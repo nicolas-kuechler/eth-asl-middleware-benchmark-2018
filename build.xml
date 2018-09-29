@@ -1,0 +1,63 @@
+<project name="asl-fall18-project" default="jar" basedir=".">
+	<description>
+    ANT Build File for ASL Fall 2018 Project
+  </description>
+	<!-- set global properties for this build -->
+
+	<property name="nethzid" value="kunicola"/>
+
+	<property name="src" location="src"/>
+	<property name="build" location="build"/>
+	<property name="dist" location="dist"/>
+	<property name="lib" location="lib"/>
+
+
+	<path id="build.classpath">
+		<fileset dir="${lib}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<target name="init">
+		<tstamp/>
+		<mkdir dir="${build}"/>
+	</target>
+
+	<target name="compile" depends="init" description="compile the source">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac 
+			srcdir="${src}" 
+			destdir="${build}" 
+			includeantruntime="false" 
+			classpathref="build.classpath"/>
+	</target>
+				
+	<target name="copy" depends="compile" description="copying files">
+		<copy file="${src}/log4j2.xml" todir="${build}" />
+	</target>
+				
+
+	<target name="jar" depends="copy" description="generate the distribution">
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist}"/>
+		<!-- Put everything in ${build} into the jar file -->
+		<jar jarfile="${dist}/middleware-${nethzid}.jar" basedir="${build}" compress="true">
+			<zipgroupfileset dir="${lib}" includes="/**/*.jar"/>
+			<fileset dir="${src}" includes="**/*.java"/>
+			<manifest>
+				<attribute name="Main-Class" value="ch.ethz.asl.kunicola.RunMW"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="clean"
+        description="clean up">
+		<!-- Delete the ${build} and ${dist} directory trees -->
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+	</target>
+
+
+
+</project>
+
