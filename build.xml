@@ -29,7 +29,8 @@
 			srcdir="${src}" 
 			destdir="${build}" 
 			includeantruntime="false" 
-			classpathref="build.classpath"/>
+			classpathref="build.classpath"
+		/>
 	</target>
 				
 	<target name="copy" depends="compile" description="copying files">

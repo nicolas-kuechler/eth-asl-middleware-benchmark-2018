@@ -7,30 +7,35 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
-import ch.ethz.asl.kunicola.BufferPool;
-import ch.ethz.asl.kunicola.request.AbstractClientRequest;
-import ch.ethz.asl.kunicola.request.SetClientRequest;
+import ch.ethz.asl.kunicola.request.AbstractRequest;
+import ch.ethz.asl.kunicola.request.RequestDecoder;
 
 public class NetThread extends Thread {
 
     private final static Logger LOG = LogManager.getLogger();
-    private static final Charset charset = Charset.forName("UTF-8");
+    private final static Marker marker = MarkerManager.getMarker("NETTHREAD");
+    private final static int BUFFER_SIZE = 8192;
 
-    private BlockingQueue<AbstractClientRequest> queue;
+    private BlockingQueue<AbstractRequest> queue;
 
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
 
+    private RequestDecoder requestDecoder;
+
     private String myIp;
     private int myPort;
+    private boolean readSharded;
+    private int numberOfServers;
 
     @Override
     public void run() {
@@ -60,43 +65,39 @@ public class NetThread extends Thread {
 				.configureBlocking(false)
 				.register(selector, SelectionKey.OP_READ);
 
-			LOG.debug("Accepted new Client: " + selectionKey.hashCode());
+			LOG.debug(marker, "C>N  accepting new client");
 		    }
 
 		    if (selectionKey.isReadable()) {
 			SocketChannel clientSocketChannel = (SocketChannel) selectionKey.channel();
 
-			Object obj = selectionKey.attachment(); // if key has no buffer attached get one from the pool
-			ByteBuffer buffer = (obj == null) ? BufferPool.getBuffer() : (ByteBuffer) obj;
+			Object obj = selectionKey.attachment();
+			boolean hasBuffer = obj != null;
+
+			ByteBuffer buffer; // TODO [nku] improve by reusing one buffer
+			if (hasBuffer) {
+			    buffer = (ByteBuffer) obj;
+			} else {
+			    buffer = ByteBuffer.allocate(BUFFER_SIZE);
+			}
 
 			int byteCount = clientSocketChannel.read(buffer);
 			if (byteCount < 1) { // TODO [nku] check if this needs special handling
 			    continue;
 			}
 
-			// TODO [nku] check if memtier clients sometimes send
-			// more than a single message and thus don't end with \r\n
-			int pos = buffer.position();
-			if (buffer.get(pos - 2) == '\r'
-				&& buffer.get(pos - 1) == '\n') {
-			    buffer.flip();
-			    String requestString = charset.decode(buffer).toString();
+			AbstractRequest request = requestDecoder.decode(buffer);
 
-			    LOG.debug("Request String: " + requestString);
+			if (request != null) { // request complete
+			    request.setClientSocketChannel(clientSocketChannel);
 
-			    // TODO [nku] build request
-			    AbstractClientRequest request = new SetClientRequest()
-				    .with(clientSocketChannel)
-				    .withRequestString(requestString);
-			    queue.put(request);
-
-			    // return buffer to pool
 			    selectionKey.attach(null);
-			    BufferPool.putBuffer(buffer);
-			} else { // incomplete request
-			    LOG.info("Incomplete Request");
-			    // attach buffer to key to continue next time
+			    queue.put(request);
+			    LOG.debug(marker, "C>N>Q {}", request.toString());
+
+			} else { // request incomplete -> attach dedicated buffer to selection key
 			    selectionKey.attach(buffer);
+			    LOG.debug(marker, "C>N  incomplete request");
 			}
 		    }
 		}
@@ -106,7 +107,7 @@ public class NetThread extends Thread {
 	}
     }
 
-    public NetThread withQueue(BlockingQueue<AbstractClientRequest> queue) {
+    public NetThread withQueue(BlockingQueue<AbstractRequest> queue) {
 	this.queue = queue;
 	return this;
     }
@@ -121,8 +122,18 @@ public class NetThread extends Thread {
 	return this;
     }
 
+    public NetThread withReadSharded(boolean readSharded) {
+	this.readSharded = readSharded;
+	return this;
+    }
+
+    public NetThread withNumberOfServers(int numberOfServers) {
+	this.numberOfServers = numberOfServers;
+	return this;
+    }
+
     public NetThread create() throws IOException {
-	LOG.debug("Creating net thread...");
+	LOG.debug(marker, "Creating net thread...");
 
 	assert (myIp != null);
 	assert (myPort != 0);
@@ -133,6 +144,8 @@ public class NetThread extends Thread {
 	serverSocketChannel.bind(new InetSocketAddress(myIp, myPort))
 		.configureBlocking(false)
 		.register(selector, SelectionKey.OP_ACCEPT);
+
+	requestDecoder = new RequestDecoder().withShardedMultiGet(readSharded).withNumberOfServers(numberOfServers);
 
 	return this;
     }

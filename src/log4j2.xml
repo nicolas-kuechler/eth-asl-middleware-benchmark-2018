@@ -2,8 +2,11 @@
 <Configuration status="WARN">
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">
+		
 			<PatternLayout
-				pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+				pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{1} \t%enc{%m}{CRLF}%n"/>
+				<MarkerFilter marker="ADMIN" onMatch="NEUTRAL" onMismatch="NEUTRAL" />
+				<MarkerFilter marker="NETTHREAD" onMatch="NEUTRAL" onMismatch="NEUTRAL" />
 		</Console>
 
 		<File name="File" fileName="app.log">
@@ -14,8 +17,8 @@
 	</Appenders>
 
 	<Loggers>
-		<Root level="info">
-			<AppenderRef ref="File" />
+		<Root level="debug">
+			<AppenderRef ref="Console" />
 		</Root>
 	</Loggers>
 </Configuration>

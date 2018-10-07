@@ -8,7 +8,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ch.ethz.asl.kunicola.request.AbstractClientRequest;
+import ch.ethz.asl.kunicola.request.AbstractRequest;
 import ch.ethz.asl.kunicola.thread.NetThread;
 import ch.ethz.asl.kunicola.thread.WorkerThread;
 
@@ -16,7 +16,7 @@ public class MyMiddleware {
 
     final static Logger LOG = LogManager.getLogger();
 
-    final BlockingQueue<AbstractClientRequest> queue = new LinkedBlockingQueue<>();
+    final BlockingQueue<AbstractRequest> queue = new LinkedBlockingQueue<>();
 
     private final String myIp;
     private final int myPort;
@@ -40,6 +40,8 @@ public class MyMiddleware {
 	NetThread netThread = new NetThread()
 		.withIp(myIp)
 		.withPort(myPort)
+		.withReadSharded(readSharded)
+		.withNumberOfServers(mcAddresses.size())
 		.withQueue(queue)
 		.create();
 
@@ -52,7 +54,7 @@ public class MyMiddleware {
 		    .withId(i)
 		    .withQueue(queue)
 		    .withMcAddresses(mcAddresses)
-		    .withReadSharded(readSharded);
+		    .create();
 
 	    workerThread.start();
 	    LOG.info("WorkerThread {} started ", i);
