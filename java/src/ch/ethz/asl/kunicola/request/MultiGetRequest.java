@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import ch.ethz.asl.kunicola.util.ServerMessage;
+
 public class MultiGetRequest extends GetRequest {
 
     private static final int MAX_NUMBER_KEYS = 10;

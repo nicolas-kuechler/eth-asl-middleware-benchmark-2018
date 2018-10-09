@@ -16,8 +16,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
-import ch.ethz.asl.kunicola.request.ServerMessage;
 import ch.ethz.asl.kunicola.util.DecoderUtil;
+import ch.ethz.asl.kunicola.util.ServerMessage;
 
 public class WorkerThread extends Thread {
 

@@ -2,6 +2,8 @@ package ch.ethz.asl.kunicola.request;
 
 import java.nio.ByteBuffer;
 
+import ch.ethz.asl.kunicola.util.ServerMessage;
+
 public class GetRequest extends AbstractRequest {
 
     protected static final byte[] RESPONSE_END_MARKER = "END\r\n".getBytes();

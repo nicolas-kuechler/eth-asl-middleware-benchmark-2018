@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
-import ch.ethz.asl.kunicola.request.RequestDecoder;
+import ch.ethz.asl.kunicola.util.RequestDecoder;
 
 public class NetThread extends Thread {
 

@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ch.ethz.asl.kunicola.util.DecoderUtil;
+import ch.ethz.asl.kunicola.util.ServerMessage;
 
 public class SetRequest extends AbstractRequest {
 

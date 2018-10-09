@@ -1,6 +1,11 @@
-package ch.ethz.asl.kunicola.request;
+package ch.ethz.asl.kunicola.util;
 
 import java.nio.ByteBuffer;
+
+import ch.ethz.asl.kunicola.request.AbstractRequest;
+import ch.ethz.asl.kunicola.request.GetRequest;
+import ch.ethz.asl.kunicola.request.MultiGetRequest;
+import ch.ethz.asl.kunicola.request.SetRequest;
 
 // TODO [nku] add JUnit tests
 public class RequestDecoder {

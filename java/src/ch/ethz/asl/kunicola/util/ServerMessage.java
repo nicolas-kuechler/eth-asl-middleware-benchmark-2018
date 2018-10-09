@@ -1,9 +1,7 @@
-package ch.ethz.asl.kunicola.request;
+package ch.ethz.asl.kunicola.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import ch.ethz.asl.kunicola.util.DecoderUtil;
 
 public class ServerMessage {
 
