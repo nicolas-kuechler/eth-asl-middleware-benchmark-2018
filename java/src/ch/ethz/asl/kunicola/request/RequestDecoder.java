@@ -54,7 +54,7 @@ public class RequestDecoder {
 	} else if (g0 && e1 && t2 && endsWithNewLine) { // Get or MultiGet Request
 	    buffer.flip();
 	    int whitespaceCount = 0;
-	    while (buffer.hasRemaining() && whitespaceCount < 2) {
+	    while (buffer.hasRemaining() && (whitespaceCount < 2 || whitespaceCount < numberOfServers)) {
 		if (buffer.get() == ' ') {
 		    whitespaceCount++;
 		}
@@ -64,9 +64,15 @@ public class RequestDecoder {
 	    content = new byte[buffer.remaining()];
 	    buffer.get(content);
 	    if (whitespaceCount < 2) { // GET Request
-		request = new GetRequest(content, getRoundRobinServerId());
+		request = new GetRequest(content, getRoundRobinServerId(), numberOfServers);
 	    } else {// MULTI GET Request
-		request = new MultiGetClientRequest(content, getRoundRobinServerId(), readSharded);
+		if (readSharded) {
+		    int serverIds[] = getRoundRobinServerIds(whitespaceCount);
+		    request = new MultiGetRequest(content, serverIds, numberOfServers);
+		} else {
+		    request = new MultiGetRequest(content, getRoundRobinServerId(), numberOfServers);
+		}
+
 	    }
 	}
 
@@ -77,6 +83,15 @@ public class RequestDecoder {
 	int serverId = nextRoundRobinServerId;
 	nextRoundRobinServerId = (nextRoundRobinServerId + 1) % numberOfServers;
 	return serverId;
+    }
+
+    private int[] getRoundRobinServerIds(int number) {
+	int[] serverIds = new int[number];
+
+	for (int i = 0; i < number; i++) {
+	    serverIds[i] = getRoundRobinServerId();
+	}
+	return serverIds;
     }
 
     public RequestDecoder withShardedMultiGet(boolean readSharded) {

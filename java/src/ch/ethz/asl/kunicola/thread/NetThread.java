@@ -7,6 +7,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -56,6 +57,8 @@ public class NetThread extends Thread {
 		    SelectionKey selectionKey = iterator.next();
 		    iterator.remove();
 
+		    Instant processStartTime = Instant.now();
+
 		    if (!selectionKey.isValid()) {
 			throw new RuntimeException("Invalid Selection Key -> Wanted to check if this can happen");
 		    }
@@ -90,9 +93,14 @@ public class NetThread extends Thread {
 
 			if (request != null) { // request complete
 			    request.setClientSocketChannel(clientSocketChannel);
-
 			    selectionKey.attach(null);
+
+			    Instant enqueueTime = Instant.now();
+			    request.setProcessStartTime(processStartTime);
+			    request.setEnqueueTime(enqueueTime);
+
 			    queue.put(request);
+
 			    LOG.debug(marker, "C>N>Q {}", request.toString());
 
 			} else { // request incomplete -> attach dedicated buffer to selection key
@@ -129,6 +137,11 @@ public class NetThread extends Thread {
 
     public NetThread withNumberOfServers(int numberOfServers) {
 	this.numberOfServers = numberOfServers;
+	return this;
+    }
+
+    public NetThread withPriority(int priority) {
+	setPriority(priority);
 	return this;
     }
 

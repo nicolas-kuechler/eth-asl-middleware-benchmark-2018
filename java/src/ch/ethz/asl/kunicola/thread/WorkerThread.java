@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -14,9 +15,9 @@ import java.util.concurrent.BlockingQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ch.ethz.asl.kunicola.DecoderUtil;
 import ch.ethz.asl.kunicola.request.AbstractRequest;
 import ch.ethz.asl.kunicola.request.ServerMessage;
+import ch.ethz.asl.kunicola.util.DecoderUtil;
 
 public class WorkerThread extends Thread {
 
@@ -42,6 +43,7 @@ public class WorkerThread extends Thread {
 
 	    try {
 		request = queue.take();
+		request.setDequeueTime(Instant.now());
 		LOG.debug("Q>W  {}", request.toString());
 	    } catch (InterruptedException e2) {
 		// TODO [nku] log exception
@@ -66,6 +68,7 @@ public class WorkerThread extends Thread {
 		    while (buffers[0].hasRemaining()) {
 			serverSocketChannel.write(buffers[0]);
 		    }
+		    request.setServerStartTime(serverId, Instant.now());
 		    LOG.debug("W>S{}  {}", serverId, msg.toString());
 		} catch (IOException e) {
 		    // TODO [nku] log exception -> maybe retry?
@@ -106,6 +109,8 @@ public class WorkerThread extends Thread {
 		    SelectionKey selectionKey = iterator.next();
 		    iterator.remove();
 
+		    Instant serverEndTime = Instant.now();
+
 		    if (!selectionKey.isValid()) {
 			throw new RuntimeException("Invalid Selection Key -> Wanted to check if this can happen");
 		    }
@@ -121,12 +126,11 @@ public class WorkerThread extends Thread {
 				continue;
 			    }
 
-			    hasAllServerResponse = request.putServerResponse(serverId, buffers[serverId]);
-
 			    if (LOG.isDebugEnabled()) {
-				LOG.debug("W<S{}  [all={}] {}", serverId, hasAllServerResponse,
-					DecoderUtil.decode(buffers[serverId]));
+				LOG.debug("W<S{}  {}", serverId, DecoderUtil.decode(buffers[serverId]));
 			    }
+			    request.setServerEndTime(serverId, serverEndTime);
+			    hasAllServerResponse = request.putServerResponse(serverId, buffers[serverId]);
 
 			} catch (IOException e) {
 			    // TODO [nku] log exception
@@ -144,6 +148,7 @@ public class WorkerThread extends Thread {
 		    while (clientResponseBuffer.hasRemaining()) {
 			clientSocketChannel.write(clientResponseBuffer);
 		    }
+		    request.setProcessEndTime(Instant.now());
 		    if (LOG.isDebugEnabled()) {
 			LOG.debug("C<W  {}", DecoderUtil.decode(clientResponseBuffer));
 		    }
@@ -152,6 +157,18 @@ public class WorkerThread extends Thread {
 		    e.printStackTrace();
 		}
 	    }
+
+	    // TODO [nku] look at performance impact of logging stats
+	    LOG.info("{} {} {} {} [{}] [{}] {} {} {}",
+		    request.getType(),
+		    request.getProcessStartTime().toEpochMilli(),
+		    request.getEnqueueTime().toEpochMilli(),
+		    request.getDequeueTime().toEpochMilli(),
+		    request.getFormattedServerStartTime(),
+		    request.getFormattedServerEndTime(),
+		    request.getProcessEndTime().toEpochMilli(),
+		    request.getHitCount(),
+		    request.getKeyCount());
 	}
     }
 
@@ -167,6 +184,11 @@ public class WorkerThread extends Thread {
 
     public WorkerThread withMcAddresses(List<String> mcAddresses) {
 	this.mcAddresses = mcAddresses;
+	return this;
+    }
+
+    public WorkerThread withPriority(int priority) {
+	setPriority(priority);
 	return this;
     }
 

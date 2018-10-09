@@ -1,4 +1,4 @@
-package ch.ethz.asl.kunicola;
+package ch.ethz.asl.kunicola.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
