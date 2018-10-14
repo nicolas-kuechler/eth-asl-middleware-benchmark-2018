@@ -4,9 +4,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,12 +23,12 @@ public abstract class AbstractRequest {
     private final int numberOfServers;
 
     // Stats
-    private Instant processStartTime;
-    private Instant enqueueTime;
-    private Instant dequeueTime;
-    private Instant[] serverStartTime; // indexed by server id
-    private Instant[] serverEndTime; // indexed by server id
-    private Instant processEndTime;
+    private long processStartTime;
+    private long enqueueTime;
+    private long dequeueTime;
+    private long[] serverStartTime; // indexed by server id
+    private long[] serverEndTime; // indexed by server id
+    private long processEndTime;
     protected int keyCount = 0;
     protected int hitCount = 0;
 
@@ -41,8 +38,8 @@ public abstract class AbstractRequest {
 	this.type = type;
 	this.numberOfServers = numberOfServers;
 
-	serverStartTime = new Instant[numberOfServers];
-	serverEndTime = new Instant[numberOfServers];
+	serverStartTime = new long[numberOfServers];
+	serverEndTime = new long[numberOfServers];
     }
 
     public abstract ServerMessage[] getServerMessages();
@@ -86,78 +83,6 @@ public abstract class AbstractRequest {
 	return type;
     }
 
-    public Instant getProcessStartTime() {
-	return processStartTime;
-    }
-
-    public void setProcessStartTime(Instant processStartTime) {
-	this.processStartTime = processStartTime;
-    }
-
-    public Instant getEnqueueTime() {
-	return enqueueTime;
-    }
-
-    public void setEnqueueTime(Instant enqueueTime) {
-	this.enqueueTime = enqueueTime;
-    }
-
-    public Instant getDequeueTime() {
-	return dequeueTime;
-    }
-
-    public void setDequeueTime(Instant dequeueTime) {
-	this.dequeueTime = dequeueTime;
-    }
-
-    public Instant[] getServerStartTime() {
-	return serverStartTime;
-    }
-
-    public Instant getServerStartTime(int serverId) {
-	return serverStartTime[serverId];
-    }
-
-    public void setServerStartTime(int serverId, Instant serverStartTime) {
-	this.serverStartTime[serverId] = serverStartTime;
-    }
-
-    public void setServerStartTime(Instant[] serverStartTime) {
-	this.serverStartTime = serverStartTime;
-    }
-
-    public Instant[] getServerEndTime() {
-	return serverEndTime;
-    }
-
-    public Instant getServerEndTime(int serverId) {
-	return serverEndTime[serverId];
-    }
-
-    public String getFormattedServerStartTime() {
-	return Arrays.stream(serverStartTime)
-		.map(x -> Long.toString(x.toEpochMilli()))
-		.collect(Collectors.joining(","));
-    }
-
-    public String getFormattedServerEndTime() {
-	return Arrays.stream(serverEndTime)
-		.map(x -> Long.toString(x.toEpochMilli()))
-		.collect(Collectors.joining(","));
-    }
-
-    public void setServerEndTime(int serverId, Instant serverEndTime) {
-	this.serverEndTime[serverId] = serverEndTime;
-    }
-
-    public Instant getProcessEndTime() {
-	return processEndTime;
-    }
-
-    public void setProcessEndTime(Instant processEndTime) {
-	this.processEndTime = processEndTime;
-    }
-
     public int getNumberOfServers() {
 	return numberOfServers;
     }
@@ -168,6 +93,62 @@ public abstract class AbstractRequest {
 
     public int getHitCount() {
 	return hitCount;
+    }
+
+    public long getProcessStartTime() {
+	return processStartTime;
+    }
+
+    public void setProcessStartTime(long processStartTime) {
+	this.processStartTime = processStartTime;
+    }
+
+    public long getEnqueueTime() {
+	return enqueueTime;
+    }
+
+    public void setEnqueueTime(long enqueueTime) {
+	this.enqueueTime = enqueueTime;
+    }
+
+    public long getDequeueTime() {
+	return dequeueTime;
+    }
+
+    public void setDequeueTime(long dequeueTime) {
+	this.dequeueTime = dequeueTime;
+    }
+
+    public long[] getServerStartTime() {
+	return serverStartTime;
+    }
+
+    public void setServerStartTime(int serverId, long serverStartTime) {
+	this.serverStartTime[serverId] = serverStartTime;
+    }
+
+    public long[] getServerEndTime() {
+	return serverEndTime;
+    }
+
+    public void setServerEndTime(int serverId, long serverEndTime) {
+	this.serverEndTime[serverId] = serverEndTime;
+    }
+
+    public long getProcessEndTime() {
+	return processEndTime;
+    }
+
+    public void setProcessEndTime(long processEndTime) {
+	this.processEndTime = processEndTime;
+    }
+
+    public void setKeyCount(int keyCount) {
+	this.keyCount = keyCount;
+    }
+
+    public void setHitCount(int hitCount) {
+	this.hitCount = hitCount;
     }
 
 }

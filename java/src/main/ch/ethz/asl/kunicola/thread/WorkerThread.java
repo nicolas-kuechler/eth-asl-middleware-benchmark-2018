@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
+import ch.ethz.asl.kunicola.statistic.Statistic;
 import ch.ethz.asl.kunicola.util.DecoderUtil;
 import ch.ethz.asl.kunicola.util.ServerMessage;
 
@@ -31,6 +31,8 @@ public class WorkerThread extends Thread {
     private Selector selector = null;
     private SelectionKey[] serverSelectionKeys = null;
     private ByteBuffer[] buffers = null;
+    private Statistic statistic = null;
+    private long statisticWindowEnd;
 
     private List<String> mcAddresses = null;
 
@@ -43,7 +45,7 @@ public class WorkerThread extends Thread {
 
 	    try {
 		request = queue.take();
-		request.setDequeueTime(Instant.now());
+		request.setDequeueTime(System.currentTimeMillis());
 		LOG.debug("Q>W  {}", request.toString());
 	    } catch (InterruptedException e2) {
 		// TODO [nku] log exception
@@ -68,7 +70,7 @@ public class WorkerThread extends Thread {
 		    while (buffers[0].hasRemaining()) {
 			serverSocketChannel.write(buffers[0]);
 		    }
-		    request.setServerStartTime(serverId, Instant.now());
+		    request.setServerStartTime(serverId, System.currentTimeMillis());
 		    LOG.debug("W>S{}  {}", serverId, msg.toString());
 		} catch (IOException e) {
 		    // TODO [nku] log exception -> maybe retry?
@@ -109,7 +111,7 @@ public class WorkerThread extends Thread {
 		    SelectionKey selectionKey = iterator.next();
 		    iterator.remove();
 
-		    Instant serverEndTime = Instant.now();
+		    long serverEndTime = System.currentTimeMillis();
 
 		    if (!selectionKey.isValid()) {
 			throw new RuntimeException("Invalid Selection Key -> Wanted to check if this can happen");
@@ -141,6 +143,7 @@ public class WorkerThread extends Thread {
 	    }
 
 	    ByteBuffer clientResponseBuffer = request.getClientResponseBuffer();
+
 	    if (clientResponseBuffer != null) {
 		clientResponseBuffer.flip();
 		SocketChannel clientSocketChannel = request.getClientSocketChannel();
@@ -148,7 +151,6 @@ public class WorkerThread extends Thread {
 		    while (clientResponseBuffer.hasRemaining()) {
 			clientSocketChannel.write(clientResponseBuffer);
 		    }
-		    request.setProcessEndTime(Instant.now());
 		    if (LOG.isDebugEnabled()) {
 			LOG.debug("C<W  {}", DecoderUtil.decode(clientResponseBuffer));
 		    }
@@ -158,17 +160,26 @@ public class WorkerThread extends Thread {
 		}
 	    }
 
+	    long processEndTime = System.currentTimeMillis();
+	    request.setProcessEndTime(processEndTime);
+
+	    while ((statisticWindowEnd - processEndTime) < 0) { // TODO [nku] maybe change
+		statistic.report();
+		statisticWindowEnd += 5000;// TODO [nku] configurable window size
+		statistic.reset();
+	    }
+
+	    statistic.update(request);
+
 	    // TODO [nku] look at performance impact of logging stats
-	    LOG.info("{} {} {} {} [{}] [{}] {} {} {}",
-		    request.getType(),
-		    request.getProcessStartTime().toEpochMilli(),
-		    request.getEnqueueTime().toEpochMilli(),
-		    request.getDequeueTime().toEpochMilli(),
-		    request.getFormattedServerStartTime(),
-		    request.getFormattedServerEndTime(),
-		    request.getProcessEndTime().toEpochMilli(),
-		    request.getHitCount(),
-		    request.getKeyCount());
+//	    LOG.info("{} {} {} {} {} {} {}",
+//		    request.getType(),
+//		    request.getProcessStartTime(),
+//		    request.getEnqueueTime(),
+//		    request.getDequeueTime(),
+//		    request.getProcessEndTime(),
+//		    request.getHitCount(),
+//		    request.getKeyCount());
 	}
     }
 
@@ -189,6 +200,16 @@ public class WorkerThread extends Thread {
 
     public WorkerThread withPriority(int priority) {
 	setPriority(priority);
+	return this;
+    }
+
+    public WorkerThread withStatistic(Statistic statistic) {
+	this.statistic = statistic;
+	return this;
+    }
+
+    public WorkerThread withStart(long start) {
+	this.statisticWindowEnd = start + 5000;
 	return this;
     }
 

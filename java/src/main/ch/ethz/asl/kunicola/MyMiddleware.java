@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
+import ch.ethz.asl.kunicola.statistic.Statistic;
 import ch.ethz.asl.kunicola.thread.NetThread;
 import ch.ethz.asl.kunicola.thread.WorkerThread;
 
@@ -40,6 +41,9 @@ public class MyMiddleware {
     public void run() throws IOException {
 	LOG.info("Middleware Started: " + this);
 
+	System.out.println("Property: ");
+	System.out.println(System.getProperty("log4j2.contextSelector"));
+
 	LOG.info("Initializing NetThread... ");
 	NetThread netThread = new NetThread()
 		.withIp(myIp)
@@ -53,14 +57,18 @@ public class MyMiddleware {
 	LOG.info("NetThread Started with config: {}", netThread.toString());
 
 	LOG.info("Initializing {} WorkerThreads... ", numThreadsPTP);
+
+	long start = System.currentTimeMillis();
+
 	for (int i = 0; i < numThreadsPTP; i++) {
 	    WorkerThread workerThread = new WorkerThread()
 		    .withId(i)
 		    .withQueue(queue)
 		    .withMcAddresses(mcAddresses)
 		    .withPriority(Thread.NORM_PRIORITY)
+		    .withStatistic(new Statistic(mcAddresses.size()))
+		    .withStart(start)
 		    .create();
-
 	    workerThread.start();
 	    LOG.info("WorkerThread {} started ", i);
 	}

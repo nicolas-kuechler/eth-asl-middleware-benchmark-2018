@@ -6,7 +6,7 @@
 
 	<property name="nethzid" value="kunicola"/>
 
-	<property name="src" location="src"/>
+	<property name="src" location="src/main"/>
 	<property name="build" location="build"/>
 	<property name="dist" location="dist"/>
 	<property name="lib" location="lib"/>
