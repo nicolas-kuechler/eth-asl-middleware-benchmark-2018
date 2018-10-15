@@ -84,6 +84,7 @@ public class MyMiddleware {
 	    public void run() {
 		super.run();
 		// TODO [nku] check what else needs to be done in the cleanup
+		LOG.info("Shutdown Hook Caught Kill");
 		LogManager.shutdown();
 	    }
 	});

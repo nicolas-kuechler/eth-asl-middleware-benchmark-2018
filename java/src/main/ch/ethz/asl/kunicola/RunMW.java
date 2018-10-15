@@ -21,6 +21,9 @@ public class RunMW {
 
 	parseArguments(args);
 
+	System.getProperties().setProperty("log4j2.contextSelector",
+		"org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+
 	// -----------------------------------------------------------------------------
 	// Start the Middleware
 	// -----------------------------------------------------------------------------

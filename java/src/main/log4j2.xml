@@ -27,7 +27,7 @@
 
 	<Loggers>
 		<Root level="info" includeLocation="false">
-			<AppenderRef ref="Console" />
+			<AppenderRef ref="RandomAccessFile" />
 		</Root>
 	</Loggers>
 </Configuration>
