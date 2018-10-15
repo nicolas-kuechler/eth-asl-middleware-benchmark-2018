@@ -1,10 +1,13 @@
-import sys, socket
+import sys, socket, argparse
 
-server = sys.argv[1]
-port = int(sys.argv[2])
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-ip")
+parser.add_argument("-port", type=int)
+args = parser.parse_args()
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((server, port))
+s.connect((args.ip, args.port))
 data_block = 4096 * 'x'
 key_max = 10000
 for i in range(key_max+1):
@@ -13,4 +16,4 @@ for i in range(key_max+1):
     assert(data=='STORED\r\n'.encode())
 s.close()
 
-print(f'initialized all keys on memcached server {server}:{port}')
+print(f'initialized all keys on memcached server {args.ip}:{args.port}')
