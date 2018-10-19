@@ -1,0 +1,13 @@
+{
+    "n_server" : 1,
+    "n_client" : 3,
+    "n_instances_mt_per_machine"  : 1,
+    "n_threads_per_mt_instance" : 2,
+    "n_vc" : [1, 4, 12, 16, 24, 32],
+    "workload_ratio" : ["1:0", "0:1"],
+    "multi_get_behaviour" : null,
+    "multi_get_size" : null,
+    "n_middleware" : 0,
+    "n_worker_per_mw" : 0,
+    "repetitions" : 3
+}
