@@ -1,5 +1,8 @@
 import os, pymongo, json
 import utility
+from paramiko import SSHClient
+from scp import SCPClient
+
 
 def process(working_dir, info, exp_config, rm_local=False):
 
