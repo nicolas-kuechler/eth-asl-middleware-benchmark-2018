@@ -1,75 +1,88 @@
-import utility, client, midleware, server
-import time
+import time, json
+import utility, client_vm, middleware_vm, server_vm, results
 
-def run_experiment():
-    experiment_name = "exp21"
-    configurations = utility.get_config("./experiments/exp21.json")
+TEST_TIME = 80 # sec
 
-    vm = None # TODO [nku] load vm config
+def run(experiment_suite_id, experiment_name):
 
-    for config in configurations:
+    configurations = utility.get_config(f"./experiments/{experiment_name}.json")
+
+    with open("./../vm_config.json") as file:
+        vm_config = json.load(file)
+
+    for exp_config in configurations:
         print("Start New Config")
-        for repetition in range(config['repetitions']):
-            print(f"\nRepetition: {repetition}")
-            start_experiment(experiment_name, config, vm)
-            time.sleep(1) # TODO [nku] figure out a way on what to wait
-            stop_experiment(experiment_name, config, vm)
-            print(f"End Repetition: {repetition}\n")
+        for repetition in range(exp_config['repetitions']):
+            info = {
+                "experiment_suite_id" : experiment_suite_id,
+                "experiment_name" : experiment_name,
+                "repetition" : repetition
+            }
 
-def start_experiment(experiment_name, config, vm):
+            info["working_dir"] = utility.resolve_path(info, exp_config)
+
+            start_experiment(info, exp_config, vm_config)
+            time.sleep(TEST_TIME + 0.5)
+            stop_experiment(info, exp_config, vm_config)
+
+            transfer_results(info, exp_config, vm_config)
+
+            result_id = results.process(info["working_dir"], info, exp_config, rm_local=False)
+            print(result_id)
+
+def start_experiment(info, exp_config, vm_config):
     server_connections = []
-    for server in range(config['n_server']):
+    for server_id in range(exp_config['n_server']):
         server_config = {
-            'host': vm["server"][server]['host'],
-            'ip' :  vm["server"][server]['private_ip'],
+            'host': vm_config["server"][server_id]['host'],
+            'ip' :  vm_config["server"][server_id]['private_ip'],
             'port' : 11211, # TODO [nku] also load from vm config?
         }
-        server_connections.append(f"{server_config['ip']}:{server_config['port']}")
-        server.start(experiment_name=experiment_name, server_id=server, config=server_config)
+
+        server_connections.append({"ip":server_config['ip'], "port" : server_config['port']})
+        server_vm.start_memcached(info=info, server_id=server_id, server_config=server_config)
 
     mw_connections = []
-    for mw in range(config['n_middleware']):
+    for mw_id in range(exp_config['n_middleware']):
         mw_config = {
-            'host': vm["middleware"][mw]['host'],
-            'ip': vm["middleware"][mw]['private_ip'],
+            'host': vm_config["middleware"][mw_id]['host'],
+            'ip': vm_config["middleware"][mw_id]['private_ip'],
             'port' : 6379, # TODO [nku] also load from vm config?
-            'n_worker_per_mw' : config['n_worker_per_mw'],
-            'multi_get_behaviour' : config['multi_get_behaviour'],
             'server' : server_connections
         }
-        mw_connections.append(f"{mw_config['ip']}:{mw_config['port']}")
-        middleware.start(experiment_name=experiment_name, mw_id=mw, config=mw_config)
+        mw_connections.append({"ip":mw_config['ip'], "port" : mw_config['port']})
+        middleware_vm.start_middleware(info=info, mw_id=mw_id, mw_config=mw_config, exp_config=exp_config)
 
-    if config['n_middleware'] > 0:
-        # TODO [nku] define criteria to what the clients should connect
-        connections = [] #list of dicts [{'ip':'localhost', 'port':1234}]
+    if exp_config['n_middleware'] > 0:
+        connections = mw_connections
     else:
-        connections = []
+        connections = server_connections
 
-    for client in range(config['n_client']):
-        for instance in range(config['n_instances_mt_per_machine']):
-            client_config = {
-                'host': vm["client"][client]['host'],
-                'server' : connections[instance]['ip'],
-                'port' : connections[instance]['port'],
-                'n_threads_per_mt_instance' : config['n_threads_per_mt_instance'],
-                'n_vc': config['n_vc'],
-                'workload_ratio': config['workload_ratio'],
-                'multi_get_size': config['multi_get_size']
-            }
-            start(experiment_name=experiment_name, client_id=client, config=client_config)
-            print(f"start instance {instance} on client {client}")
+    for client_id in range(exp_config['n_client']):
+        client_config = {
+                'host': vm_config["client"][client_id]['host'],
+                'connections' : connections,
+                'test_time': TEST_TIME
+        }
+        client_vm.start_memtier(info=info, client_id=client_id, client_config=client_config, exp_config=exp_config)
 
-def stop_experiment(config):
-    for server in range(config['n_server']):
-        print(f"stop server {server}")
+def stop_experiment(info, exp_config, vm_config):
 
-    for mw in range(config['n_middleware']):
-        print(f"stop mw {mw} and transfer results")
+    for mw_id in range(exp_config['n_middleware']):
+        middleware_vm.stop_middleware(mw_id=mw_id, host=vm_config["middleware"][mw_id]['host'])
 
-    for client in range(config['n_client']):
-        for instance in range(config['n_instances_mt_per_machine']):
-            print(f"stop instance {instance} on client {client} and transfer results")
+    for server_id in range(exp_config['n_server']):
+        server_vm.stop_memcached(server_id=server_id, host=vm_config["server"][server_id]['host'])
+
+    # Clients Finished Through Time Limit Automatically -> don't need to be stopped
+
+
+def transfer_results(info, exp_config, vm_config):
+        for mw_id in range(exp_config['n_middleware']):
+            results.transfer(info=info, exp_config=exp_config, host=vm_config["middleware"][mw_id]['host'], id=mw_id, rm_remote=True, rename_mw_logs=True)
+
+        for client_id in range(exp_config['n_client']):
+            results.transfer(info=info, exp_config=exp_config, host=vm_config["client"][client_id]['host'], id=client_id, rm_remote=True)
 
 if __name__ == "__main__":
-    run_experiment()
+    run()

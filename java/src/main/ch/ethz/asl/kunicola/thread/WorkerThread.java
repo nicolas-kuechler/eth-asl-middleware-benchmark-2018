@@ -24,6 +24,7 @@ public class WorkerThread extends Thread {
     private final Logger LOG = LogManager.getLogger();
 
     private static final int BUFFER_SIZE = 65536; // 2^16 b enough to handle up to ten 4096b values in multiget
+    private static final int STATS_WINDOWS_SIZE = 5000; // ms
 
     private int id = -1;
     private BlockingQueue<AbstractRequest> queue = null;
@@ -47,9 +48,8 @@ public class WorkerThread extends Thread {
 		request = queue.take();
 		request.setDequeueTime(System.currentTimeMillis());
 		LOG.debug("Q>W  {}", request.toString());
-	    } catch (InterruptedException e2) {
-		// TODO [nku] log exception
-		e2.printStackTrace();
+	    } catch (InterruptedException e) {
+		LOG.warn("Exception occured while taking request from queue: {}", e);
 		continue;
 	    }
 
@@ -73,8 +73,7 @@ public class WorkerThread extends Thread {
 		    request.setServerStartTime(serverId, System.currentTimeMillis());
 		    LOG.debug("W>S{}  {}", serverId, msg.toString());
 		} catch (IOException e) {
-		    // TODO [nku] log exception -> maybe retry?
-		    e.printStackTrace();
+		    LOG.error("Error writing message to server: {}", e);
 		}
 	    }
 
@@ -100,8 +99,7 @@ public class WorkerThread extends Thread {
 		    selectedKeys = selector.selectedKeys();
 
 		} catch (IOException e1) {
-		    // TODO [nku] log exception
-		    LOG.error(e1.getMessage());
+		    LOG.error("Error selecting channels {}", e1.getMessage());
 		    continue;
 		}
 
@@ -124,7 +122,8 @@ public class WorkerThread extends Thread {
 			try {
 			    int byteCount = serverSocketChannel.read(buffers[serverId]);
 
-			    if (byteCount < 1) { // TODO [nku] check if this needs special handling
+			    if (byteCount < 1) {
+				LOG.warn("number of bytes read: {} (-1 stands for end of stream)", byteCount);
 				continue;
 			    }
 
@@ -135,8 +134,7 @@ public class WorkerThread extends Thread {
 			    hasAllServerResponse = request.putServerResponse(serverId, buffers[serverId]);
 
 			} catch (IOException e) {
-			    // TODO [nku] log exception
-			    e.printStackTrace();
+			    LOG.error("Error reading server socket channel: {}", e);
 			}
 		    }
 		}
@@ -155,17 +153,17 @@ public class WorkerThread extends Thread {
 			LOG.debug("C<W  {}", DecoderUtil.decode(clientResponseBuffer));
 		    }
 		} catch (IOException e) {
-		    // TODO [nku] log exception -> maybe retry?
-		    e.printStackTrace();
+		    LOG.error("Error writing response to client: {}", e);
 		}
 	    }
 
 	    long processEndTime = System.currentTimeMillis();
 	    request.setProcessEndTime(processEndTime);
 
-	    while ((statisticWindowEnd - processEndTime) < 0) { // TODO [nku] maybe change
+	    while ((statisticWindowEnd - processEndTime) < 0) { // TODO [nku] maybe change because initially makes no
+								// sense
 		statistic.report();
-		statisticWindowEnd += 5000;// TODO [nku] configurable window size
+		statisticWindowEnd += STATS_WINDOWS_SIZE;
 		statistic.reset();
 	    }
 
@@ -213,6 +211,11 @@ public class WorkerThread extends Thread {
 	return this;
     }
 
+    public WorkerThread withUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
+	setUncaughtExceptionHandler(uncaughtExceptionHandler);
+	return this;
+    }
+
     public WorkerThread create() {
 	LOG.debug("Creating worker thread " + this.id + "...");
 
@@ -241,8 +244,7 @@ public class WorkerThread extends Thread {
 	    }
 
 	} catch (IOException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+	    LOG.error("Error opening server socket channel: {}", e);
 	}
 
 	return this;

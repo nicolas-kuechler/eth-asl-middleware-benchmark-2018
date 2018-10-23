@@ -7,8 +7,8 @@
     "workload_ratio" : ["1:0", "0:1"],
     "multi_get_behaviour" : null,
     "multi_get_size" : null,
-    "n_middleware" : 0,
-    "n_worker_per_mw" : 0,
+    "n_middleware" : 1,
+    "n_worker_per_mw" : [8, 16, 32, 64],
     "repetitions" : 3,
-    "path_template": "exp21/${workload_ratio}/vc_${n_vc}/rep_${repetition}"
+    "path_template": "exp31/${workload_ratio}/w_${n_worker_per_mw}/vc_${n_vc}/rep_${repetition}"
 }

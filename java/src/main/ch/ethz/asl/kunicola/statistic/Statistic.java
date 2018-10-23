@@ -8,7 +8,8 @@ import ch.ethz.asl.kunicola.request.AbstractRequest;
 //TODO [nku] add junit test
 public class Statistic {
 
-    private final Logger LOG = LogManager.getLogger();
+    public final static String HEADER = "header placeholder"; // TODO [nku] write header
+    private final static Logger STATS_LOG = LogManager.getLogger("stat");
 
     OnlineAverage queueWaitingTime;
 
@@ -134,19 +135,19 @@ public class Statistic {
     }
 
     public void report() {
-	LOG.info("get {} {} {} {} {} {} {} {} {} {} {} {}",
+	STATS_LOG.info("get {} {} {} {} {} {} {} {} {} {} {} {}",
 		queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 		getResponseTime.getCount(), getResponseTime.getMean(), getResponseTime.getM2(),
 		getNetThreadTime.getCount(), getNetThreadTime.getMean(), getNetThreadTime.getM2(),
 		getWorkerThreadTime.getCount(), getWorkerThreadTime.getMean(), getWorkerThreadTime.getM2());
 
-	LOG.info("set {} {} {} {} {} {} {} {} {} {} {} {}",
+	STATS_LOG.info("set {} {} {} {} {} {} {} {} {} {} {} {}",
 		queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 		setResponseTime.getCount(), setResponseTime.getMean(), setResponseTime.getM2(),
 		setNetThreadTime.getCount(), setNetThreadTime.getMean(), setNetThreadTime.getM2(),
 		setWorkerThreadTime.getCount(), setWorkerThreadTime.getMean(), setWorkerThreadTime.getM2());
 
-	LOG.info("mget {} {} {} {} {} {} {} {} {} {} {} {}",
+	STATS_LOG.info("mget {} {} {} {} {} {} {} {} {} {} {} {}",
 		queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 		multiGetResponseTime.getCount(), multiGetResponseTime.getMean(), multiGetResponseTime.getM2(),
 		multiGetNetThreadTime.getCount(), multiGetNetThreadTime.getMean(), multiGetNetThreadTime.getM2(),

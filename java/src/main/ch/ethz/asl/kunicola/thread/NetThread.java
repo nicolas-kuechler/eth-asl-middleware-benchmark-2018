@@ -84,7 +84,8 @@ public class NetThread extends Thread {
 			}
 
 			int byteCount = clientSocketChannel.read(buffer);
-			if (byteCount < 1) { // TODO [nku] check if this needs special handling
+			if (byteCount < 1) {
+			    LOG.warn("number of bytes read: {} (-1 stands for end of stream)", byteCount);
 			    continue;
 			}
 
@@ -141,6 +142,11 @@ public class NetThread extends Thread {
 
     public NetThread withPriority(int priority) {
 	setPriority(priority);
+	return this;
+    }
+
+    public NetThread withUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
+	setUncaughtExceptionHandler(uncaughtExceptionHandler);
 	return this;
     }
 

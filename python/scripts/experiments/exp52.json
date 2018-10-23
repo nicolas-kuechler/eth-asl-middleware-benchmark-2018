@@ -1,0 +1,14 @@
+{
+    "n_server" : 3,
+    "n_client" : 3,
+    "n_instances_mt_per_machine"  : 2,
+    "n_threads_per_mt_instance" : 1,
+    "n_vc" : 2,
+    "workload_ratio" : ["1:1","1:3","1:6","1:9"],
+    "multi_get_behaviour" : "non-sharded",
+    "multi_get_size" : [1, 3, 6, 9],
+    "n_middleware" : 2,
+    "n_worker_per_mw" : 64,
+    "repetitions" : 3,
+    "path_template": "exp52/mget_${multi_get_size}/rep_${repetition}"
+}

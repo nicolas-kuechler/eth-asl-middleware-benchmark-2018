@@ -1,7 +1,6 @@
 package ch.ethz.asl.kunicola;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
@@ -16,10 +15,12 @@ import ch.ethz.asl.kunicola.request.AbstractRequest;
 import ch.ethz.asl.kunicola.statistic.Statistic;
 import ch.ethz.asl.kunicola.thread.NetThread;
 import ch.ethz.asl.kunicola.thread.WorkerThread;
+import ch.ethz.asl.kunicola.util.MiddlewareExceptionHandler;
 
 public class MyMiddleware {
 
     final static Logger LOG = LogManager.getLogger();
+    final static Logger STATS_LOG = LogManager.getLogger("stat");
 
     final BlockingQueue<AbstractRequest> queue = new LinkedBlockingQueue<>();
 
@@ -41,8 +42,7 @@ public class MyMiddleware {
     public void run() throws IOException {
 	LOG.info("Middleware Started: " + this);
 
-	System.out.println("Property: ");
-	System.out.println(System.getProperty("log4j2.contextSelector"));
+	STATS_LOG.info(Statistic.HEADER);
 
 	LOG.info("Initializing NetThread... ");
 	NetThread netThread = new NetThread()
@@ -52,6 +52,8 @@ public class MyMiddleware {
 		.withNumberOfServers(mcAddresses.size())
 		.withQueue(queue)
 		.withPriority(Thread.MAX_PRIORITY) // TODO [nku] see if this makes a difference
+		.withUncaughtExceptionHandler(new MiddlewareExceptionHandler()) // TODO [nku] need one per thread or
+										// only one for all?
 		.create();
 	netThread.start();
 	LOG.info("NetThread Started with config: {}", netThread.toString());
@@ -68,6 +70,7 @@ public class MyMiddleware {
 		    .withPriority(Thread.NORM_PRIORITY)
 		    .withStatistic(new Statistic(mcAddresses.size()))
 		    .withStart(start)
+		    .withUncaughtExceptionHandler(new MiddlewareExceptionHandler())
 		    .create();
 	    workerThread.start();
 	    LOG.info("WorkerThread {} started ", i);
@@ -76,7 +79,7 @@ public class MyMiddleware {
 
 	ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 	scheduledExecutorService.scheduleWithFixedDelay(
-		() -> LOG.info("queue {} {}", Instant.now().toEpochMilli(), queue.size()),
+		() -> STATS_LOG.info("queue {} {}", System.currentTimeMillis(), queue.size()),
 		0, 5, TimeUnit.SECONDS);
 
 	Runtime.getRuntime().addShutdownHook(new Thread() {

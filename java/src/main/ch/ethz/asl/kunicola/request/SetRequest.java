@@ -49,7 +49,7 @@ public class SetRequest extends AbstractRequest {
 	    byte b = buffer.get();
 	    if (SUCCESS_MSG[i] != b) {
 		buffer.position(pos);
-		LOG.debug("Memcached server returned error msg, preparing for client relay: {}   ",
+		LOG.warn("Memcached server returned error msg, preparing for client relay: {}   ",
 			DecoderUtil.decode(buffer)); // TODO [nku] do differently
 		setClientResponseBuffer(buffer); // relay one of the error msgs
 		break;
