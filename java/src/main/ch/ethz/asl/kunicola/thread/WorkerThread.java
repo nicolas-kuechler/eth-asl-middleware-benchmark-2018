@@ -123,7 +123,7 @@ public class WorkerThread extends Thread {
 			    int byteCount = serverSocketChannel.read(buffers[serverId]);
 
 			    if (byteCount < 1) {
-				LOG.warn("number of bytes read: {} (-1 stands for end of stream)", byteCount);
+				LOG.debug("number of bytes read: {} (-1 stands for end of stream)", byteCount);
 				continue;
 			    }
 

@@ -11,7 +11,8 @@ def process(working_dir, info, exp_config, rm_local=False):
 
     client = pymongo.MongoClient(f"mongodb://{ip}:{port}/")
 
-    db = client[info['experiment_suite_id']]
+    #db = client[info['experiment_suite_id']]
+    db = client['abc']
     results = db.collection['results']
 
     result = {
@@ -52,8 +53,8 @@ def process(working_dir, info, exp_config, rm_local=False):
         if rm_local:
             os.remove(file_path)
 
-    for mw_id, stat in sorted(mw_stats):
-        result['mw_stats'].append(stat[mw_id])
+    for mw_id in sorted(mw_stats):
+        result['mw_stats'].append(mw_stats[mw_id])
 
 
     result_id = results.insert_one(result).inserted_id
@@ -84,7 +85,7 @@ def process_mw_stats(file_path):
     with open(file_path) as file:
 
         header = file.readline()
-        header = header.split() # split header at spaces
+        header = header.split()[2:] # split header at spaces and exclude  first
 
         for line in file:
             op = {}
@@ -98,7 +99,7 @@ def process_mw_stats(file_path):
 
     return op_stats, queue_stats
 
-def proces_mw_out(file_path):
+def process_mw_out(file_path):
     out = []
     with open(file_path) as file:
         for line in file:
@@ -107,8 +108,8 @@ def proces_mw_out(file_path):
                 'time' : parts[0],
                 'thread': parts[1],
                 'level':parts[2],
-                'class':parts[4],
-                'msg':parts[5]
+                'class':parts[3],
+                'msg':parts[4]
             }
             out.append(log)
 

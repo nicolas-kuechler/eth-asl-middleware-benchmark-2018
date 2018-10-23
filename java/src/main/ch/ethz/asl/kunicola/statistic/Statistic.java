@@ -10,7 +10,7 @@ public class Statistic {
 
     public final static String HEADER = "time tid type "
 	    + "qwt_count qwt_mean qwt_m2 "
-	    + "rt_count rt_mean rt.m2 "
+	    + "rt_count rt_mean rt_m2 "
 	    + "ntt_count ntt_mean ntt_M2 "
 	    + "wtt_count wtt_mean wtt_M2";
 
