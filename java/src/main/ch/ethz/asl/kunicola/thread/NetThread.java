@@ -85,7 +85,7 @@ public class NetThread extends Thread {
 
 			int byteCount = clientSocketChannel.read(buffer);
 			if (byteCount < 1) {
-			    LOG.warn("number of bytes read: {} (-1 stands for end of stream)", byteCount);
+			    LOG.debug("number of bytes read: {} (-1 stands for end of stream)", byteCount);
 			    continue;
 			}
 
