@@ -1,4 +1,4 @@
-import argparse, json, logging
+import argparse, json, logging, os
 from tqdm import tqdm
 import experiment, azure_vm
 from configs import config
@@ -12,7 +12,14 @@ parser.add_argument('-vmstart', dest='vmstart',  choices=['initial', 'required']
 args = parser.parse_args()
 experiment_suite_id = args.experiment_suite_id
 
-logging.basicConfig(level=logging.DEBUG, filename=f'{experiment_suite_id}.log')
+
+suite_dir = config.BASE_DIR + f"/exp_output/{experiment_suite_id}"
+try:
+    os.makedirs(suite_dir) # create local directories
+except OSError:
+    raise ValueError("Error: Suite Directory already exists!")
+
+logging.basicConfig(level=logging.INFO, filename=f'{suite_dir}/experiment_suite.log')
 log = logging.getLogger('asl')
 
 
