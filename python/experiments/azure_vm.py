@@ -1,7 +1,9 @@
-import os, json, logging
+import os, json, logging, time
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
-import middleware_vm, server_vm, client_vm
+from paramiko.ssh_exception import NoValidConnectionsError
+from tqdm import tqdm
+import middleware_vm, server_vm, client_vm, utility
 from configs import config
 
 log = logging.getLogger('asl')
@@ -21,9 +23,27 @@ def start(n_client, n_middleware, n_server):
     # start the vm's if they are not already running
     started_vm_names = _start(vm_names=vm_names)
 
+    # wait until all started vm's are reachable through ssh
+    for started_vm_name in started_vm_names:
+        id, c = _vm_config_by_name(started_vm_name)
+
+        tries = 20
+        for i in range(tries):
+            try:
+                ssh = utility.get_ssh_client(host=c['host'])
+                ssh.close()
+            except NoValidConnectionsError:
+                if (i+1) == tries:
+                    raise ValueError("Max tries exceeded to establish ssh connection")
+
+                log.debug("Failed to establish ssh connection -> wait one second before trying again")
+                time.sleep(2) # wait one second before trying again
+            break   # succeeded
+
+
     # initialize all newly started vm's (e.g. pull from git)
     for started_vm_name in started_vm_names:
-        id, c = _vm_config_by_name(vm_name)
+        id, c = _vm_config_by_name(started_vm_name)
         host = c['host']
         if started_vm_name.startswith("Client"):
             client_vm.init(client_id=id, host=host)
@@ -41,7 +61,7 @@ def list_vm_status(compute_client=None):
         compute_client = _get_compute_client()
 
     for vm in compute_client.virtual_machines.list("asl"):
-        vm_status = get_power_state("asl", vm.name)
+        vm_status = _get_power_state("asl", vm.name, compute_client)
         log.info(f"{vm.name}: \t{vm_status}")
 
 
@@ -57,7 +77,7 @@ def _start(vm_names, compute_client=None):
     started_vm_names = []
 
     for vm_name in vm_names:
-        vm_status = get_power_state("asl", vm_name)
+        vm_status = _get_power_state("asl", vm_name, compute_client)
 
         if vm_status == 'PowerState/deallocated': # only start the deallocated vm's
             log.info(f"Starting {vm_name}...")
@@ -67,7 +87,7 @@ def _start(vm_names, compute_client=None):
         else:
             log.debug(f"Not starting {vm_name} becauce it is currently in {vm_status}")
 
-    for vm_name, async_vm_start in zip(started_vm_names, async_vm_starts):
+    for vm_name, async_vm_start in tqdm(zip(started_vm_names, async_vm_starts), desc='starting vm'):
         async_vm_start.wait()
         log.info(f"Finished Starting {vm_name}")
 
@@ -90,7 +110,7 @@ def deallocate_all(compute_client=None):
         vm_names.append(vm.name)
         log.info(f"  Deallocating {vm.name}...")
 
-    for vm_name, async_vm_stop in zip(vm_names, async_vm_stops):
+    for vm_name, async_vm_stop in tqdm(zip(vm_names, async_vm_stops), desc='stopping vm'):
         async_vm_stop.wait()
         log.info(f"  Finished Deallocating {vm_name}")
 
@@ -112,6 +132,15 @@ def _get_compute_client():
     compute_client = ComputeManagementClient(credentials, subscription_id)
 
     return compute_client
+
+def _get_power_state(group_name, vm_name, compute_client=None):
+    if compute_client is None:
+        compute_client = _get_compute_client()
+
+    for status in compute_client.virtual_machines.instance_view(group_name, vm_name).statuses:
+        if(status.code.startswith('PowerState/')):
+            vm_status = status.code
+    return vm_status
 
 def _vm_config_by_name(vm_name):
     """Given the name of the vm (e.g. Client1)

@@ -33,6 +33,7 @@ def get_config(path:str):
 
 
 def get_ssh_client(host):
+    log.debug(f"get ssh client host={host}, username={config.SSH_USERNAME}, key_file={config.SSH_PRIVATE_KEY_FILE}")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)

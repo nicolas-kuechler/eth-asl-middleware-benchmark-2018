@@ -1,10 +1,10 @@
 
-OUTPUT_DIR = "C:/Development/asl-fall18-project/output"
+BASE_DIR = "C:/Development/asl-fall18-project"
 
 EXP_TEST_TIME = 80
 
-EXP_REMOVE_FILES_VM = True
-EXP_REMOVE_FILES_LOCAL = True
+EXP_REMOVE_FILES_VM = False
+EXP_REMOVE_FILES_LOCAL = False
 
 VM_MW_PORT = 6379
 VM_MEMCACHED_PORT = 11211

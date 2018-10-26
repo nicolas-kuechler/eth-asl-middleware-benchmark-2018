@@ -30,26 +30,27 @@ def process(working_dir, info, exp_config, rm_local=False):
     for file in os.listdir(working_dir):
 
         file_path = f"{working_dir}/{file}"
-        id = os.path.splitext(file)[0]
+        split = os.path.splitext(file)[0].split("_")
+        instance_id = f"{split[0]}_{split[-1]}"
 
         log.debug(f"process file {file_path}")
 
-        if id not in mw_stats:
-            mw_stats[id] = {'id':id}
-
-        if id.startswith('client'):
-            client_stat = process_client_stats(file_path, id)
+        if instance_id.startswith('client'):
+            client_stat = process_client_stats(file_path, instance_id)
             result['client_stats'].append(client_stat)
 
-        elif id.startswith('mw_stat'):
-            op_stats, queue_stats = process_mw_stats(file_path)
-            mw_stats[id]['ops'] = op_stats
-            mw_stats[id]['queue'] = queue_stats
+        elif instance_id.startswith('mw'):
+            if instance_id not in mw_stats:
+                mw_stats[instance_id] = {'id':instance_id}
 
-        elif id.startswith('mw'): # general mw log file
-            out = process_mw_out(file_path)
-            mw_stats[id]['out'] = out
+            if '_stat_' in file: # stats mw log file
+                op_stats, queue_stats = process_mw_stats(file_path)
+                mw_stats[instance_id]['ops'] = op_stats
+                mw_stats[instance_id]['queue'] = queue_stats
 
+            else: # general mw log file
+                out_log = process_mw_out(file_path)
+                mw_stats[instance_id]['out'] = out_log
         else:
             raise ValueError(f"Unknown File: {file}")
 
@@ -110,14 +111,14 @@ def process_mw_out(file_path):
     with open(file_path) as file:
         for line in file:
             parts = line.split(None, 4)
-            log = {
+            log_entry = {
                 'time' : parts[0],
                 'thread': parts[1],
                 'level':parts[2],
                 'class':parts[3],
                 'msg':parts[4]
             }
-            out.append(log)
+            out.append(log_entry)
 
     return out
 
@@ -126,25 +127,25 @@ def transfer(info, exp_config, host, id, rm_remote=True, rename_mw_logs=False):
     ssh = utility.get_ssh_client(host=host)
 
     try:
-        os.makedirs(info['working_dir']) # create local directories
+        os.makedirs(config.BASE_DIR + info['working_dir']) # create local directories
     except OSError:
         pass
 
     if rename_mw_logs:
-        stdin, stdout, stderr = ssh.exec_command(f"mv ~/{info['working_dir']}/mw_stat.log ~/{info['working_dir']}/mw_stat_0{id}.log")
+        stdin, stdout, stderr = ssh.exec_command(f"mv ~{info['working_dir']}/mw_stat.log ~/{info['working_dir']}/mw_stat_0{id}.log")
         utility.format(stdout, stderr)
-        stdin, stdout, stderr = ssh.exec_command(f"mv ~/{info['working_dir']}/mw_out.log ~/{info['working_dir']}/mw_out_0{id}.log")
+        stdin, stdout, stderr = ssh.exec_command(f"mv ~{info['working_dir']}/mw_out.log ~/{info['working_dir']}/mw_out_0{id}.log")
         utility.format(stdout, stderr)
 
 
-    local_path = config.OUTPUT_DIR + info['working_dir'].rsplit('/', 1)[0]
+    local_path = config.BASE_DIR + info['working_dir'].rsplit('/', 1)[0]
 
     with SCPClient(ssh.get_transport()) as scp:
-        scp.get(info['working_dir'], local_path=local_path, recursive=True)
+        scp.get(f"~{info['working_dir']}", local_path=local_path, recursive=True)
 
     if rm_remote:
         log.debug("delete result file on remote")
-        stdin, stdout, stderr = ssh.exec_command(f"rm -r ~/{info['working_dir']}")
+        stdin, stdout, stderr = ssh.exec_command(f"rm -r ~{info['working_dir']}")
         utility.format(stdout, stderr)
 
     ssh.close()
