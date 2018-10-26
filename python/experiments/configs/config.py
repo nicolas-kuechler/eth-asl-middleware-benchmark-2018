@@ -17,6 +17,8 @@ MONGODB_PORT = 27017
 SSH_USERNAME = "kunicola"
 SSH_PRIVATE_KEY_FILE = "C:/Users/nicok/.ssh/asl/asl-private-openssh.ppk"
 
+NOTIFY_URL = "https://notify.run/c/YbbTbFoj0Yn9vUuN"
+
 
 VM_CLIENT = [
 {

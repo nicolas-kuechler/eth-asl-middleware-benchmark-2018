@@ -1,5 +1,6 @@
 import argparse, json, logging, os
 from tqdm import tqdm
+from notify_run import Notify
 import experiment, azure_vm
 from configs import config
 
@@ -71,7 +72,7 @@ try:
         experiment.run(experiment_suite_id=experiment_suite_id, experiment_name=exp_id)
 finally:
     # Deallocate all VM's
-    # TODO [nku] notification to mobile
-    # TODO [nku] uncomment
-    #azure_vm.deallocate_all()
-    print("DID NOT STOP VM's")
+    notify = Notify(config.NOTIFY_URL)
+    notify.send("Experiment Suite Stopped")
+
+    azure_vm.deallocate_all()
