@@ -1,14 +1,19 @@
-import utility, os
+import utility, os, logging
 from paramiko import SSHClient
 from scp import SCPClient
 
+log = logging.getLogger('asl')
+
+def init(client_id, host):
+    return    # do nothing (currently no init necessary)
 
 def start_memtier(info, client_id, client_config, exp_config):
+    log.info(f"Starting Memtier Instances on Client: {client_id}...")
+    log.debug(f"  with info:{info} client_id:{client_id} client_config:{client_config} exp_config:{exp_config}")
 
-    print(f"Starting Client: {client_id}...")
     ssh = utility.get_ssh_client(host=client_config['host'])
 
-    print("  creating working directory...")
+    log.debug("creating working directory")
     stdin, stdout, stderr = ssh.exec_command(f"mkdir -p ~/{info['working_dir']}")
     utility.format(stdout, stderr)
 
@@ -19,7 +24,7 @@ def start_memtier(info, client_id, client_config, exp_config):
         ip = client_config['connections'][instance_id]['ip']
         port = client_config['connections'][instance_id]['port']
 
-        print(f"  starting memtier instance {mt_id}...")
+        log.info(f"starting memtier instance {mt_id}")
         stdin, stdout, stderr = ssh.exec_command(f"cd ~/{info['working_dir']};\
                                                 screen -dmS {mt_id} \
                                                     memtier_benchmark \
@@ -39,13 +44,4 @@ def start_memtier(info, client_id, client_config, exp_config):
 
     ssh.close()
 
-    print(f"Finished Starting Client: {client_id}...")
-
-
-def start_vm():
-    # TODO [nku] implement client vm starting
-    print("NOT IMPLEMENTED YET")
-
-def stop_vm():
-    # TODO [nku] implement client vm stop
-    print("NOT IMPLEMENTED YET")
+    log.info(f"Finished Starting Memtier Instances on Client: {client_id}")

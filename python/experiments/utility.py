@@ -1,7 +1,13 @@
-import json, itertools, paramiko
+import json, itertools, paramiko, logging
 from string import Template
+from configs import config
+
+log = logging.getLogger('asl')
 
 def get_config(path:str):
+
+    log.debug(f"building product of configurations: {path}")
+
     # open file
     with open(path) as file:
         config = json.load(file)
@@ -27,20 +33,16 @@ def get_config(path:str):
 
 
 def get_ssh_client(host):
-    # TODO [nku] move to config file?
-    username = 'kunicola'
-    key_filename= 'C:/Users/nicok/.ssh/asl/asl-private-openssh.ppk'
-
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, username=username, key_filename=key_filename)
+    ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)
     return ssh
 
 def format(stdout, stderr):
     for line in iter(stderr.readline, ""):
-        print(f"\t{line}", end='')
+        log.error(f"\t{line}")
     for line in iter(stdout.readline, ""):
-        print(f"\t{line}", end='')
+        log.debug(f"\t{line}")
 
 
 
@@ -67,7 +69,7 @@ def resolve_path(info, exp_config):
 
 def list_screen_windows(host):
     ssh = utility.get_ssh_client(host=host)
-    print("screen windows: ")
+    log.debug("screen windows: ")
     stdin, stdout, stderr = ssh.exec_command("screen -list")
     utility.format(stdout, stderr)
     ssh.close()
