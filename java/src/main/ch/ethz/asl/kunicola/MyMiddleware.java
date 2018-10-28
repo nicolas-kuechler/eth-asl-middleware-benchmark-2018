@@ -83,7 +83,7 @@ public class MyMiddleware {
 	scheduledExecutorService.scheduleWithFixedDelay(
 		() -> {
 		    Integer slot = windowSlot.get() != null ? windowSlot.get() : 0;
-		    STATS_LOG.info("{} queue {} {}", slot, System.currentTimeMillis(), queue.size());
+		    STATS_LOG.info("{} queue {}", slot, queue.size());
 		    slot++;
 		    windowSlot.set(slot);
 		}, 0, 5, TimeUnit.SECONDS);

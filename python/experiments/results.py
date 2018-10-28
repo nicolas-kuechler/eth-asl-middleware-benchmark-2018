@@ -108,7 +108,11 @@ def process_mw_stats(file_path):
                         except ValueError: # value is no datetime
                             pass
 
-                op[header[i]]= value
+                try:
+                    if op['type'] == 'queue':
+                        op['size'] = value # special rule for queue op
+                except ValueError:
+                    op[header[i]]= value
 
             if op['type'] == 'queue':
                 queue_stats.append(op)
