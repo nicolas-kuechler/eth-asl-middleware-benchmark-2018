@@ -107,11 +107,12 @@ def process_mw_stats(file_path):
                             value = datetime.strptime(f'01.01.1900-{value}', '%d.%m.%Y-%H:%M:%S.%f') # try transforming to datetime
                         except ValueError: # value is no datetime
                             pass
-
                 try:
                     if op['type'] == 'queue':
                         op['size'] = value # special rule for queue op
-                except ValueError:
+                    else:
+                        op[header[i]]= value
+                except KeyError:
                     op[header[i]]= value
 
             if op['type'] == 'queue':

@@ -23,22 +23,23 @@ def start(n_client, n_middleware, n_server):
     # start the vm's if they are not already running
     started_vm_names = _start(vm_names=vm_names)
 
-    # wait until all started vm's are reachable through ssh
-    for started_vm_name in started_vm_names:
-        id, c = _vm_config_by_name(started_vm_name)
+    # wait until all started vm's are reachable through ssh try two times to reach all
+    for _ in range(2):
+        for started_vm_name in started_vm_names:
+            id, c = _vm_config_by_name(started_vm_name)
 
-        tries = 20
-        for i in range(tries):
-            try:
-                ssh = utility.get_ssh_client(host=c['host'])
-                ssh.close()
-            except (NoValidConnectionsError, socket.timeout, TimeoutError):
-                if (i+1) == tries:
-                    raise ValueError("Max tries exceeded to establish ssh connection")
+            tries = 20
+            for i in range(tries):
+                try:
+                    ssh = utility.get_ssh_client(host=c['host'])
+                    ssh.close()
+                except (NoValidConnectionsError, socket.timeout, TimeoutError):
+                    if (i+1) == tries:
+                        raise ValueError("Max tries exceeded to establish ssh connection")
 
-                log.info("Failed to establish ssh connection -> wait one second before trying again")
-                time.sleep(2) # wait one second before trying again
-            break   # succeeded
+                    log.info("Failed to establish ssh connection -> wait one second before trying again")
+                    time.sleep(2) # wait one second before trying again
+                break   # succeeded
 
 
     # initialize all newly started vm's (e.g. pull from git)
