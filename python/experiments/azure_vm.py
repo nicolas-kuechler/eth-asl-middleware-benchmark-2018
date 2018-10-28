@@ -1,4 +1,4 @@
-import os, json, logging, time
+import os, json, logging, time, socket
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.compute import ComputeManagementClient
 from paramiko.ssh_exception import NoValidConnectionsError
@@ -32,11 +32,11 @@ def start(n_client, n_middleware, n_server):
             try:
                 ssh = utility.get_ssh_client(host=c['host'])
                 ssh.close()
-            except NoValidConnectionsError:
+            except (NoValidConnectionsError, socket.timeout, TimeoutError):
                 if (i+1) == tries:
                     raise ValueError("Max tries exceeded to establish ssh connection")
 
-                log.debug("Failed to establish ssh connection -> wait one second before trying again")
+                log.info("Failed to establish ssh connection -> wait one second before trying again")
                 time.sleep(2) # wait one second before trying again
             break   # succeeded
 

@@ -8,11 +8,11 @@ import ch.ethz.asl.kunicola.request.AbstractRequest;
 //TODO [nku] add junit test
 public class Statistic {
 
-    public final static String HEADER = "time tid type "
+    public final static String HEADER = "time tid slot type "
 	    + "qwt_count qwt_mean qwt_m2 "
 	    + "rt_count rt_mean rt_m2 "
-	    + "ntt_count ntt_mean ntt_M2 "
-	    + "wtt_count wtt_mean wtt_M2";
+	    + "ntt_count ntt_mean ntt_m2 "
+	    + "wtt_count wtt_mean wtt_m2";
 
     private final static Logger STATS_LOG = LogManager.getLogger("stat");
 
@@ -36,8 +36,11 @@ public class Statistic {
 
     private int numberOfServers;
 
+    private int windowsSlot;
+
     public Statistic(int numberofServers) {
 	this.numberOfServers = numberofServers;
+	this.windowsSlot = 0;
 
 	queueWaitingTime = new OnlineAverage();
 	queueWaitingTime = new OnlineAverage();
@@ -137,22 +140,27 @@ public class Statistic {
 	getWorkerThreadTime.reset();
 	setWorkerThreadTime.reset();
 	multiGetWorkerThreadTime.reset();
+
+	windowsSlot += 1;
     }
 
     public void report() {
-	STATS_LOG.info("get {} {} {} {} {} {} {} {} {} {} {} {}",
+	STATS_LOG.info("{} get {} {} {} {} {} {} {} {} {} {} {} {}",
+		windowsSlot,
 		queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 		getResponseTime.getCount(), getResponseTime.getMean(), getResponseTime.getM2(),
 		getNetThreadTime.getCount(), getNetThreadTime.getMean(), getNetThreadTime.getM2(),
 		getWorkerThreadTime.getCount(), getWorkerThreadTime.getMean(), getWorkerThreadTime.getM2());
 
-	STATS_LOG.info("set {} {} {} {} {} {} {} {} {} {} {} {}",
+	STATS_LOG.info("{} set {} {} {} {} {} {} {} {} {} {} {} {}",
+		windowsSlot,
 		queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 		setResponseTime.getCount(), setResponseTime.getMean(), setResponseTime.getM2(),
 		setNetThreadTime.getCount(), setNetThreadTime.getMean(), setNetThreadTime.getM2(),
 		setWorkerThreadTime.getCount(), setWorkerThreadTime.getMean(), setWorkerThreadTime.getM2());
 
-	STATS_LOG.info("mget {} {} {} {} {} {} {} {} {} {} {} {}",
+	STATS_LOG.info("{} mget {} {} {} {} {} {} {} {} {} {} {} {}",
+		windowsSlot,
 		queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 		multiGetResponseTime.getCount(), multiGetResponseTime.getMean(), multiGetResponseTime.getM2(),
 		multiGetNetThreadTime.getCount(), multiGetNetThreadTime.getMean(), multiGetNetThreadTime.getM2(),

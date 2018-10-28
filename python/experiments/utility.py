@@ -8,6 +8,8 @@ def get_config(path:str):
 
     log.debug(f"building product of configurations: {path}")
 
+    configs = []
+
     # open file
     with open(path) as file:
         config = json.load(file)
@@ -29,7 +31,9 @@ def get_config(path:str):
         c['n_instances_mt_per_machine'] = c['tmp'][1]
         c['n_threads_per_mt_instance'] = c['tmp'][2]
         del c['tmp']
-        yield(c)
+        configs.append(c)
+        
+    return configs
 
 
 def get_ssh_client(host):

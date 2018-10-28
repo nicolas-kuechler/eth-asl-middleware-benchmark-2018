@@ -78,9 +78,15 @@ public class MyMiddleware {
 	LOG.info("{} WorkerThreads started with config", numThreadsPTP);
 
 	ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+
+	ThreadLocal<Integer> windowSlot = new ThreadLocal<>(); // enumerate all the the logging slots
 	scheduledExecutorService.scheduleWithFixedDelay(
-		() -> STATS_LOG.info("queue {} {}", System.currentTimeMillis(), queue.size()),
-		0, 5, TimeUnit.SECONDS);
+		() -> {
+		    Integer slot = windowSlot.get() != null ? windowSlot.get() : 0;
+		    STATS_LOG.info("{} queue {} {}", slot, System.currentTimeMillis(), queue.size());
+		    slot++;
+		    windowSlot.set(slot);
+		}, 0, 5, TimeUnit.SECONDS);
 
 	Runtime.getRuntime().addShutdownHook(new Thread() {
 	    @Override

@@ -11,11 +11,11 @@ def run(experiment_suite_id, experiment_name):
 
     configurations = utility.get_config(f"./configs/{experiment_name}.json")
 
-    for exp_config in tqdm(configurations, desc=experiment_name):
+    for exp_config in tqdm(configurations, desc=f"  {experiment_name}"):
         log.info("Start New Config")
         log.debug(f"  with exp_config: {exp_config}")
 
-        for repetition in tqdm(range(exp_config['repetitions']), desc='rep', leave=False):
+        for repetition in tqdm(range(exp_config['repetitions']), desc="    rep", leave=False):
             log.info(f"Repetition {repetition}")
             info = {
                 "experiment_suite_id" : experiment_suite_id,
@@ -27,7 +27,7 @@ def run(experiment_suite_id, experiment_name):
 
             start_experiment(info, exp_config)
 
-            for _ in tqdm(range(int(math.ceil(config.EXP_TEST_TIME/2) + 1)), desc='run', leave=False):
+            for _ in tqdm(range(int(math.ceil(config.EXP_TEST_TIME/2) + 1)), desc="      run", leave=False):
                 time.sleep(2)
 
             stop_experiment(info, exp_config)

@@ -3,6 +3,7 @@ import utility
 from configs import config
 from paramiko import SSHClient
 from scp import SCPClient
+from datetime import datetime
 
 log = logging.getLogger('asl')
 
@@ -96,6 +97,17 @@ def process_mw_stats(file_path):
         for line in file:
             op = {}
             for i, value in enumerate(line.split()):
+                try:
+                    value = int(value) # try casting to int
+                except ValueError: # value is no int
+                    try:
+                        value = float(value) # try casting to float
+                    except ValueError: # value is no float
+                        try:
+                            value = datetime.strptime(f'01.01.1900-{value}', '%d.%m.%Y-%H:%M:%S.%f') # try transforming to datetime
+                        except ValueError: # value is no datetime
+                            pass
+
                 op[header[i]]= value
 
             if op['type'] == 'queue':
@@ -112,7 +124,7 @@ def process_mw_out(file_path):
         for line in file:
             parts = line.split(None, 4)
             log_entry = {
-                'time' : parts[0],
+                'time' : datetime.strptime(f'01.01.1900-{parts[0]}', '%d.%m.%Y-%H:%M:%S.%f'),
                 'thread': parts[1],
                 'level':parts[2],
                 'class':parts[3],
