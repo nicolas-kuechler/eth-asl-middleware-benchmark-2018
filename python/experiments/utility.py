@@ -1,4 +1,5 @@
-import json, itertools, paramiko, logging
+import json, itertools, paramiko, logging, time, socket
+from paramiko.ssh_exception import SSHException
 from string import Template
 from configs import config
 
@@ -32,7 +33,7 @@ def get_config(path:str):
         c['n_threads_per_mt_instance'] = c['tmp'][2]
         del c['tmp']
         configs.append(c)
-        
+
     return configs
 
 
@@ -40,8 +41,16 @@ def get_ssh_client(host):
     log.debug(f"get ssh client host={host}, username={config.SSH_USERNAME}, key_file={config.SSH_PRIVATE_KEY_FILE}")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)
-    return ssh
+    tries = 5
+    for _ in range(tries):
+        try:
+            ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)
+            return ssh
+        except (SSHException, socket.error, TimeoutError) as e:
+            log.warning(f"Failed to establish ssh connection to host {host} -> wait 0.1 second before trying again (Error Msg: {e})")
+            time.sleep(0.1)
+
+    raise ValueError(f"Failed to connect to host={host} within {tries} tries")
 
 def format(stdout, stderr):
     for line in iter(stderr.readline, ""):

@@ -33,13 +33,13 @@ def start(n_client, n_middleware, n_server):
                 try:
                     ssh = utility.get_ssh_client(host=c['host'])
                     ssh.close()
-                except (NoValidConnectionsError, socket.timeout, TimeoutError):
+                    break
+                except (NoValidConnectionsError, socket.timeout, TimeoutError) as e:
                     if (i+1) == tries:
                         raise ValueError("Max tries exceeded to establish ssh connection")
 
-                    log.info("Failed to establish ssh connection -> wait one second before trying again")
+                    log.info(f"Failed to establish ssh connection -> wait one second before trying again (Error Msg: {e})")
                     time.sleep(2) # wait one second before trying again
-                break   # succeeded
 
 
     # initialize all newly started vm's (e.g. pull from git)
