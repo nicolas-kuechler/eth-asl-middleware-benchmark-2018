@@ -45,9 +45,8 @@ def process(working_dir, info, exp_config, rm_local=False):
                 mw_stats[instance_id] = {'id':instance_id}
 
             if '_stat_' in file: # stats mw log file
-                op_stats, queue_stats = process_mw_stats(file_path)
-                mw_stats[instance_id]['ops'] = op_stats
-                mw_stats[instance_id]['queue'] = queue_stats
+                mw_stats_1 = process_mw_stats(file_path)
+                mw_stats[instance_id] = mw_stats_1
 
             else: # general mw log file
                 out_log = process_mw_out(file_path)
@@ -61,7 +60,6 @@ def process(working_dir, info, exp_config, rm_local=False):
 
     for mw_id in sorted(mw_stats):
         result['mw_stats'].append(mw_stats[mw_id])
-
 
     result_id = results.insert_one(result).inserted_id
 
@@ -86,41 +84,64 @@ def process_client_stats(file_path, id):
 
 def process_mw_stats(file_path):
     log.debug(f"process mw stats file: {file_path}")
-    op_stats = []
-    queue_stats = []
+    mw_stats = {}
 
     with open(file_path) as file:
+        headers = {}
+        for header in file:
+            header = header.replace("\n", "")
+            if "===" in header: # read headers until break appears
+                break
+            header = header.split("; ") # split header at delimiter
+            header_type = header[2]
+            headers[header_type] = header[3:]
 
-        header = file.readline()
-        header = header.split()[2:] # split header at spaces and exclude  first
+            assert(headers[header_type][2] == "stat_type") # assert that type is in the correct position
+
 
         for line in file:
-            op = {}
-            for i, value in enumerate(line.split()):
-                try:
-                    value = int(value) # try casting to int
-                except ValueError: # value is no int
-                    try:
-                        value = float(value) # try casting to float
-                    except ValueError: # value is no float
-                        try:
-                            value = datetime.strptime(f'01.01.1900-{value}', '%d.%m.%Y-%H:%M:%S.%f') # try transforming to datetime
-                        except ValueError: # value is no datetime
-                            pass
-                try:
-                    if op['type'] == 'queue':
-                        op['size'] = value # special rule for queue op
-                    else:
-                        op[header[i]]= value
-                except KeyError:
-                    op[header[i]]= value
+            entry = {}
+            stat_type = line.split("; ")[2]
+            line = line.replace("\n", "")
 
-            if op['type'] == 'queue':
-                queue_stats.append(op)
-            else:
-                op_stats.append(op)
+            for i, value in enumerate(line.split("; ")):
+                if value.startswith("{") and value.endswith("}"): # value is a dict of the form {key1=val1, key2=val2, ...}
+                    value = value.replace("{", "").replace("}", "")
+                    entry_lst = []
+                    for pair in value.split(", "):
+                        v = pair.split("=")
+                        e = {
+                            'key' : _parse_value(v[0]),
+                            'value': _parse_value(v[1])
+                        }
+                        entry_lst.append(e)
+                    entry[headers[stat_type][i]] = entry_lst
+                else:
+                    entry[headers[stat_type][i]] = _parse_value(value)
 
-    return op_stats, queue_stats
+            try:
+                mw_stats[stat_type]
+            except KeyError:
+                mw_stats[stat_type] = []
+
+            mw_stats[stat_type].append(entry)
+
+    return mw_stats
+
+def _parse_value(value):
+    try:
+        value = int(value) # try casting to int
+    except ValueError: # value is no int
+        try:
+        # TODO [nku] verify that java E10 is read correctly
+            value = float(value) # try casting to float
+        except ValueError: # value is no float
+            try:
+                value = datetime.strptime(f'01.01.1900-{value}', '%d.%m.%Y-%H:%M:%S.%f') # try transforming to datetime
+            except ValueError: # value is no datetime
+                pass
+    return value
+
 
 def process_mw_out(file_path):
     log.debug(f"process mw out file: {file_path}")
@@ -166,3 +187,5 @@ def transfer(info, exp_config, host, id, rm_remote=True, rename_mw_logs=False):
         utility.format(stdout, stderr)
 
     ssh.close()
+
+if __name__ == "__main__": process(working_dir="C:/Development/asl-fall18-project/java/dist/out", info={"experiment_suite_id":"process_demo2", "repetition":0, "experiment_name":"demo"}, exp_config=None, rm_local=False)

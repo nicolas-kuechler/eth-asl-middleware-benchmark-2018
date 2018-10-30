@@ -37,20 +37,26 @@ def get_config(path:str):
     return configs
 
 
-def get_ssh_client(host):
+def get_ssh_client(host, retry=True):
     log.debug(f"get ssh client host={host}, username={config.SSH_USERNAME}, key_file={config.SSH_PRIVATE_KEY_FILE}")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    tries = 5
-    for _ in range(tries):
-        try:
-            ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)
-            return ssh
-        except (SSHException, socket.error, TimeoutError) as e:
-            log.warning(f"Failed to establish ssh connection to host {host} -> wait 0.1 second before trying again (Error Msg: {e})")
-            time.sleep(0.1)
 
-    raise ValueError(f"Failed to connect to host={host} within {tries} tries")
+    if not retry:
+        ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)
+    else:
+        tries = 5
+        for _ in range(tries):
+            try:
+                ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)
+                break
+            except (SSHException, socket.error, TimeoutError) as e:
+                if (i+1) == tries:
+                    raise ValueError(f"Failed to connect to host={host} within {tries} tries")
+                log.warning(f"Failed to establish ssh connection to host {host} -> wait 0.1 second before trying again (Error Msg: {e})")
+                time.sleep(0.1)
+
+    return ssh
 
 def format(stdout, stderr):
     for line in iter(stderr.readline, ""):

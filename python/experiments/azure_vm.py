@@ -31,7 +31,7 @@ def start(n_client, n_middleware, n_server):
             tries = 20
             for i in range(tries):
                 try:
-                    ssh = utility.get_ssh_client(host=c['host'])
+                    ssh = utility.get_ssh_client(host=c['host'], retry=False)
                     ssh.close()
                     break
                 except (NoValidConnectionsError, socket.timeout, TimeoutError) as e:
