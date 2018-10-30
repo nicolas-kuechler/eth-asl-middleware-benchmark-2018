@@ -13,142 +13,142 @@ import ch.ethz.asl.kunicola.util.ServerMessage;
 
 public abstract class AbstractRequest {
 
-    private final static Logger LOG = LogManager.getLogger();
-    final static CharsetDecoder DECODER = Charset.forName("UTF8").newDecoder();
+	private final static Logger LOG = LogManager.getLogger();
+	final static CharsetDecoder DECODER = Charset.forName("UTF8").newDecoder();
 
-    private SocketChannel clientSocketChannel;
-    private byte[] content;
-    private ByteBuffer clientResponseBuffer;
-    private final String type;
-    private final int numberOfServers;
+	private SocketChannel clientSocketChannel;
+	private byte[] content;
+	private ByteBuffer clientResponseBuffer;
+	private final String type;
+	private final int numberOfServers;
 
-    // Stats
-    private long processStartTime;
-    private long enqueueTime;
-    private long dequeueTime;
-    private long[] serverStartTime; // indexed by server id
-    private long[] serverEndTime; // indexed by server id
-    private long processEndTime;
-    protected int keyCount = 0;
-    protected int hitCount = 0;
+	// Stats
+	private long processStartTime;
+	private long enqueueTime;
+	private long dequeueTime;
+	private long[] serverStartTime; // indexed by server id
+	private long[] serverEndTime; // indexed by server id
+	private long processEndTime;
+	protected int keyCount = 0;
+	protected int hitCount = 0;
 
-    public AbstractRequest(byte[] content, String type, int numberOfServers) {
-	super();
-	this.setContent(content);
-	this.type = type;
-	this.numberOfServers = numberOfServers;
+	public AbstractRequest(byte[] content, String type, int numberOfServers) {
+		super();
+		this.setContent(content);
+		this.type = type;
+		this.numberOfServers = numberOfServers;
 
-	serverStartTime = new long[numberOfServers];
-	serverEndTime = new long[numberOfServers];
-    }
-
-    public abstract ServerMessage[] getServerMessages();
-
-    public abstract boolean putServerResponse(Integer serverId, ByteBuffer byteBuffer);
-
-    public ByteBuffer getClientResponseBuffer() {
-	return clientResponseBuffer;
-    }
-
-    public void setClientResponseBuffer(ByteBuffer clientResponseBuffer) {
-	this.clientResponseBuffer = clientResponseBuffer;
-    }
-
-    public SocketChannel getClientSocketChannel() {
-	return clientSocketChannel;
-    }
-
-    public void setClientSocketChannel(SocketChannel clientSocketChannel) {
-	this.clientSocketChannel = clientSocketChannel;
-    }
-
-    public byte[] getContent() {
-	return content;
-    }
-
-    public void setContent(byte[] content) {
-	this.content = content;
-    }
-
-    @Override
-    public String toString() {
-	if (LOG.isDebugEnabled()) {
-	    return DecoderUtil.decode(getContent());
-	} else {
-	    return type;
+		serverStartTime = new long[numberOfServers];
+		serverEndTime = new long[numberOfServers];
 	}
-    }
 
-    public String getType() {
-	return type;
-    }
+	public abstract ServerMessage[] getServerMessages();
 
-    public int getNumberOfServers() {
-	return numberOfServers;
-    }
+	public abstract boolean putServerResponse(Integer serverId, ByteBuffer byteBuffer);
 
-    public int getKeyCount() {
-	return keyCount;
-    }
+	public ByteBuffer getClientResponseBuffer() {
+		return clientResponseBuffer;
+	}
 
-    public int getHitCount() {
-	return hitCount;
-    }
+	public void setClientResponseBuffer(ByteBuffer clientResponseBuffer) {
+		this.clientResponseBuffer = clientResponseBuffer;
+	}
 
-    public long getProcessStartTime() {
-	return processStartTime;
-    }
+	public SocketChannel getClientSocketChannel() {
+		return clientSocketChannel;
+	}
 
-    public void setProcessStartTime(long processStartTime) {
-	this.processStartTime = processStartTime;
-    }
+	public void setClientSocketChannel(SocketChannel clientSocketChannel) {
+		this.clientSocketChannel = clientSocketChannel;
+	}
 
-    public long getEnqueueTime() {
-	return enqueueTime;
-    }
+	public byte[] getContent() {
+		return content;
+	}
 
-    public void setEnqueueTime(long enqueueTime) {
-	this.enqueueTime = enqueueTime;
-    }
+	public void setContent(byte[] content) {
+		this.content = content;
+	}
 
-    public long getDequeueTime() {
-	return dequeueTime;
-    }
+	@Override
+	public String toString() {
+		if (LOG.isDebugEnabled()) {
+			return DecoderUtil.decode(getContent());
+		} else {
+			return type;
+		}
+	}
 
-    public void setDequeueTime(long dequeueTime) {
-	this.dequeueTime = dequeueTime;
-    }
+	public String getType() {
+		return type;
+	}
 
-    public long[] getServerStartTime() {
-	return serverStartTime;
-    }
+	public int getNumberOfServers() {
+		return numberOfServers;
+	}
 
-    public void setServerStartTime(int serverId, long serverStartTime) {
-	this.serverStartTime[serverId] = serverStartTime;
-    }
+	public int getKeyCount() {
+		return keyCount;
+	}
 
-    public long[] getServerEndTime() {
-	return serverEndTime;
-    }
+	public int getHitCount() {
+		return hitCount;
+	}
 
-    public void setServerEndTime(int serverId, long serverEndTime) {
-	this.serverEndTime[serverId] = serverEndTime;
-    }
+	public long getProcessStartTime() {
+		return processStartTime;
+	}
 
-    public long getProcessEndTime() {
-	return processEndTime;
-    }
+	public void setProcessStartTime(long processStartTime) {
+		this.processStartTime = processStartTime;
+	}
 
-    public void setProcessEndTime(long processEndTime) {
-	this.processEndTime = processEndTime;
-    }
+	public long getEnqueueTime() {
+		return enqueueTime;
+	}
 
-    public void setKeyCount(int keyCount) {
-	this.keyCount = keyCount;
-    }
+	public void setEnqueueTime(long enqueueTime) {
+		this.enqueueTime = enqueueTime;
+	}
 
-    public void setHitCount(int hitCount) {
-	this.hitCount = hitCount;
-    }
+	public long getDequeueTime() {
+		return dequeueTime;
+	}
+
+	public void setDequeueTime(long dequeueTime) {
+		this.dequeueTime = dequeueTime;
+	}
+
+	public long[] getServerStartTime() {
+		return serverStartTime;
+	}
+
+	public void setServerStartTime(int serverId, long serverStartTime) {
+		this.serverStartTime[serverId] = serverStartTime;
+	}
+
+	public long[] getServerEndTime() {
+		return serverEndTime;
+	}
+
+	public void setServerEndTime(int serverId, long serverEndTime) {
+		this.serverEndTime[serverId] = serverEndTime;
+	}
+
+	public long getProcessEndTime() {
+		return processEndTime;
+	}
+
+	public void setProcessEndTime(long processEndTime) {
+		this.processEndTime = processEndTime;
+	}
+
+	public void setKeyCount(int keyCount) {
+		this.keyCount = keyCount;
+	}
+
+	public void setHitCount(int hitCount) {
+		this.hitCount = hitCount;
+	}
 
 }

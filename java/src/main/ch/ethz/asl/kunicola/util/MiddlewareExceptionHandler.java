@@ -7,14 +7,14 @@ import org.apache.logging.log4j.Logger;
 
 public class MiddlewareExceptionHandler implements UncaughtExceptionHandler {
 
-    final static Logger LOG = LogManager.getLogger();
+	final static Logger LOG = LogManager.getLogger();
 
-    @Override
-    public void uncaughtException(Thread thread, Throwable e) {
-	LOG.error("{} throws exception: {}", thread.getName(), e);
-	// TODO [nku] decide if want to stop the system or restart thread
+	@Override
+	public void uncaughtException(Thread thread, Throwable e) {
+		LOG.error("{} throws exception: {}", thread.getName(), e);
+		// TODO [nku] decide if want to stop the system or restart thread
 
-	Runtime.getRuntime().exit(-1);
-    }
+		Runtime.getRuntime().exit(-1);
+	}
 
 }
