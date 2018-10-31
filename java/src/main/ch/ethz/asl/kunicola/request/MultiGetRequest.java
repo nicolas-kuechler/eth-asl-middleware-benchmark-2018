@@ -16,13 +16,13 @@ public class MultiGetRequest extends GetRequest {
 	private Map<Integer, byte[]> responseMap;
 
 	public MultiGetRequest(byte[] content, int serverId, int numberOfServers) {
-		super(content, serverId, "multi-get", numberOfServers);
+		super(content, serverId, "mget", numberOfServers);
 		this.readSharded = false;
 		this.serverIds = null;
 	}
 
 	public MultiGetRequest(byte[] content, int[] serverIds, int numberOfServers) {
-		super(content, "multi-get", numberOfServers);
+		super(content, "mget", numberOfServers);
 		this.readSharded = true;
 		this.serverIds = serverIds;
 	}

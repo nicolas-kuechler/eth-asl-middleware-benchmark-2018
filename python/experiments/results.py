@@ -112,7 +112,7 @@ def process_mw_stats(file_path):
                         v = pair.split("=")
                         e = {
                             'key' : _parse_value(v[0]),
-                            'value': _parse_value(v[1])
+                            'val': _parse_value(v[1])
                         }
                         entry_lst.append(e)
                     entry[headers[stat_type][i]] = entry_lst
@@ -133,7 +133,6 @@ def _parse_value(value):
         value = int(value) # try casting to int
     except ValueError: # value is no int
         try:
-        # TODO [nku] verify that java E10 is read correctly
             value = float(value) # try casting to float
         except ValueError: # value is no float
             try:

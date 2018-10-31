@@ -11,7 +11,7 @@ s.connect((args.ip, args.port))
 data_block = 4096 * 'x'
 key_max = 10000
 for i in range(key_max+1):
-    s.sendall(f'set memtier-{i} 0 0 4096 \r\n{data_block}\r\n'.encode())
+    s.sendall(f'set memtier-{i} 0 0 4096\r\n{data_block}\r\n'.encode())
     data = s.recv(64)
     assert(data=='STORED\r\n'.encode())
 s.close()

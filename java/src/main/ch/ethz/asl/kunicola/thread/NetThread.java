@@ -14,8 +14,6 @@ import java.util.concurrent.BlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
 import ch.ethz.asl.kunicola.util.RequestDecoder;
@@ -23,8 +21,7 @@ import ch.ethz.asl.kunicola.util.RequestDecoder;
 public class NetThread extends Thread {
 
 	private final static Logger LOG = LogManager.getLogger();
-	private final static Marker marker = MarkerManager.getMarker("NETTHREAD");
-	private final static int BUFFER_SIZE = 8192;
+	public final static int BUFFER_SIZE = 8192;
 
 	private BlockingQueue<AbstractRequest> queue;
 
@@ -68,7 +65,7 @@ public class NetThread extends Thread {
 									.configureBlocking(false)
 									.register(selector, SelectionKey.OP_READ);
 
-							LOG.debug(marker, "C>N  accepting new client");
+							LOG.debug("C>N  accepting new client");
 						}
 
 						if (selectionKey.isReadable()) {
@@ -90,24 +87,30 @@ public class NetThread extends Thread {
 								continue;
 							}
 
-							AbstractRequest request = requestDecoder.decode(buffer);
+							boolean hasMore; // multiple commands in buffer
+							do {
+								AbstractRequest request = requestDecoder.decode(buffer);
+								hasMore = requestDecoder.hasMore();
 
-							if (request != null) { // request complete
-								request.setClientSocketChannel(clientSocketChannel);
-								selectionKey.attach(null);
+								if (request != null) { // request complete
+									selectionKey.attach(null);
+									if (!request.getType().equals("unknown")) { // known request
+										request.setClientSocketChannel(clientSocketChannel);
 
-								long enqueueTime = System.nanoTime() / 1000; // in microseconds
-								request.setProcessStartTime(processStartTime);
-								request.setEnqueueTime(enqueueTime);
+										long enqueueTime = System.nanoTime() / 1000; // in microseconds
+										request.setProcessStartTime(processStartTime);
+										request.setEnqueueTime(enqueueTime);
 
-								queue.put(request);
+										queue.put(request);
 
-								LOG.debug(marker, "C>N>Q {}", request);
+										LOG.debug("C>N>Q {}", request);
+									}
 
-							} else { // request incomplete -> attach dedicated buffer to selection key
-								selectionKey.attach(buffer);
-								LOG.debug(marker, "C>N  incomplete request");
-							}
+								} else { // request incomplete -> attach dedicated buffer to selection key
+									selectionKey.attach(buffer);
+									LOG.debug("C>N  incomplete request");
+								}
+							} while (hasMore);
 						}
 					}
 				} catch (ClosedByInterruptException e) {
@@ -158,7 +161,7 @@ public class NetThread extends Thread {
 	}
 
 	public NetThread create() throws IOException {
-		LOG.debug(marker, "Creating net thread...");
+		LOG.debug("Creating net thread...");
 
 		assert (myIp != null);
 		assert (myPort != 0);
@@ -170,7 +173,8 @@ public class NetThread extends Thread {
 				.configureBlocking(false)
 				.register(selector, SelectionKey.OP_ACCEPT);
 
-		requestDecoder = new RequestDecoder().withShardedMultiGet(readSharded).withNumberOfServers(numberOfServers);
+		requestDecoder = new RequestDecoder().withShardedMultiGet(readSharded)
+				.withNumberOfServers(numberOfServers);
 
 		return this;
 	}

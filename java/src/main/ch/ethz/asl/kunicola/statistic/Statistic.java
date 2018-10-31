@@ -118,7 +118,7 @@ public class Statistic {
 			setNetThreadTime.update(netThreadTime);
 			setWorkerThreadTime.update(workerThreadTime);
 
-		} else if (type.equals("multi-get")) {
+		} else if (type.equals("mget")) {
 			mgetResponseTime.update(responseTime);
 			mgetResponseTimeHist.merge(responseTime / 100, 1, Integer::sum);
 
@@ -210,7 +210,7 @@ public class Statistic {
 					getWorkerThreadTime.getCount(), getWorkerThreadTime.getMean(), getWorkerThreadTime.getM2(),
 					getBuilder);
 
-			STATS_LOG.info("hist; {}; get; {}", slot, getResponseTimeHist);
+			STATS_LOG.info("rt_hist; {}; get; {}", slot, getResponseTimeHist);
 		}
 
 		if (setResponseTime.getCount() > 0) {
@@ -221,7 +221,7 @@ public class Statistic {
 					setNetThreadTime.getCount(), setNetThreadTime.getMean(), setNetThreadTime.getM2(),
 					setWorkerThreadTime.getCount(), setWorkerThreadTime.getMean(), setWorkerThreadTime.getM2(),
 					setBuilder);
-			STATS_LOG.info("hist; {}; set; {}", slot, setResponseTimeHist);
+			STATS_LOG.info("rt_hist; {}; set; {}", slot, setResponseTimeHist);
 		}
 
 		if (mgetResponseTime.getCount() > 0) {
@@ -233,7 +233,7 @@ public class Statistic {
 					mgetWorkerThreadTime.getCount(), mgetWorkerThreadTime.getMean(),
 					mgetWorkerThreadTime.getM2(),
 					mgetBuilder);
-			STATS_LOG.info("hist; {}; mget; {}", slot, mgetResponseTimeHist);
+			STATS_LOG.info("rt_hist; {}; mget; {}", slot, mgetResponseTimeHist);
 		}
 	}
 
@@ -253,8 +253,8 @@ public class Statistic {
 		STATS_LOG.info("op; " + opHeader);
 
 		// for stat type hist
-		String histHeader = "time; tid; stat_type; slot; op_type; rt_hist";
-		STATS_LOG.info("hist; " + histHeader);
+		String histHeader = "time; tid; stat_type; slot; op_type; hist";
+		STATS_LOG.info("rt_hist; " + histHeader);
 
 		// for stat type summary
 		String summaryHeader = "time; tid; stat_type; total_request_count; total_value_hit_count; total_value_count; cache_miss_ratio";
