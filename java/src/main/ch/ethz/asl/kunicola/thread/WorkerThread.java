@@ -25,7 +25,7 @@ public class WorkerThread extends Thread {
 	private final Logger LOG = LogManager.getLogger();
 
 	private static final int BUFFER_SIZE = 65536; // 2^16 b enough to handle up to ten 4096b values in multiget
-	private static final long STATS_WINDOWS_SIZE = 5000000l; // in microseconds -> 5 secs
+	private static final long STATS_WINDOWS_SIZE = 50000l; // in 100 microseconds -> 5 secs
 
 	private int id = -1;
 	private BlockingQueue<AbstractRequest> queue = null;
@@ -46,7 +46,7 @@ public class WorkerThread extends Thread {
 				AbstractRequest request;
 
 				request = queue.take();
-				long dequeueTime = System.nanoTime() / 1000; // in microseconds
+				long dequeueTime = System.nanoTime() / 100000; // in 100 microseconds
 				request.setDequeueTime(dequeueTime);
 				LOG.debug("Q>W  {}", request);
 
@@ -67,7 +67,7 @@ public class WorkerThread extends Thread {
 						while (buffers[0].hasRemaining()) {
 							serverSocketChannel.write(buffers[0]);
 						}
-						long serverStartTime = System.nanoTime() / 1000; // in microseconds
+						long serverStartTime = System.nanoTime() / 100000; // in 100 microseconds
 						request.setServerStartTime(serverId, serverStartTime);
 						LOG.debug("W>S{}  {}", serverId, msg);
 					} catch (ClosedByInterruptException e) {
@@ -111,7 +111,7 @@ public class WorkerThread extends Thread {
 						SelectionKey selectionKey = iterator.next();
 						iterator.remove();
 
-						long serverEndTime = System.nanoTime() / 1000; // in microseconds
+						long serverEndTime = System.nanoTime() / 100000; // in 100 microseconds
 
 						if (!selectionKey.isValid()) {
 							throw new RuntimeException("Invalid Selection Key -> Wanted to check if this can happen");
@@ -163,7 +163,7 @@ public class WorkerThread extends Thread {
 					}
 				}
 
-				long processEndTime = System.nanoTime() / 1000; // in microseconds
+				long processEndTime = System.nanoTime() / 100000; // in 100 microseconds
 				request.setProcessEndTime(processEndTime);
 
 				while ((statisticWindowEnd - processEndTime) < 0) {

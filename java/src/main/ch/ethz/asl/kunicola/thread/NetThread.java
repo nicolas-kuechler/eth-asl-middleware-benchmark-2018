@@ -54,7 +54,7 @@ public class NetThread extends Thread {
 						SelectionKey selectionKey = iterator.next();
 						iterator.remove();
 
-						long processStartTime = System.nanoTime() / 1000; // in microseconds
+						long processStartTime = System.nanoTime() / 100000; // in 100 microseconds
 
 						if (!selectionKey.isValid()) {
 							throw new RuntimeException("Invalid Selection Key -> Wanted to check if this can happen");
@@ -97,7 +97,7 @@ public class NetThread extends Thread {
 									if (!request.getType().equals("unknown")) { // known request
 										request.setClientSocketChannel(clientSocketChannel);
 
-										long enqueueTime = System.nanoTime() / 1000; // in microseconds
+										long enqueueTime = System.nanoTime() / 100000; // in 100 microseconds
 										request.setProcessStartTime(processStartTime);
 										request.setEnqueueTime(enqueueTime);
 

@@ -16,9 +16,12 @@ public class Statistic {
 	private final int numberOfServers;
 	private int slot; // enumerates all the 5 second windows
 
-	private long totalRequestCount = 0;
-	private long totalHitCount = 0;
-	private long totalKeyCount = 0;
+	private long totalHitCount = 0; // total number of cache hits
+	private long totalKeyCount = 0; // total number of keys (get/mget) in the forwarded requests
+
+	private long totalGetCount = 0;
+	private long totalMGetCount = 0;
+	private long totalSetCount = 0;
 
 	private OnlineAverage queueWaitingTime;
 
@@ -74,7 +77,6 @@ public class Statistic {
 	}
 
 	public void update(AbstractRequest request) {
-		totalRequestCount++;
 		totalHitCount += request.getHitCount();
 		totalKeyCount += request.getKeyCount();
 
@@ -88,8 +90,9 @@ public class Statistic {
 		String type = request.getType();
 
 		if (type.equals("get")) {
+			totalGetCount++;
 			getResponseTime.update(responseTime);
-			getResponseTimeHist.merge(responseTime / 100, 1, Integer::sum);
+			getResponseTimeHist.merge(responseTime, 1, Integer::sum);
 
 			for (int serverId = 0; serverId < getServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
@@ -104,6 +107,7 @@ public class Statistic {
 			getWorkerThreadTime.update(workerThreadTime);
 
 		} else if (type.equals("set")) {
+			totalSetCount++;
 			setResponseTime.update(responseTime);
 			setResponseTimeHist.merge(responseTime / 100, 1, Integer::sum);
 
@@ -119,6 +123,8 @@ public class Statistic {
 			setWorkerThreadTime.update(workerThreadTime);
 
 		} else if (type.equals("mget")) {
+			totalMGetCount++;
+
 			mgetResponseTime.update(responseTime);
 			mgetResponseTimeHist.merge(responseTime / 100, 1, Integer::sum);
 
@@ -238,8 +244,17 @@ public class Statistic {
 	}
 
 	public void reportWorkerSummary() {
-		double cacheMissRatio = totalKeyCount > 0 ? 1.0 - (double) totalHitCount / totalKeyCount : 0.0;
-		STATS_LOG.info("summary; {}; {}; {}; {}", totalRequestCount, totalHitCount, totalKeyCount, cacheMissRatio);
+		double cacheMissRatio = totalKeyCount > 0
+				? 1.0 - (double) totalHitCount / totalKeyCount
+				: 0.0;
+
+		double avgNumberOfKeys = (totalGetCount + totalMGetCount) > 0
+				? totalKeyCount / (double) (totalGetCount + totalMGetCount)
+				: 0.0;
+
+		STATS_LOG.info("summary; {}; {}; {}; {}; {}; {}; {}",
+				totalGetCount, totalSetCount, totalMGetCount,
+				totalHitCount, totalKeyCount, cacheMissRatio, avgNumberOfKeys);
 	}
 
 	public static void reportHeaders(int numberOfServers) {
@@ -257,7 +272,7 @@ public class Statistic {
 		STATS_LOG.info("rt_hist; " + histHeader);
 
 		// for stat type summary
-		String summaryHeader = "time; tid; stat_type; total_request_count; total_value_hit_count; total_value_count; cache_miss_ratio";
+		String summaryHeader = "time; tid; stat_type; total_get_count; total_set_count; total_mget_count; total_value_hit_count; total_value_count; cache_miss_ratio; avg_number_of_values";
 		STATS_LOG.info("summary; " + summaryHeader);
 
 		STATS_LOG.info("===");

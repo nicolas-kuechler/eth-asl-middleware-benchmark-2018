@@ -51,16 +51,15 @@ public class MyMiddleware {
 				.withReadSharded(readSharded)
 				.withNumberOfServers(mcAddresses.size())
 				.withQueue(queue)
-				.withPriority(Thread.MAX_PRIORITY) // TODO [nku] see if this makes a difference
-				.withUncaughtExceptionHandler(new MiddlewareExceptionHandler()) // TODO [nku] need one per thread or
-				// only one for all?
+				.withPriority(Thread.MAX_PRIORITY)
+				.withUncaughtExceptionHandler(new MiddlewareExceptionHandler())
 				.create();
 		netThread.start();
 		LOG.info("NetThread Started with config: {}", netThread.toString());
 
 		LOG.info("Initializing {} WorkerThreads... ", numThreadsPTP);
 
-		long start = System.nanoTime() / 1000; // in microseconds
+		long start = System.nanoTime() / 100000; // in 100 microseconds
 		WorkerThread[] workerThreads = new WorkerThread[numThreadsPTP];
 		for (int i = 0; i < numThreadsPTP; i++) {
 			workerThreads[i] = new WorkerThread()
