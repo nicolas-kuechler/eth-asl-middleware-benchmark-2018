@@ -27,8 +27,10 @@ def run(experiment_suite_id, experiment_name):
 
             start_experiment(info, exp_config)
 
-            for _ in tqdm(range(int(math.ceil(config.EXP_TEST_TIME/2) + 1)), desc="      run", leave=False):
+            for _ in tqdm(range(int(math.ceil(config.EXP_TEST_TIME/2))), desc="      run", leave=False):
                 time.sleep(2)
+
+            time.sleep(0.1)
 
             stop_experiment(info, exp_config)
 
@@ -71,6 +73,7 @@ def start_experiment(info, exp_config):
     else:
         connections = server_connections
 
+    # TODO [nku] optimize timing
     time.sleep(2) # give middleware some time to initialize
 
     log.debug("Starting Experiment on Clients")
