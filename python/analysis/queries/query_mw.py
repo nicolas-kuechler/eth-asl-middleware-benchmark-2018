@@ -1,17 +1,13 @@
-import pymongo
 from bson.son import SON
 import pandas as pd
 import numpy as np
 
+from queries.query_util import df_aggregate, utility
 
-def load_pd(suite, exp):
 
-    # connect to mongo db
-    ip = "localhost"
-    port = "27017"
-    client = pymongo.MongoClient(f"mongodb://{ip}:{port}/")
-    db = client[suite]
-    results = db.collection['results']
+def load_df(suite, exp):
+
+    results = utility.get_result_collection(suite)
 
     pipeline = _build_pipeline(exp)
 
@@ -19,18 +15,17 @@ def load_pd(suite, exp):
     cursor = results.aggregate(pipeline, allowDiskUse=True)
 
 
-
     df =  pd.DataFrame(list(cursor))
 
-    config_cols = ["rep", "slot", "op_type", "num_clients", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio",
+    config_cols = ["rep", "slot", "data_origin", "op_type", "num_clients", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio",
         "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance"]
     value_cols = ["throughput_mean", "rt_mean", "rt_std", "qwt_mean", "qwt_std", "ntt_mean", "ntt_std", "wtt_mean", "wtt_std",
         "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std"]
     df = df.set_index(config_cols, drop=False)
 
-    df_slot, config_cols_slot, value_cols_slot = _aggregate_slots(df, config_cols=config_cols, value_cols=value_cols)
+    df_slot, config_cols_slot, value_cols_slot = df_aggregate.aggregate_slots(df, config_cols=config_cols, value_cols=value_cols)
 
-    df_rep, config_cols_rep, value_cols_rep = _aggregate_repetitions(df_slot, config_cols=config_cols_slot, value_cols=value_cols_slot)
+    df_rep, config_cols_rep, value_cols_rep = df_aggregate.aggregate_repetitions(df_slot, config_cols=config_cols_slot, value_cols=value_cols_slot)
 
     return df_rep.reset_index()
 
@@ -52,6 +47,7 @@ def _build_pipeline(exp):
                       }
         },
         {"$unwind":"$mw_stats"},
+        {"$project": {"mw_stats.rt_hist":0}},
         {"$unwind":"$mw_stats.op"},
         {"$group": {"_id" : {"rep":"$repetition",
                              "slot": "$mw_stats.op.slot",
@@ -68,7 +64,7 @@ def _build_pipeline(exp):
                              "n_middleware" : "$exp_config.n_middleware",
                              "n_instances_mt_per_machine":"$exp_config.n_instances_mt_per_machine",
                              "n_threads_per_mt_instance":"$exp_config.n_threads_per_mt_instance"},
-                   "count" : {"$sum" :  1},
+                   "run_count" : {"$sum" :  1},
                    "sum_rt_count" : {"$sum": "$mw_stats.op.rt_count"},
                    "rt_arr" :  {"$push": {"m2":"$mw_stats.op.rt_m2", "mean":"$mw_stats.op.rt_mean", "count":"$mw_stats.op.rt_count"}},
                    "qwt_arr" : {"$push": {"m2":"$mw_stats.op.qwt_m2", "mean":"$mw_stats.op.qwt_mean", "count":"$mw_stats.op.qwt_count"}},
@@ -105,7 +101,9 @@ def _build_pipeline(exp):
                         "sst2_std":{"$sqrt": {"$divide": ["$sst2.m2", {"$subtract":["$sst2.count", 1]}]}},
                         "sst_arr":{"$setUnion":[["$sst0"],["$sst1"],["$sst2"]]}
                        }},
-        {"$addFields":{ "sst": {"$reduce":  _reduce_stat("sst_arr")}}},
+        {"$addFields":{ "sst": {"$reduce":  _reduce_stat("sst_arr")},
+                        "data_origin": "mw"
+                    }},
         {"$project": {"_id": 0,
                         "rep":"$_id.rep",
                         "slot": "$_id.slot",
@@ -122,24 +120,25 @@ def _build_pipeline(exp):
                         "n_middleware_vm" : "$_id.n_middleware",
                         "n_instances_mt_per_machine":"$_id.n_instances_mt_per_machine",
                         "n_threads_per_mt_instance":"$_id.n_threads_per_mt_instance",
-                        "count": 1,
+                        "run_count": 1,
+                        "data_origin":1,
                         "throughput_mean":"$throughput",
-                        "rt_mean" : "$rt_mean",
-                        "rt_std": "$rt_std",
-                        "qwt_mean" : "$qwt_mean",
-                        "qwt_std": "$qwt_std",
-                        "ntt_mean" : "$ntt_mean",
-                        "ntt_std": "$ntt_std",
-                        "wtt_mean" : "$wtt_mean",
-                        "wtt_std": "$wtt_std",
-                        "sst0_mean" : "$sst0_mean",
-                        "sst0_std": "$sst0_std",
-                        "sst1_mean" : "$sst1_mean",
-                        "sst1_std": "$sst1_std",
-                        "sst2_mean" : "$sst2_mean",
-                        "sst2_std": "$sst2_std",
-                        "sst_mean": "$sst.mean",
-                        "sst_std": {"$sqrt": {"$divide": ["$sst.m2", {"$subtract":["$sst.count", 1]}]}}
+                        "rt_mean" : {"$divide" : ["$rt_mean", 10.0]},
+                        "rt_std": {"$divide" : ["$rt_std", 10.0]},
+                        "qwt_mean" : {"$divide" : ["$qwt_mean", 10.0]},
+                        "qwt_std": {"$divide" : ["$qwt_std", 10.0]},
+                        "ntt_mean" : {"$divide" : ["$ntt_mean", 10.0]},
+                        "ntt_std": {"$divide" : ["$ntt_std", 10.0]},
+                        "wtt_mean" : {"$divide" : ["$wtt_mean", 10.0]},
+                        "wtt_std": {"$divide" : ["$wtt_std", 10.0]},
+                        "sst0_mean" : {"$divide" : ["$sst0_mean", 10.0]},
+                        "sst0_std": {"$divide" : ["$sst0_std", 10.0]},
+                        "sst1_mean" :{"$divide" : ["$sst1_mean", 10.0]},
+                        "sst1_std": {"$divide" : ["$sst1_std", 10.0]},
+                        "sst2_mean" : {"$divide" : ["$sst2_mean", 10.0]},
+                        "sst2_std": {"$divide" : ["$sst2_std", 10.0]},
+                        "sst_mean": {"$divide" : ["$sst.mean", 10.0]},
+                        "sst_std": {"$divide" : [{"$sqrt": {"$divide": ["$sst.m2", {"$subtract":["$sst.count", 1]}]}}, 10.0]}
                      }
         },
         {"$match":{ "throughput_mean": { "$gt": 0 }}},
@@ -156,44 +155,6 @@ def _build_pipeline(exp):
     ]
 
     return pipeline
-
-def _aggregate_slots(df, config_cols, value_cols, start_slot=1, end_slot=13):
-    # filter slots (warmup and cooldown phase)
-    df = df.loc[(df.slot>=start_slot) & (df.slot<=end_slot)]
-
-    # want to group over slots -> remove slots from config columns
-    config_cols.remove('slot')
-    # create a dict to aggregate all value columns ending with mean and calc the mean and sample std
-    # e.g.{'throughput_mean': ['mean', 'std'], 'rt_mean:['mean', 'std'], ...}
-    agg_dict = {col: ['mean', 'std'] for col in value_cols if col.endswith('mean')}
-
-    # group over different selected slots
-    df = df.groupby(level=config_cols).agg(agg_dict)
-
-    # column renaming and level flattening
-    value_cols = [x[0].split("_")[0] + "_slot_" + x[1] for x in df.columns.ravel()]
-    df.columns = value_cols
-
-    return df, config_cols, value_cols
-
-
-def _aggregate_repetitions(df, config_cols, value_cols):
-
-    # want to group over repetitions -> remove rep from config columns
-    config_cols.remove('rep')
-    # create a dict to aggregate all value columns ending with mean and calc the mean and sample std
-    # e.g.{'throughput_slot_mean': ['mean', 'std'], 'rt_slot_mean:['mean', 'std'], ...}
-    agg_dict = {col: ['mean', 'std'] for col in value_cols if col.endswith('mean')}
-
-    # group over repetitions
-    df = df.groupby(level=config_cols).agg(agg_dict)
-
-    # column renaming and level flattening
-    value_cols = [x[0].split("_")[0] + "_rep_" + x[1] for x in df.columns.ravel()]
-    df.columns = value_cols
-
-    return df, config_cols, value_cols
-
 
 
 def _reduce_stat(arr):

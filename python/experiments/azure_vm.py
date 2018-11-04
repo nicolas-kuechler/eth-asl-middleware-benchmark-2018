@@ -15,6 +15,17 @@ def start(n_client, n_middleware, n_server):
     log.info(f"Requesting {n_client} clients, {n_middleware} middlewares and {n_server} servers")
 
     # create the list of vm names (e.g. ['Client1', 'Server1', 'Server2'])
+
+    if isinstance(n_client, list):
+        n_client = max(n_client)
+
+    if isinstance(n_middleware, list):
+        n_middleware = max(n_middleware)
+
+    if isinstance(n_server, list):
+        n_server = max(n_server)
+
+
     client_names = [f"Client{i+1}" for i in range(n_client)]
     middleware_names = [f"Middleware{i+1}" for i in range(n_middleware)]
     server_names = [f"Server{i+1}" for i in range(n_server)]

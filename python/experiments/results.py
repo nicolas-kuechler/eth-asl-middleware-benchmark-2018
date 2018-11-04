@@ -72,6 +72,7 @@ def process_client_stats(file_path, id):
 
     client_stat = {
         "id" : id,
+        "runtime": d['run information']['Seconds'],
         "sets": d['ALL STATS']['Sets'],
         "gets": d['ALL STATS']['Gets'],
         "totals": d['ALL STATS']['Totals'],

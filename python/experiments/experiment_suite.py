@@ -18,7 +18,9 @@ suite_dir = config.BASE_DIR + f"/exp_output/{experiment_suite_id}"
 try:
     os.makedirs(suite_dir) # create local directories
 except OSError:
-    raise ValueError("Error: Suite Directory already exists!")
+    x = input("Suite Directory already exists, continue? [yes/no]: ")
+    if x != "yes":
+        raise ValueError("Error: Suite Directory already exists!")
 
 logging.basicConfig(level=logging.INFO, filename=f'{suite_dir}/experiment_suite.log')
 log = logging.getLogger('asl')
@@ -31,7 +33,9 @@ else:
 
 if 'exp51' in exp_ids or 'exp52' in exp_ids:
     # TODO [nku] implement Throughput Maximizing Number of Worker Threads
-    raise ValueError(f"Cannot run exp51 or exp52: Throughput Maximizing Number of Worker Threads not Implemented")
+    x = input("Are you sure to run exp51 or exp52 without the throughput max number of worker threads implemented? [yes/no]: ")
+    if x != "yes":
+        raise ValueError(f"Cannot run exp51 or exp52: Throughput Maximizing Number of Worker Threads not Implemented")
 
 
 configs = {}
@@ -46,14 +50,21 @@ for exp_id in exp_ids:
         configs[exp_id] = json.load(file)
 
     x = configs[exp_id]['n_server']
+    if isinstance(x, list):
+        x = max(x)
+
     if x > max_n_server:
         max_n_server = x
 
     x = configs[exp_id]['n_middleware']
+    if isinstance(x, list):
+        x = max(x)
     if x > max_n_middleware:
         max_n_middleware = x
 
     x = configs[exp_id]['n_client']
+    if isinstance(x, list):
+        x = max(x)
     if x > max_n_client:
         max_n_client = x
 

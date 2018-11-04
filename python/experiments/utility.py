@@ -21,20 +21,39 @@ def get_config(path:str):
             config[key] = [value]
 
     # build tuple (to avoid cross product for these keys)
-    config['tmp'] = list(zip(config['n_middleware'], config['n_instances_mt_per_machine'], config['n_threads_per_mt_instance']))
+    config['tmp1'] = list(zip(config['n_middleware'], config['n_instances_mt_per_machine'], config['n_threads_per_mt_instance']))
     del config['n_middleware']
     del config['n_instances_mt_per_machine']
     del config['n_threads_per_mt_instance']
 
+    has_multi_get_size = None not in config['multi_get_size']
+    # build tuple (to avoid cross product for these keys)
+    if has_multi_get_size:
+        config['tmp2'] = list(zip(config['workload_ratio'], config['multi_get_size']))
+        del config['workload_ratio']
+        del config['multi_get_size']
+
     # build cross product and transform back
     for c in (dict(zip(config, x)) for x in itertools.product(*config.values())):
-        c['n_middleware'] = c['tmp'][0]
-        c['n_instances_mt_per_machine'] = c['tmp'][1]
-        c['n_threads_per_mt_instance'] = c['tmp'][2]
-        del c['tmp']
+        c['n_middleware'] = c['tmp1'][0]
+        c['n_instances_mt_per_machine'] = c['tmp1'][1]
+        c['n_threads_per_mt_instance'] = c['tmp1'][2]
+
+        if has_multi_get_size:
+            c['workload_ratio'] = c['tmp2'][0]
+            c['multi_get_size'] = c['tmp2'][1]
+            del c['tmp2']
+
+        del c['tmp1']
+
         configs.append(c)
 
     return configs
+
+if __name__ == "__main__":
+    c = get_config("./configs/exp21.json")
+    for x in c:
+        print(str(x)+"\n\n\n")
 
 
 def get_ssh_client(host, retry=True):
@@ -46,7 +65,7 @@ def get_ssh_client(host, retry=True):
         ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)
     else:
         tries = 5
-        for _ in range(tries):
+        for i in range(tries):
             try:
                 ssh.connect(host, username=config.SSH_USERNAME, key_filename=config.SSH_PRIVATE_KEY_FILE)
                 break
