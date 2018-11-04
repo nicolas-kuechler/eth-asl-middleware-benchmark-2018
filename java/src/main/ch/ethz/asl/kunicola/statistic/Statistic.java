@@ -109,7 +109,7 @@ public class Statistic {
 		} else if (type.equals("set")) {
 			totalSetCount++;
 			setResponseTime.update(responseTime);
-			setResponseTimeHist.merge(responseTime / 100, 1, Integer::sum);
+			setResponseTimeHist.merge(responseTime, 1, Integer::sum);
 
 			for (int serverId = 0; serverId < setServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
@@ -126,7 +126,7 @@ public class Statistic {
 			totalMGetCount++;
 
 			mgetResponseTime.update(responseTime);
-			mgetResponseTimeHist.merge(responseTime / 100, 1, Integer::sum);
+			mgetResponseTimeHist.merge(responseTime, 1, Integer::sum);
 
 			for (int serverId = 0; serverId < mgetServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
