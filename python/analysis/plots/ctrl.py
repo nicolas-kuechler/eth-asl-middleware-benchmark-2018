@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 
-from plots import rt, tp, qwt, ntt, wtt, sst
+from plots import rt, tp, qwt, ntt, wtt, sst, queue
 
 pd.options.display.max_columns = None
 output_folder = "./../../../exp_plots"
@@ -29,3 +29,4 @@ def dashboard(df):
     generate(ntt.nc_w, df)
     generate(wtt.nc_w, df)
     generate(sst.nc_w, df)
+    generate(queue.nc_w, df)

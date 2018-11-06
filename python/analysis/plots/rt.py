@@ -78,9 +78,11 @@ def mget_perc(ax,df): # rt 3
         dfs = df[df["stat"]==stat]
 
         mget_sizes = dfs.loc[:,'multi_get_size'].values
-        rts = dfs.loc[:,'rt'].values
+        rts = dfs.loc[:,'rt_rep_mean'].values
+        stds = dfs.loc[:,'rt_rep_std'].values
 
-        ax.plot(mget_sizes, rts, marker='.', markersize=10, label=f"{stat}")
+
+        ax.errorbar(mget_sizes, rts, stds, capsize=5, marker='.', markersize=10, label=f"{stat}")
 
 
         max_y.append(max(rts))

@@ -3,7 +3,8 @@ from bson.son import SON
 import pandas as pd
 import numpy as np
 
-from queries.query_util import utility
+from queries.query_util import utility, df_aggregate
+from  queries import weighted_stats
 
 def load_df(suite, exp):
 
@@ -16,13 +17,29 @@ def load_df(suite, exp):
 
     df =  pd.DataFrame(list(cursor))
 
-    return df
+    quantiles = [0.25, 0.50, 0.75, 0.90, 0.99]
+    df_quantiles = weighted_stats.weighted_quantiles_mean(df=df, value_col='rt', weight_col='rt_freq', quantiles=quantiles)
+
+    config_cols = ["rep", "stat", "num_clients", "data_origin", "op_type", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio",
+        "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance"]
+    value_cols = ['rt']
+
+    df_quantiles = df_quantiles.set_index(config_cols, drop=False)
+    df_quantiles_rep, _ , _ = df_aggregate.aggregate_repetitions(df_quantiles, config_cols, value_cols)
+    df_quantiles_rep = df_quantiles_rep.reset_index()
+
+    return df, df_quantiles_rep
 
 def _build_pipeline(exp, min_slot=1, max_slot=13):
 
     pipeline = [
         {"$match": {"exp": exp}},
-        {"$addFields":{"workload": {"$switch": {"branches": [  { "case": {"$eq":["$exp_config.workload_ratio", "1:0"]}, "then": "write-only" },
+        {"$addFields":{"num_clients": {"$multiply": ["$exp_config.n_client",
+                                                     "$exp_config.n_instances_mt_per_machine",
+                                                     "$exp_config.n_threads_per_mt_instance",
+                                                     "$exp_config.n_vc"
+                                                    ]},
+                        "workload": {"$switch": {"branches": [  { "case": {"$eq":["$exp_config.workload_ratio", "1:0"]}, "then": "write-only" },
                                                                 { "case": {"$eq":["$exp_config.workload_ratio", "0:1"]}, "then": "read-only" },],
                                                 "default": "read-write"}}
                       }

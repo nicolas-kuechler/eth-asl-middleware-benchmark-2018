@@ -14,13 +14,13 @@ def load_df(suite, exp):
     # create dataframe
     cursor = results.aggregate(pipeline, allowDiskUse=True)
 
-
     df =  pd.DataFrame(list(cursor))
 
     config_cols = ["rep", "slot", "data_origin", "op_type", "num_clients", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio",
         "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance"]
-    value_cols = ["throughput_mean", "rt_mean", "rt_std", "qwt_mean", "qwt_std", "ntt_mean", "ntt_std", "wtt_mean", "wtt_std",
-        "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std"]
+    value_cols = ["throughput", "rt_mean", "rt_std", "qwt_mean", "qwt_std", "ntt_mean", "ntt_std", "wtt_mean", "wtt_std",
+        "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std", "queue_size_mean"]
+
     df = df.set_index(config_cols, drop=False)
 
     df_slot, config_cols_slot, value_cols_slot = df_aggregate.aggregate_slots(df, config_cols=config_cols, value_cols=value_cols)
@@ -28,7 +28,6 @@ def load_df(suite, exp):
     df_rep, config_cols_rep, value_cols_rep = df_aggregate.aggregate_repetitions(df_slot, config_cols=config_cols_slot, value_cols=value_cols_slot)
 
     return df_rep.reset_index()
-
 
 
 def _build_pipeline(exp):
@@ -49,6 +48,7 @@ def _build_pipeline(exp):
         {"$unwind":"$mw_stats"},
         {"$project": {"mw_stats.rt_hist":0}},
         {"$unwind":"$mw_stats.op"},
+        {"$addFields": {"queue":  { "$arrayElemAt": [ { "$filter": { "input": "$mw_stats.queue", "as": "q", "cond": {"$eq":["$$q.slot", "$mw_stats.op.slot"]} } }, 0 ]}}}, # extract matching queue length according to slot
         {"$group": {"_id" : {"rep":"$repetition",
                              "slot": "$mw_stats.op.slot",
                              "op_type": "$mw_stats.op.op_type",
@@ -65,6 +65,7 @@ def _build_pipeline(exp):
                              "n_instances_mt_per_machine":"$exp_config.n_instances_mt_per_machine",
                              "n_threads_per_mt_instance":"$exp_config.n_threads_per_mt_instance"},
                    "run_count" : {"$sum" :  1},
+                   "queue_size_mean":{"$avg":"$queue.size"}, # average over mw's
                    "sum_rt_count" : {"$sum": "$mw_stats.op.rt_count"},
                    "rt_arr" :  {"$push": {"m2":"$mw_stats.op.rt_m2", "mean":"$mw_stats.op.rt_mean", "count":"$mw_stats.op.rt_count"}},
                    "qwt_arr" : {"$push": {"m2":"$mw_stats.op.qwt_m2", "mean":"$mw_stats.op.qwt_mean", "count":"$mw_stats.op.qwt_count"}},
@@ -122,7 +123,8 @@ def _build_pipeline(exp):
                         "n_threads_per_mt_instance":"$_id.n_threads_per_mt_instance",
                         "run_count": 1,
                         "data_origin":1,
-                        "throughput_mean":"$throughput",
+                        "queue_size_mean": 1,
+                        "throughput":1,
                         "rt_mean" : {"$divide" : ["$rt_mean", 10.0]},
                         "rt_std": {"$divide" : ["$rt_std", 10.0]},
                         "qwt_mean" : {"$divide" : ["$qwt_mean", 10.0]},
@@ -141,7 +143,7 @@ def _build_pipeline(exp):
                         "sst_std": {"$divide" : [{"$sqrt": {"$divide": ["$sst.m2", {"$subtract":["$sst.count", 1]}]}}, 10.0]}
                      }
         },
-        {"$match":{ "throughput_mean": { "$gt": 0 }}},
+        {"$match":{ "throughput": { "$gt": 0 }}},
         {"$sort":SON([("n_client_vm",1),
                         ("n_middleware_vm",1),
                         ("n_server_vm",1),
