@@ -145,6 +145,36 @@ def rt2(ax,df):
     ax.set_xlim(0, max(max_x)+1)
     ax.set_ylim(0, max(max_y)*1.1)
 
+def rt3(ax,df):
+    stats = np.unique(df.loc[:,'stat'].values)
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    assert(data_origin.shape[0]==1)
+
+    max_y = []
+    max_x = []
+
+    for stat in stats:
+        dfs = df[df["stat"]==stat]
+
+        mget_sizes = dfs.loc[:,'multi_get_size'].values
+        rts = dfs.loc[:,'rt'].values
+
+        ax.plot(mget_sizes, rts, marker='.', markersize=10, label=f"{stat}")
+
+
+        max_y.append(max(rts))
+        max_x.append(max(mget_sizes))
+
+    ax.legend()
+    ax.set_ylabel('Response Time [ms]')
+    ax.set_xlabel('Multi Get Size')
+
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.set_xlim(0, max(max_x)+1)
+    ax.set_ylim(0, max(max_y)*1.1)
+
+
 def rt4(ax,df):
 
     bins =  np.arange(0.0, 20.0, 0.5)
