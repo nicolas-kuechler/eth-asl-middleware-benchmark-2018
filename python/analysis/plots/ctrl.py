@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 
-from plots import rt, tp
+from plots import rt, tp, qwt, ntt, wtt, sst
 
 pd.options.display.max_columns = None
 output_folder = "./../../../exp_plots"
@@ -22,3 +22,10 @@ def generate(plot_func, df, suite=None, name=None):
 
         fig.savefig(f"{path}/{name}.pdf")
     plt.show()
+
+
+def dashboard(df):
+    generate(qwt.nc_w, df)
+    generate(ntt.nc_w, df)
+    generate(wtt.nc_w, df)
+    generate(sst.nc_w, df)
