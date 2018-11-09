@@ -7,7 +7,7 @@ from datetime import datetime
 
 log = logging.getLogger('asl')
 
-def process(working_dir, info, exp_config, rm_local=False):
+def process(working_dir, info, exp_config, network_stats, rm_local=False):
 
     log.info("Start processing results...")
     log.debug(f"  with working_dir {working_dir}, info {info}, exp_config {exp_config}, rm_local {rm_local}")
@@ -23,7 +23,7 @@ def process(working_dir, info, exp_config, rm_local=False):
         "repetition": info['repetition'],
         "client_stats":[],
         "mw_stats":[],
-        "ping":[]
+        "network_stats": network_stats
     }
 
     mw_stats = {}

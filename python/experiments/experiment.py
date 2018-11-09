@@ -1,6 +1,6 @@
 import time, json, logging, math
 from tqdm import tqdm
-import utility, client_vm, middleware_vm, server_vm, results
+import utility, client_vm, middleware_vm, server_vm, results, network_test
 from configs import config
 
 log = logging.getLogger('asl')
@@ -10,10 +10,18 @@ def run(experiment_suite_id, experiment_name):
     log.debug(f"  with test time: {config.EXP_TEST_TIME}")
 
     configurations = utility.get_config(f"./configs/{experiment_name}.json")
+    network_test_done = False
 
     for exp_config in tqdm(configurations, desc=f"  {experiment_name}"):
         log.info("Start New Config")
         log.debug(f"  with exp_config: {exp_config}")
+
+        if (not network_test_done) or exp_config['n_client'] != n_client or exp_config['n_middleware'] != n_middleware or exp_config['n_server'] != n_server:
+            network_test_done = True
+            n_server = exp_config['n_server']
+            n_middleware = exp_config['n_middleware']
+            n_client = exp_config['n_client']
+            network_stats = network_test.execute_network_test(n_client=n_client, n_mw=n_middleware, n_server=n_server)
 
         for repetition in tqdm(range(exp_config['repetitions']), desc="    rep", leave=False):
             log.info(f"Repetition {repetition}")
@@ -36,7 +44,7 @@ def run(experiment_suite_id, experiment_name):
 
             transfer_results(info, exp_config)
 
-            result_id = results.process(config.BASE_DIR + info["working_dir"], info, exp_config, rm_local=config.EXP_REMOVE_FILES_LOCAL)
+            result_id = results.process(config.BASE_DIR + info["working_dir"], info, exp_config, network_stats=network_stats, rm_local=config.EXP_REMOVE_FILES_LOCAL)
 
             log.info(f"Result: {result_id}")
 
