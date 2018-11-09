@@ -5,21 +5,25 @@ import numpy as np
 
 from queries.query_util import df_aggregate, utility
 
-def load_df(suite, exp):
+def load_df_by_rep(suite,exp):
 
     results = utility.get_result_collection(suite)
-
     pipeline = _build_pipeline(exp)
-
-    # create dataframe
     cursor = results.aggregate(pipeline, allowDiskUse=True)
-
     df =  pd.DataFrame(list(cursor))
 
     config_cols = ["rep", "num_clients", "data_origin", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio",
         "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance"]
     value_cols = ["throughput_mean", "throughput_std", "rt_mean", "rt_std"]
     df = df.set_index(config_cols, drop=False)
+
+    return df, config_cols, value_cols
+
+
+def load_df(suite, exp):
+
+    df, config_cols, value_cols = load_df_by_rep(suite,exp)
+
 
     df_rep, config_cols_rep, value_cols_rep = df_aggregate.aggregate_repetitions(df, config_cols=config_cols, value_cols=value_cols)
 

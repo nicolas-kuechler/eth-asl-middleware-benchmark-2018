@@ -4,26 +4,31 @@ import numpy as np
 
 from queries.query_util import df_aggregate, utility
 
-
-def load_df(suite, exp):
+def load_df_by_slot(suite,exp):
 
     results = utility.get_result_collection(suite)
-
     pipeline = _build_pipeline(exp)
-
-    # create dataframe
     cursor = results.aggregate(pipeline, allowDiskUse=True)
 
     df =  pd.DataFrame(list(cursor))
+    return df
+
+def load_df_by_rep(suite, exp):
+
+    df = load_df_by_slot(suite,exp)
 
     config_cols = ["rep", "slot", "data_origin", "op_type", "num_clients", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio",
-        "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance"]
+            "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance"]
     value_cols = ["throughput", "rt_mean", "rt_std", "qwt_mean", "qwt_std", "ntt_mean", "ntt_std", "wtt_mean", "wtt_std",
-        "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std", "queue_size_mean"]
+            "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std", "queue_size_mean"]
 
     df = df.set_index(config_cols, drop=False)
-
     df_slot, config_cols_slot, value_cols_slot = df_aggregate.aggregate_slots(df, config_cols=config_cols, value_cols=value_cols)
+
+    return df_slot, config_cols_slot, value_cols_slot
+
+def load_df(suite, exp):
+    df_slot, config_cols_slot, value_cols_slot = load_df_by_rep(suite, exp)
 
     df_rep, config_cols_rep, value_cols_rep = df_aggregate.aggregate_repetitions(df_slot, config_cols=config_cols_slot, value_cols=value_cols_slot)
 
