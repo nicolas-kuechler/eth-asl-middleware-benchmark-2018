@@ -18,7 +18,9 @@ def load_df_by_rep(suite, exp):
     df = load_df_by_slot(suite,exp)
 
     config_cols = ["rep", "slot", "data_origin", "op_type", "num_clients", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio",
-            "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance"]
+            "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance",
+            "write_bandwidth_limit","bandwidth_limit_write_throughput", "read_bandwidth_limit", "bandwidth_limit_read_throughput", "client_rtt", "server_rtt"]
+
     value_cols = ["throughput", "rt_mean", "rt_std", "qwt_mean", "qwt_std", "ntt_mean", "ntt_std", "wtt_mean", "wtt_std",
             "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std", "queue_size_mean"]
 
@@ -35,8 +37,12 @@ def load_df(suite, exp):
     return df_rep.reset_index()
 
 
+
+
 def _build_pipeline(exp):
     stats_window_size = 5.0 #seconds
+    value_size = 4096 # bytes
+    value_size_mbit = value_size / 125000.0
 
     pipeline = [
         {"$match": {"exp": exp}},
@@ -47,8 +53,53 @@ def _build_pipeline(exp):
                                                     ]},
                         "workload": {"$switch": {"branches": [  { "case": {"$eq":["$exp_config.workload_ratio", "1:0"]}, "then": "write-only" },
                                                                 { "case": {"$eq":["$exp_config.workload_ratio", "0:1"]}, "then": "read-only" },],
-                                                "default": "read-write"}}
+                                                "default": "read-write"}},
+                        "from_client_netstat": {"$reduce": {
+                                                    "input": {"$filter":{"input": "$network_stats", "as": "e", "cond": {"$eq":[{ "$substrBytes": ["$$e.from", 0, 1]},"C"]}}},
+                                                    "initialValue":{"bandwidth": 0.0,
+                                                                     "rtt": 0.0,
+                                                                     "count":0},
+                                                    "in":{ "bandwidth": {"$add" : ["$$value.bandwidth", "$$this.bandwidth"]},
+                                                            "rtt": {"$add" : ["$$value.rtt", {"$toDouble":"$$this.rtt"}]}, # TODO [nku] remove double conversion
+                                                            "count": {"$add": ["$$value.count", 1]}}
+                                                            }
+                                                },
+                        "to_server_netstat": {"$reduce": {
+                                                    "input": {"$filter":{"input": "$network_stats", "as": "e", "cond": {"$eq":[{ "$substrBytes": ["$$e.to", 0, 1]},"S"]}}},
+                                                    "initialValue":{"bandwidth": 0.0,
+                                                                     "rtt": 0.0,
+                                                                     "count":0},
+                                                    "in": { "bandwidth": {"$add" : ["$$value.bandwidth", "$$this.bandwidth"]},
+                                                            "rtt": {"$add" : ["$$value.rtt", {"$toDouble":"$$this.rtt"}]}, # TODO [nku] remove double conversion
+                                                            "count": {"$add": ["$$value.count", 1]}}
+                                                    }
+                                                },
+                        "to_client_netstat": {"$reduce": {
+                                                    "input": {"$filter":{"input": "$network_stats", "as": "e", "cond": {"$eq":[{ "$substrBytes": ["$$e.to", 0, 1]},"C"]}}},
+                                                    "initialValue":{"bandwidth": 0.0,
+                                                                     "rtt": 0.0,
+                                                                     "count":0},
+                                                    "in":{ "bandwidth": {"$add" : ["$$value.bandwidth", "$$this.bandwidth"]},
+                                                            "rtt": {"$add" : ["$$value.rtt", {"$toDouble":"$$this.rtt"}]}, # TODO [nku] remove double conversion
+                                                            "count": {"$add": ["$$value.count", 1]}}
+                                                    }
+                                                },
+                        "from_server_netstat": {"$reduce": {
+                                                    "input": {"$filter":{"input": "$network_stats", "as": "e", "cond": {"$eq":[{ "$substrBytes": ["$$e.from", 0, 1]}, "S"]}}},
+                                                    "initialValue":{"bandwidth": 0.0,
+                                                                     "rtt": 0.0,
+                                                                     "count":0},
+                                                    "in":{ "bandwidth": {"$add" : ["$$value.bandwidth", "$$this.bandwidth"]},
+                                                            "rtt": {"$add" : ["$$value.rtt", {"$toDouble":"$$this.rtt"}]}, # TODO [nku] remove double conversion
+                                                            "count": {"$add": ["$$value.count", 1]}}
+                                                }},
                       }
+        },
+        {"$addFields":{"write_bandwidth_limit": {"$min":["$from_client_netstat.bandwidth", "$to_server_netstat.bandwidth"]},
+                       "read_bandwidth_limit":  {"$min":["$from_server_netstat.bandwidth", "$to_client_netstat.bandwidth"]},
+                       "client_rtt":{"$divide":["$from_client_netstat.rtt", "$from_client_netstat.count"]},
+                       "server_rtt":{"$divide":["$to_server_netstat.rtt", "$to_server_netstat.count"]}
+                       }
         },
         {"$unwind":"$mw_stats"},
         {"$project": {"mw_stats.rt_hist":0}},
@@ -69,6 +120,10 @@ def _build_pipeline(exp):
                              "n_middleware" : "$exp_config.n_middleware",
                              "n_instances_mt_per_machine":"$exp_config.n_instances_mt_per_machine",
                              "n_threads_per_mt_instance":"$exp_config.n_threads_per_mt_instance"},
+                   "write_bandwidth_limit":{"$avg":"$write_bandwidth_limit"}, # should all be the same anyway
+                   "read_bandwidth_limit":{"$avg":"$read_bandwidth_limit"}, # should all be the same anyway
+                   "client_rtt":{"$avg":"$client_rtt"}, # should all be the same anyway
+                   "server_rtt":{"$avg":"$server_rtt"}, # should all be the same anyway
                    "run_count" : {"$sum" :  1},
                    "queue_size_mean":{"$avg":"$queue.size"}, # average over mw's
                    "sum_rt_count" : {"$sum": "$mw_stats.op.rt_count"},
@@ -145,7 +200,13 @@ def _build_pipeline(exp):
                         "sst2_mean" : {"$divide" : ["$sst2_mean", 10.0]},
                         "sst2_std": {"$divide" : ["$sst2_std", 10.0]},
                         "sst_mean": {"$divide" : ["$sst.mean", 10.0]},
-                        "sst_std": {"$divide" : [{"$sqrt": {"$divide": ["$sst.m2", {"$subtract":["$sst.count", 1]}]}}, 10.0]}
+                        "sst_std": {"$divide" : [{"$sqrt": {"$divide": ["$sst.m2", {"$subtract":["$sst.count", 1]}]}}, 10.0]},
+                        "read_bandwidth_limit": 1,
+                        "bandwidth_limit_read_throughput": {"$divide":["$read_bandwidth_limit", value_size_mbit]},
+                        "write_bandwidth_limit":1,
+                        "bandwidth_limit_write_throughput": {"$divide":["$write_bandwidth_limit", value_size_mbit]},
+                        "client_rtt":1,
+                        "server_rtt":1
                      }
         },
         {"$match":{ "throughput": { "$gt": 0 }}},

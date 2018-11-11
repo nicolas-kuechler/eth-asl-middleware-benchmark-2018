@@ -130,7 +130,7 @@ def _ping_test(host, connections, ping_rep = 20):
         summary = stdout.readlines()[-1]
         avg_rtt = summary.split("/")[4]
 
-        ping_data[con['name']]= {"avg_rtt": avg_rtt}
+        ping_data[con['name']]= {"avg_rtt": float(avg_rtt)}
 
     return ping_data
 
