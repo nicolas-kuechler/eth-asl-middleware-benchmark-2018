@@ -7,10 +7,12 @@ from queries.query_util import df_aggregate, utility
 def load_df_by_slot(suite,exp):
 
     results = utility.get_result_collection(suite)
+
     pipeline = _build_pipeline(exp)
     cursor = results.aggregate(pipeline, allowDiskUse=True)
 
     df =  pd.DataFrame(list(cursor))
+
     return df
 
 def load_df_by_rep(suite, exp):
@@ -201,12 +203,12 @@ def _build_pipeline(exp):
                         "sst2_std": {"$divide" : ["$sst2_std", 10.0]},
                         "sst_mean": {"$divide" : ["$sst.mean", 10.0]},
                         "sst_std": {"$divide" : [{"$sqrt": {"$divide": ["$sst.m2", {"$subtract":["$sst.count", 1]}]}}, 10.0]},
-                        "read_bandwidth_limit": 1,
-                        "bandwidth_limit_read_throughput": {"$divide":["$read_bandwidth_limit", value_size_mbit]},
-                        "write_bandwidth_limit":1,
-                        "bandwidth_limit_write_throughput": {"$divide":["$write_bandwidth_limit", value_size_mbit]},
-                        "client_rtt":1,
-                        "server_rtt":1
+                        "read_bandwidth_limit": { "$cond": { "if": { "$eq": ["$read_bandwidth_limit", None]}, "then": "-", "else": "$read_bandwidth_limit" }},
+                        "bandwidth_limit_read_throughput": { "$cond": { "if": { "$eq": ["$read_bandwidth_limit", None]}, "then": "-", "else": {"$divide":["$read_bandwidth_limit", value_size_mbit]}}},
+                        "write_bandwidth_limit":{ "$cond": { "if": { "$eq": ["$write_bandwidth_limit", None]}, "then": "-", "else": "$write_bandwidth_limit" }},
+                        "bandwidth_limit_write_throughput": { "$cond": { "if": { "$eq": ["$write_bandwidth_limit", None]}, "then": "-", "else": {"$divide":["$write_bandwidth_limit", value_size_mbit]}}},
+                        "client_rtt":{ "$cond": { "if": { "$eq": ["$client_rtt", None]}, "then": "-", "else": "$client_rtt" }},
+                        "server_rtt":{ "$cond": { "if": { "$eq": ["$server_rtt", None]}, "then": "-", "else": "$server_rtt" }},
                      }
         },
         {"$match":{ "throughput": { "$gt": 0 }}},
