@@ -22,6 +22,7 @@ def nc(ax, df):
 
     ax.set_xlim(0, clients[-1]+1)
     ax.set_ylim(0, max(qwt_means)*1.1)
+    ax.set_xticks(clients)
 
 
 def nc_w(ax, df):
@@ -52,3 +53,4 @@ def nc_w(ax, df):
 
     ax.set_xlim(0, max(max_x)+1)
     ax.set_ylim(0, max(max_y)*1.1)
+    ax.set_xticks(clients)

@@ -29,6 +29,7 @@ def nc(ax, df): # rt1
 
     ax.set_xlim(0, clients[-1]+1)
     ax.set_ylim(0, max(rt_means+rt_interactive_law)*1.1)
+    ax.set_xticks(clients)
 
 
 def nc_w(ax, df):
@@ -65,6 +66,7 @@ def nc_w(ax, df):
 
     ax.set_xlim(0, max(max_x)+1)
     ax.set_ylim(0, max(max_y)*1.1)
+    ax.set_xticks(clients)
 
 def mget_perc(ax,df): # rt 3
     stats = np.unique(df.loc[:,'stat'].values)

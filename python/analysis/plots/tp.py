@@ -10,6 +10,9 @@ def nc(ax, df): # t1
     throughput_stds = df.loc[:,'throughput_rep_std'].values
 
     data_origin = np.unique(df.loc[:,'data_origin'].values)
+    op_type = np.unique(df.loc[:,'op_type'].values)
+
+    assert(op_type.shape[0]==1)
     assert(data_origin.shape[0]==1)
 
     rt_means = df.loc[:,'rt_rep_mean'].values
@@ -19,6 +22,16 @@ def nc(ax, df): # t1
     ax.errorbar(clients, throughput_means, throughput_stds, capsize=5, marker='.', markersize=10 ,label="throughput")
     ax.plot(clients, throughput_interactive_law, linestyle='--', label="interactive law")
 
+    if op_type == "set":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput'].values
+    elif op_type == "get":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_read_throughput'].values
+    else:
+        raise ValueError("Unknown Op Type")
+
+    if np.asscalar(np.unique(bandwidth_throughput_limit)) != "-":
+        ax.plot(clients, bandwidth_throughput_limit, linestyle='--', label="throughput limit")
+
     ax.legend()
     ax.set_ylabel('Throughput [req/sec]')
     ax.set_xlabel('Number of Clients')
@@ -27,11 +40,15 @@ def nc(ax, df): # t1
 
     ax.set_xlim(0, clients[-1]+1)
     ax.set_ylim(0, max(throughput_means+throughput_interactive_law)*1.1)
+    ax.set_xticks(clients)
 
 
 def nc_w(ax, df):
     n_workers = np.unique(df.loc[:,'n_worker_per_mw'].values)
     data_origin = np.unique(df.loc[:,'data_origin'].values)
+    op_type = np.unique(df.loc[:,'op_type'].values)
+
+    assert(op_type.shape[0]==1)
     assert(data_origin.shape[0]==1)
     max_y = []
     max_x = []
@@ -53,6 +70,16 @@ def nc_w(ax, df):
         max_y.append(max(throughput_means + throughput_interactive_law))
         max_x.append(max(clients))
 
+    if op_type == "set":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput'].values
+    elif op_type == "get":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_read_throughput'].values
+    else:
+        raise ValueError("Unknown Op Type")
+
+    if np.asscalar(np.unique(bandwidth_throughput_limit)) != "-":
+        ax.plot(clients, bandwidth_throughput_limit, linestyle='--', label="throughput limit")
+
 
     ax.legend()
     ax.set_ylabel('Throughput [req/sec]')
@@ -62,3 +89,5 @@ def nc_w(ax, df):
 
     ax.set_xlim(0, max(max_x)+1)
     ax.set_ylim(0, max(max_y)*1.1)
+
+    ax.set_xticks(clients)
