@@ -3,7 +3,7 @@
     "n_client" : 3,
     "n_instances_mt_per_machine"  : 2,
     "n_threads_per_mt_instance" : 1,
-    "n_vc" : [1, 2, 4, 12, 16, 24, 32],
+    "n_vc" : [1, 2, 4, 8, 12, 16, 24, 32],
     "workload_ratio" : ["1:0"],
     "multi_get_behaviour" : null,
     "multi_get_size" : null,
