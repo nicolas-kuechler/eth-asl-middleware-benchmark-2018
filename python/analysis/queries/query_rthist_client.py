@@ -6,13 +6,22 @@ import numpy as np
 from queries.query_util import utility, df_aggregate
 from  queries import weighted_stats
 
-def load_df(suite, exp):
-
+def load_df_by_rep(suite, exp):
     results = utility.get_result_collection(suite)
 
     pipeline = _build_pipeline(exp)
+
+    # create dataframe
     cursor = results.aggregate(pipeline, allowDiskUse=True)
+
     df =  pd.DataFrame(list(cursor))
+
+    return df
+
+
+def load_df(suite, exp):
+
+    df = load_df_by_rep(suite, exp)
 
     quantiles = [0.25, 0.50, 0.75, 0.90, 0.99]
     df_quantiles = weighted_stats.weighted_quantiles_mean(df=df, value_col='rt', weight_col='rt_freq', quantiles=quantiles)

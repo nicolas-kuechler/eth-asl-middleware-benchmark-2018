@@ -160,13 +160,14 @@ def load_2k_effect_df(df, r_rep, factor_map):
     rt_variation = df[rt_cols].apply(lambda row: row['SSj']/rt['SST'] * 100, axis=0)
     df.loc['percentage_of_variation_effect'] = tp_variation.combine_first(rt_variation) # merge rows
 
+
     # Calculate Confidence Interval
-    tp_ci_low = df[tp_cols].apply(lambda row: row['effect']-t_value*tp['STD_DEV_EFFECT'], axis=0)
-    rt_ci_low = df[rt_cols].apply(lambda row: row['effect']-t_value*rt['STD_DEV_EFFECT'], axis=0)
+    tp_ci_low = df[tp_cols + ['I_tp']].apply(lambda row: row['effect']-t_value*tp['STD_DEV_EFFECT'], axis=0)
+    rt_ci_low = df[rt_cols + ['I_rt']].apply(lambda row: row['effect']-t_value*rt['STD_DEV_EFFECT'], axis=0)
     df.loc['confidence_interval_low'] = tp_ci_low.combine_first(rt_ci_low)
 
-    tp_ci_high = df[tp_cols].apply(lambda row: row['effect']+t_value*tp['STD_DEV_EFFECT'], axis=0)
-    rt_ci_high = df[rt_cols].apply(lambda row: row['effect']+t_value*rt['STD_DEV_EFFECT'], axis=0)
+    tp_ci_high = df[tp_cols + ['I_tp']].apply(lambda row: row['effect']+t_value*tp['STD_DEV_EFFECT'], axis=0)
+    rt_ci_high = df[rt_cols + ['I_rt']].apply(lambda row: row['effect']+t_value*rt['STD_DEV_EFFECT'], axis=0)
     df.loc['confidence_interval_high'] = tp_ci_high.combine_first(rt_ci_high)
 
     # not significant if 0 is in the confidence interval
