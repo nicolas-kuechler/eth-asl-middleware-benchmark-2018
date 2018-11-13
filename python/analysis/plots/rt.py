@@ -102,22 +102,28 @@ def mget_perc(ax,df): # rt 3
 
 def mget_hist(ax,df): # rt 4
 
-    bins =  np.arange(0.0, 20.0, 0.5)
-
-    ylim = 28000
-
-    rts = df.loc[:,'rt'].values
-    rt_freqs = df.loc[:,'rt_freq'].values
+    #bins =  np.arange(0.0, 20.0, 0.5)
+    bins = x = np.sort(np.unique(np.concatenate([df['rt_bin_low'].values,df['rt_bin_high'].values])))
+    bins[-1]=20
 
 
-    data_origin = np.unique(df.loc[:,'data_origin'].values)
-    assert(data_origin.shape[0]==1)
+    rts = df.loc[:,'rt_bin_avg'].values
+    rts[-1] = 19.75
+    rt_freqs = df.loc[:,'rt_freq_mean'].values
 
-    plt.hist(rts, weights=rt_freqs, bins=bins)
+    rt_stds = df.loc[:,'rt_freq_std'].values
+
+    ylim = max(rt_freqs+5000)
+    #data_origin = np.unique(df.loc[:,'data_origin'].values)
+    #assert(data_origin.shape[0]==1)
+
+    y, _ , _ = ax.hist(rts, weights=rt_freqs, bins=bins)
+    ax.errorbar(rts, y, fmt='none', yerr=rt_stds, capsize=5)
+
 
     ax.set_ylabel('Frequency')
     ax.set_xlabel('Response Time [ms]')
 
-    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+    #ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_ylim(0, ylim)

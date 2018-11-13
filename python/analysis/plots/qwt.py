@@ -54,3 +54,24 @@ def nc_w(ax, df):
     ax.set_xlim(0, max(max_x)+1)
     ax.set_ylim(0, max(max_y)*1.1)
     ax.set_xticks(clients)
+
+def mget(ax, df):
+    mget_sizes = df.loc[:,'multi_get_size'].values
+    qwt_means = df.loc[:,'qwt_rep_mean'].values
+    qwt_stds = df.loc[:,'qwt_rep_std'].values
+
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    assert(data_origin.shape[0]==1)
+
+    ax.errorbar(mget_sizes, qwt_means, qwt_stds, capsize=5, marker='.', markersize=10 ,label="queue waiting time")
+
+
+    ax.legend()
+    ax.set_ylabel('Queue Waiting Time [ms]')
+    ax.set_xlabel('Multi Get Size')
+
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_ylim(0, max(qwt_means)*1.1)
+    ax.set_xticks(mget_sizes)
