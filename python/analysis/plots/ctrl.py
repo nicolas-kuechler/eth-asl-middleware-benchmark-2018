@@ -9,6 +9,12 @@ pd.options.display.max_columns = None
 output_folder = "./../../exp_plots"
 
 def generate(plot_func, df, suite=None, name=None):
+    plt.rc('font', family='serif', serif='Times')
+    plt.rc('text', usetex=False)
+    plt.rc('xtick', labelsize=12)
+    plt.rc('ytick', labelsize=12)
+    plt.rc('axes', labelsize=12)
+
     fig, ax = plt.subplots()
     plot_func(ax, df)
 
