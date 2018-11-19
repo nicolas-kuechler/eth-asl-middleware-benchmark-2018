@@ -7,7 +7,6 @@ import org.apache.logging.log4j.Logger;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
 
-//TODO [nku] add junit test
 public class Statistic {
 
 	private final static Logger STATS_LOG = LogManager.getLogger("stat");

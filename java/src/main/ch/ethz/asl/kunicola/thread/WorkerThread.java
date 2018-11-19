@@ -173,16 +173,6 @@ public class WorkerThread extends Thread {
 				}
 
 				statistic.update(request);
-
-				// TODO [nku] look at performance impact of logging stats
-//	    LOG.info("{} {} {} {} {} {} {}",
-//		    request.getType(),
-//		    request.getProcessStartTime(),
-//		    request.getEnqueueTime(),
-//		    request.getDequeueTime(),
-//		    request.getProcessEndTime(),
-//		    request.getHitCount(),
-//		    request.getKeyCount());
 			}
 
 			// before worker ends report a summary

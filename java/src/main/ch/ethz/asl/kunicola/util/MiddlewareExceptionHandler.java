@@ -12,8 +12,6 @@ public class MiddlewareExceptionHandler implements UncaughtExceptionHandler {
 	@Override
 	public void uncaughtException(Thread thread, Throwable e) {
 		LOG.error("{} throws exception: {}", thread.getName(), e);
-		// TODO [nku] decide if want to stop the system or restart thread
-
 		Runtime.getRuntime().exit(-1);
 	}
 

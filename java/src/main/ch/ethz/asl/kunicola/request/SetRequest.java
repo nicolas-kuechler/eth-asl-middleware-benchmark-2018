@@ -50,7 +50,7 @@ public class SetRequest extends AbstractRequest {
 			if (SUCCESS_MSG[i] != b) {
 				buffer.position(pos);
 				LOG.warn("Memcached server returned error msg, preparing for client relay: {}   ",
-						DecoderUtil.decode(buffer)); // TODO [nku] do differently
+						DecoderUtil.decode(buffer));
 				setClientResponseBuffer(buffer); // relay one of the error msgs
 				break;
 			}

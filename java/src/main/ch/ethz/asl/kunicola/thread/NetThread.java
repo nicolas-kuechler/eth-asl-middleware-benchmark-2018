@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
+import ch.ethz.asl.kunicola.util.BufferTimePair;
 import ch.ethz.asl.kunicola.util.RequestDecoder;
 
 public class NetThread extends Thread {
@@ -48,6 +49,7 @@ public class NetThread extends Thread {
 					}
 
 					Set<SelectionKey> selectedKeys = selector.selectedKeys();
+
 					Iterator<SelectionKey> iterator = selectedKeys.iterator();
 
 					while (iterator.hasNext()) {
@@ -74,9 +76,13 @@ public class NetThread extends Thread {
 							Object obj = selectionKey.attachment();
 							boolean hasBuffer = obj != null;
 
-							ByteBuffer buffer; // TODO [nku] improve by reusing one buffer
+							ByteBuffer buffer;
 							if (hasBuffer) {
-								buffer = (ByteBuffer) obj;
+								// use time and buffer of first part of request
+								BufferTimePair btPair = (BufferTimePair) obj;
+								buffer = btPair.getBuffer();
+								processStartTime = btPair.getTime();
+
 							} else {
 								buffer = ByteBuffer.allocate(BUFFER_SIZE);
 							}
@@ -107,7 +113,8 @@ public class NetThread extends Thread {
 									}
 
 								} else { // request incomplete -> attach dedicated buffer to selection key
-									selectionKey.attach(buffer);
+									BufferTimePair btPair = new BufferTimePair(buffer, processStartTime);
+									selectionKey.attach(btPair);
 									LOG.debug("C>N  incomplete request");
 								}
 							} while (hasMore);
