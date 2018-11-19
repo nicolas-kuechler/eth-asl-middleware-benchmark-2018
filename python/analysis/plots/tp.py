@@ -131,3 +131,61 @@ def nc_w(ax, df):
     ax.set_ylim(0, max(max_y)*1.1)
 
     ax.set_xticks(clients)
+
+def mget(ax, df):
+    clients = df.loc[:,'num_clients'].values
+    mget_sizes = df.loc[:,'multi_get_size'].values
+    throughput_means = df.loc[:,'throughput_rep_mean'].values
+    throughput_stds = df.loc[:,'throughput_rep_std'].values
+
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    op_type = np.unique(df.loc[:,'op_type'].values)
+
+    assert(op_type.shape[0]==1)
+    assert(data_origin.shape[0]==1)
+
+    rt_means = df.loc[:,'rt_rep_mean'].values
+
+    if const.use_interactive_law_rtt_adjustment and data_origin[0] == 'mw':
+        rtt_client = np.unique(df.loc[:,'client_rtt'].values)
+        assert(rtt_client.shape[0]==1)
+        
+        if rtt_client[0] != '-':
+            rt_means_interactive_law = rt_means + rtt_client[0]
+        else: rt_means_interactive_law = rt_means
+    else:
+        rt_means_interactive_law = rt_means
+
+    throughput_interactive_law = clients / rt_means_interactive_law * 1000
+
+    ax.errorbar(mget_sizes, throughput_means, throughput_stds, color=const.color['single_color'],
+                                                            capsize=const.capsize,
+                                                            marker='.',
+                                                            markersize=const.markersize,
+                                                            label=const.label['measurement'])
+    ax.plot(mget_sizes, throughput_interactive_law, color=const.color['single_color_interactive_law'],
+                                                    linestyle='--',
+                                                    label=const.label['interactive_law'])
+
+    if op_type == "set":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput'].values
+    elif op_type == "get" or op_type == "mget":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_read_throughput'].values
+    else:
+        print(op_type)
+        raise ValueError("Unknown Op Type")
+
+    if np.asscalar(np.unique(bandwidth_throughput_limit)) != "-":
+        ax.plot(mget_sizes, bandwidth_throughput_limit, linestyle='--', label=const.label['network_throughput_limit'])
+
+    # TODO [nku] decide on legend to use
+    ax.legend()
+
+    ax.set_ylabel(const.axis_label['throughput'])
+    ax.set_xlabel(const.axis_label['mget_size'])
+
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.set_xlim(0, clients[-1]+2)
+    ax.set_ylim(0, max(np.concatenate([throughput_means,throughput_interactive_law]))*1.1)
+    ax.set_xticks(mget_sizes)

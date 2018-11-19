@@ -162,3 +162,42 @@ def mget_hist(ax,df): # rt 4
     #ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_ylim(0, ylim)
+
+def mget(ax, df):
+    mget_sizes = df.loc[:,'multi_get_size'].values
+    clients = df.loc[:,'num_clients'].values
+    throughput_means = df.loc[:,'throughput_rep_mean'].values
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    assert(data_origin.shape[0]==1)
+
+
+    rt_means = df.loc[:,'rt_rep_mean'].values
+    rt_stds = df.loc[:,'rt_rep_std'].values
+
+    rt_interactive_law = clients / throughput_means * 1000
+
+    if const.use_interactive_law_rtt_adjustment and data_origin[0] == 'mw':
+        rtt_client = np.unique(df.loc[:,'client_rtt'].values)
+        assert(rtt_client.shape[0]==1)
+        if rtt_client[0] != '-':
+            rt_interactive_law = rt_interactive_law - rtt_client[0]
+
+    ax.errorbar(mget_sizes, rt_means, rt_stds, capsize=const.capsize,
+                                            color=const.color['single_color'],
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label=const.label['measurement'])
+
+    ax.plot(mget_sizes, rt_interactive_law,color=const.color['single_color_interactive_law'],
+                                        linestyle='--',
+                                        label=const.label['interactive_law'])
+    # TODO [nku] decide on legend
+    ax.legend()
+    ax.set_ylabel(const.axis_label['rt'])
+    ax.set_xlabel(const.axis_label['mget_size'])
+
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.set_xlim(0, clients[-1]+2)
+    ax.set_ylim(0, max(np.concatenate([rt_means, rt_interactive_law]))*1.1)
+    ax.set_xticks(mget_sizes)
