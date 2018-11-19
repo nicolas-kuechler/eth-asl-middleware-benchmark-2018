@@ -25,7 +25,8 @@ axis_label = {
     "throughput": "Throughput [req/sec]",
     "rt": "Response Time [ms]",
     "mget_size": "Multi Get Size",
-    "freq": "Frequency"
+    "freq": "Frequency",
+    "slot": "Slot"
 }
 
 label = {

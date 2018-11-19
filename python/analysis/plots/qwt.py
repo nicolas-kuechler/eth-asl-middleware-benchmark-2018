@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-
+from plots import const
 
 def nc(ax, df):
     clients = df.loc[:,'num_clients'].values
@@ -65,7 +65,6 @@ def mget(ax, df):
 
     ax.errorbar(mget_sizes, qwt_means, qwt_stds, capsize=5, marker='.', markersize=10 ,label="queue waiting time")
 
-
     ax.legend()
     ax.set_ylabel('Queue Waiting Time [ms]')
     ax.set_xlabel('Multi Get Size')
@@ -75,3 +74,24 @@ def mget(ax, df):
     ax.set_xlim(0, mget_sizes[-1]+1)
     ax.set_ylim(0, max(qwt_means)*1.1)
     ax.set_xticks(mget_sizes)
+
+def time(ax, df):
+    for rep in np.unique(df.loc[:,'rep'].values):
+        df_rep = df[df['rep']==rep]
+
+        slots = df_rep.loc[:,'slot'].values
+        assert(slots.shape[0] == np.unique(slots).shape[0])
+
+        means = df_rep.loc[:,'qwt_mean'].values
+        stds = df_rep.loc[:,'qwt_std'].values
+        ax.errorbar(slots, means, stds, marker='.', markersize=const.markersize, capsize=const.capsize, label=f"rep={rep}")
+
+    ax.legend()
+    ax.set_ylabel('Queue Waiting Time [ms]')
+    ax.set_xlabel(const.axis_label['slot'])
+
+    ax.axvspan(0, 2, alpha=0.5, color='grey')
+    ax.axvspan(15, 18, alpha=0.5, color='grey')
+    ax.set_xlim(0, slots[-1]+2)
+    ax.set_ylim(0, max(means)+20)
+    ax.set_xticks(slots)

@@ -149,7 +149,7 @@ def mget(ax, df):
     if const.use_interactive_law_rtt_adjustment and data_origin[0] == 'mw':
         rtt_client = np.unique(df.loc[:,'client_rtt'].values)
         assert(rtt_client.shape[0]==1)
-        
+
         if rtt_client[0] != '-':
             rt_means_interactive_law = rt_means + rtt_client[0]
         else: rt_means_interactive_law = rt_means
@@ -178,7 +178,6 @@ def mget(ax, df):
     if np.asscalar(np.unique(bandwidth_throughput_limit)) != "-":
         ax.plot(mget_sizes, bandwidth_throughput_limit, linestyle='--', label=const.label['network_throughput_limit'])
 
-    # TODO [nku] decide on legend to use
     ax.legend()
 
     ax.set_ylabel(const.axis_label['throughput'])
@@ -189,3 +188,23 @@ def mget(ax, df):
     ax.set_xlim(0, clients[-1]+2)
     ax.set_ylim(0, max(np.concatenate([throughput_means,throughput_interactive_law]))*1.1)
     ax.set_xticks(mget_sizes)
+
+def time(ax, df):
+    for rep in np.unique(df.loc[:,'rep'].values):
+        df_rep = df[df['rep']==rep]
+
+        slots = df_rep.loc[:,'slot'].values
+        assert(slots.shape[0] == np.unique(slots).shape[0])
+
+        throughputs = df_rep.loc[:,'throughput'].values
+        ax.plot(slots, throughputs, marker='.', markersize=const.markersize, label=f"rep={rep}")
+
+    ax.legend()
+    ax.set_ylabel(const.axis_label['throughput'])
+    ax.set_xlabel(const.axis_label['slot'])
+
+    ax.axvspan(0, 2, alpha=0.5, color='grey')
+    ax.axvspan(15, 18, alpha=0.5, color='grey')
+    ax.set_xlim(0, slots[-1]+2)
+    ax.set_ylim(0, max(throughputs*1.2))
+    ax.set_xticks(slots)

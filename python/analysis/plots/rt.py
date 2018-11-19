@@ -201,3 +201,24 @@ def mget(ax, df):
     ax.set_xlim(0, clients[-1]+2)
     ax.set_ylim(0, max(np.concatenate([rt_means, rt_interactive_law]))*1.1)
     ax.set_xticks(mget_sizes)
+
+def time(ax, df):
+    for rep in np.unique(df.loc[:,'rep'].values):
+        df_rep = df[df['rep']==rep]
+
+        slots = df_rep.loc[:,'slot'].values
+        assert(slots.shape[0] == np.unique(slots).shape[0])
+
+        rt_means = df_rep.loc[:,'rt_mean'].values
+        rt_stds = df_rep.loc[:,'rt_std'].values
+        ax.errorbar(slots, rt_means, rt_stds, marker='.', markersize=const.markersize, capsize=const.capsize, label=f"rep={rep}")
+
+    ax.legend()
+    ax.set_ylabel(const.axis_label['rt'])
+    ax.set_xlabel(const.axis_label['slot'])
+
+    ax.axvspan(0, 2, alpha=0.5, color='grey')
+    ax.axvspan(15, 18, alpha=0.5, color='grey')
+    ax.set_xlim(0, slots[-1]+2)
+    ax.set_ylim(0, max(rt_means)+30)
+    ax.set_xticks(slots)
