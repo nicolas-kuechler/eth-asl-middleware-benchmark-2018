@@ -202,6 +202,41 @@ def mget(ax, df):
     ax.set_ylim(0, max(np.concatenate([rt_means, rt_interactive_law]))*1.1)
     ax.set_xticks(mget_sizes)
 
+def component_nc_w(ax, df):
+
+
+    n_workers = np.unique(df.loc[:,'n_worker_per_mw'].values)
+    N = np.unique(df.loc[:,'num_clients'].values).shape[0]
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    assert(data_origin.shape[0]==1)
+
+    ind = np.arange(N)    # the x locations for the groups
+    width = 0.2        # the width of the bars
+
+    for n_worker in n_workers:
+        dfw = df[df["n_worker_per_mw"]==n_worker]
+
+        clients = dfw.loc[:,'num_clients'].values
+
+
+
+        ntt_means = dfw.loc[:,'ntt_rep_mean'].values
+        qwt_means = dfw.loc[:,'qwt_rep_mean'].values
+        wtt_means = dfw.loc[:,'wtt_rep_mean'].values - dfw.loc[:,'sst_rep_mean'].values
+        sst_means = dfw.loc[:,'sst_rep_mean'].values
+
+        print(ind)
+        print(ntt_means)
+
+        ax.bar(ind, ntt_means, width, bottom=0, color='r', label="ntt")
+        ax.bar(ind, qwt_means, width, bottom=ntt_means, color='b',  label="qwt")
+        ax.bar(ind, wtt_means, width, bottom=qwt_means+ntt_means, color='y', label="wtt")
+        ax.bar(ind, sst_means, width, bottom=wtt_means+qwt_means+ntt_means, color='g', label="sst")
+
+        ind = ind + width
+
+    ax.legend()
+
 def time(ax, df):
     for rep in np.unique(df.loc[:,'rep'].values):
         df_rep = df[df['rep']==rep]

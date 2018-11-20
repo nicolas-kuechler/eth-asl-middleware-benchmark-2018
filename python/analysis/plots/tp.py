@@ -107,9 +107,9 @@ def nc_w(ax, df):
         max_x.append(max(clients))
 
     if op_type == "set":
-        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput'].values
+        bandwidth_throughput_limit = dfw.loc[:,'bandwidth_limit_write_throughput'].values
     elif op_type == "get":
-        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_read_throughput'].values
+        bandwidth_throughput_limit = dfw.loc[:,'bandwidth_limit_read_throughput'].values
     else:
         raise ValueError("Unknown Op Type")
 
