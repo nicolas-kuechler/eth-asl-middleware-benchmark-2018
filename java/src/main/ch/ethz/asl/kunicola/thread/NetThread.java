@@ -11,6 +11,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +26,7 @@ public class NetThread extends Thread {
 	public final static int BUFFER_SIZE = 8192;
 
 	private BlockingQueue<AbstractRequest> queue;
+	private AtomicLong arrivalCounter;
 
 	private Selector selector;
 	private ServerSocketChannel serverSocketChannel;
@@ -108,7 +110,7 @@ public class NetThread extends Thread {
 										request.setEnqueueTime(enqueueTime);
 
 										queue.put(request);
-
+										arrivalCounter.incrementAndGet();
 										LOG.debug("C>N>Q {}", request);
 									}
 
@@ -134,6 +136,11 @@ public class NetThread extends Thread {
 
 	public NetThread withQueue(BlockingQueue<AbstractRequest> queue) {
 		this.queue = queue;
+		return this;
+	}
+
+	public NetThread withArrivalCounter(AtomicLong arrivalCounter) {
+		this.arrivalCounter = arrivalCounter;
 		return this;
 	}
 

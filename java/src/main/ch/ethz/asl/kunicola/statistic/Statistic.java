@@ -262,6 +262,10 @@ public class Statistic {
 		String queueHeader = "time; tid; stat_type; slot; size";
 		STATS_LOG.info("queue; " + queueHeader);
 
+		// for stat type arrival
+		String arrivalHeader = "time; tid; stat_type; slot; arrivalCount";
+		STATS_LOG.info("arrival; " + arrivalHeader);
+
 		// for stat type op
 		String opHeader = getOpHeader(numberOfServers);
 		STATS_LOG.info("op; " + opHeader);

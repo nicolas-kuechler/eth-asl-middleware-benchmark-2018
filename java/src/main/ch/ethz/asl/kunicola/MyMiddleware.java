@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,6 +24,7 @@ public class MyMiddleware {
 	final static Logger STATS_LOG = LogManager.getLogger("stat");
 
 	final BlockingQueue<AbstractRequest> queue = new LinkedBlockingQueue<>();
+	final AtomicLong arrivalCounter = new AtomicLong(0);
 
 	private final String myIp;
 	private final int myPort;
@@ -51,6 +53,7 @@ public class MyMiddleware {
 				.withReadSharded(readSharded)
 				.withNumberOfServers(mcAddresses.size())
 				.withQueue(queue)
+				.withArrivalCounter(arrivalCounter)
 				.withPriority(Thread.MAX_PRIORITY)
 				.withUncaughtExceptionHandler(new MiddlewareExceptionHandler())
 				.create();
@@ -84,6 +87,8 @@ public class MyMiddleware {
 				() -> {
 					Integer slot = windowSlot.get() != null ? windowSlot.get() : 0;
 					STATS_LOG.info("queue; {}; {}", slot, queue.size());
+					long slotArrivalCount = arrivalCounter.getAndSet(0);
+					STATS_LOG.info("arrival; {}; {}", slot, slotArrivalCount);
 					slot++;
 					windowSlot.set(slot);
 				}, 0, 5, TimeUnit.SECONDS);
