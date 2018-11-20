@@ -22,7 +22,7 @@ except OSError:
     if x != "yes":
         raise ValueError("Error: Suite Directory already exists!")
 
-logging.basicConfig(level=logging.INFO, filename=f'{suite_dir}/experiment_suite.log')
+logging.basicConfig(level=logging.DEBUG, filename=f'{suite_dir}/experiment_suite.log')
 log = logging.getLogger('asl')
 
 
