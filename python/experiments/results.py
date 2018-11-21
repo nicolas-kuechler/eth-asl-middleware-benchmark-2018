@@ -51,6 +51,8 @@ def process(working_dir, info, exp_config, network_stats, rm_local=False):
             else: # general mw log file
                 out_log = process_mw_out(file_path)
                 mw_stats[instance_id]['out'] = out_log
+        elif file.startswith('screen'):
+            pass
         else:
             raise ValueError(f"Unknown File: {file}")
 

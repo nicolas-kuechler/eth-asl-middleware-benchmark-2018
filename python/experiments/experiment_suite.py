@@ -31,12 +31,6 @@ if 'all' in args.exp:
 else:
     exp_ids = args.exp
 
-if 'exp51' in exp_ids or 'exp52' in exp_ids:
-    # TODO [nku] implement Throughput Maximizing Number of Worker Threads
-    x = input("Are you sure to run exp51 or exp52 without the throughput max number of worker threads implemented? [yes/no]: ")
-    if x != "yes":
-        raise ValueError(f"Cannot run exp51 or exp52: Throughput Maximizing Number of Worker Threads not Implemented")
-
 
 configs = {}
 max_n_server = 0

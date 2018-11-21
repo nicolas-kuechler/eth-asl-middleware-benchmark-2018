@@ -223,8 +223,7 @@ def _bandwidth_stage_test(iperf_clients, iperf_servers, report_duration=20 ,repo
                 else:
                     log.warning(f"no bandwidths found")
                     log.warning(f"lines: {lines}")
-                    # TODO [nku] remove this value error if worked one more time
-                    raise ValueError("no bandwidths found")
+                    
 
             finally:
                 remote_file.close()

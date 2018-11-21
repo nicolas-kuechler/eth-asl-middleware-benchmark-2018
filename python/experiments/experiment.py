@@ -29,9 +29,10 @@ def run(experiment_suite_id, experiment_name):
             result_id = run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats)
             result_ids.append(result_id)
 
-        pass_check = quick_check.throughput_check(suite=experiment_suite_id, result_ids=result_ids, threshold=1300)
+        pass_check = quick_check.throughput_check(suite=experiment_suite_id, result_ids=result_ids, threshold=1000)
 
         if not pass_check: # if throughput std threshold is exceeded, run one more repetition (can be assumed that something went wrong)
+            log.info("Throughput check not passed -> run another repetition")
             repetition = exp_config['repetitions']
             run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats)
 
@@ -96,7 +97,6 @@ def start_experiment(info, exp_config):
     else:
         connections = server_connections
 
-    # TODO [nku] optimize timing
     time.sleep(2) # give middleware some time to initialize
 
     log.debug("Starting Experiment on Clients")

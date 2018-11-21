@@ -26,7 +26,7 @@ def start_memcached(info, server_id, server_config):
 
     ssh = utility.get_ssh_client(host=server_config['host'])
 
-    stdin, stdout, stderr = ssh.exec_command(f"screen -dmS server_0{server_id} memcached -l {server_config['ip']} -p {server_config['port']} -t 1")
+    stdin, stdout, stderr = ssh.exec_command(f"screen -dmS server_0{server_id} -L memcached -l {server_config['ip']} -p {server_config['port']} -t 1")
     utility.format(stdout, stderr)
 
     log.info("initializing memcached")

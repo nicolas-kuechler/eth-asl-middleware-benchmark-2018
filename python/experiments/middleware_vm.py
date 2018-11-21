@@ -43,7 +43,7 @@ def start_middleware(info, mw_id, mw_config, exp_config):
     connection_str = " ".join(list(map(lambda connection: f"{connection['ip']}:{connection['port']}", mw_config['server'])))
 
     stdin, stdout, stderr = ssh.exec_command(f"cd ~/{info['working_dir']};\
-                                                            screen -dmS mw_0{mw_id} \
+                                                            screen -dmS mw_0{mw_id} -L \
                                                              java -jar ~/asl-fall18-project/java/dist/middleware-kunicola.jar \
                                                                 -l {mw_config['ip']} \
                                                                 -p {mw_config['port']} \
