@@ -6,6 +6,12 @@ import java.util.Map;
 
 import ch.ethz.asl.kunicola.util.ServerMessage;
 
+/**
+ * Implements the functionality of a multi-get request (more than one key)
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class MultiGetRequest extends GetRequest {
 
 	private static final int MAX_NUMBER_KEYS = 10;

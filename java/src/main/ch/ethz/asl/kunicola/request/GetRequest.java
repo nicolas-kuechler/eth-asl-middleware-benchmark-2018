@@ -4,6 +4,12 @@ import java.nio.ByteBuffer;
 
 import ch.ethz.asl.kunicola.util.ServerMessage;
 
+/**
+ * Implements the functionality of a get request with a single key
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class GetRequest extends AbstractRequest {
 
 	protected static final byte[] RESPONSE_END_MARKER = "END\r\n".getBytes();

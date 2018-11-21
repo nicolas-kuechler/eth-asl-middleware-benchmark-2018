@@ -20,6 +20,14 @@ import ch.ethz.asl.kunicola.request.AbstractRequest;
 import ch.ethz.asl.kunicola.util.BufferTimePair;
 import ch.ethz.asl.kunicola.util.RequestDecoder;
 
+/**
+ * Accepts client connections, reads request into a buffer and decodes it to
+ * check if the request is valid and complete. Then if the request is both valid
+ * and complete it is placed into the queue.
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class NetThread extends Thread {
 
 	private final static Logger LOG = LogManager.getLogger();

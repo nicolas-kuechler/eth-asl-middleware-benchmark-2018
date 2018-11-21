@@ -3,6 +3,12 @@ package ch.ethz.asl.kunicola.util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Holds the message for a certain server.
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class ServerMessage {
 
 	final static Logger LOG = LogManager.getLogger();

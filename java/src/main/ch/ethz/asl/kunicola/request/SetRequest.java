@@ -8,6 +8,12 @@ import org.apache.logging.log4j.Logger;
 import ch.ethz.asl.kunicola.util.DecoderUtil;
 import ch.ethz.asl.kunicola.util.ServerMessage;
 
+/**
+ * Implements the functionality of a set request.
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class SetRequest extends AbstractRequest {
 
 	private final static Logger LOG = LogManager.getLogger();

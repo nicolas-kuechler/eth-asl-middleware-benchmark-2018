@@ -5,6 +5,13 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
+/**
+ * Utility class for debugging that allows to decode a byte array and a
+ * ByteBuffer without changing its limit and position.
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class DecoderUtil {
 
 	private static final CharsetDecoder DECODER = Charset.forName("UTF8").newDecoder();

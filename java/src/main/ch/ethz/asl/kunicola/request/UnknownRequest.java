@@ -4,6 +4,13 @@ import java.nio.ByteBuffer;
 
 import ch.ethz.asl.kunicola.util.ServerMessage;
 
+/**
+ * Class representing an unknown / not implemented request type which can be
+ * returned by RequestDecoder
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class UnknownRequest extends AbstractRequest {
 
 	private String errorMsg;

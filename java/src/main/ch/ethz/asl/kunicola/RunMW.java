@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Provided code to parse arguments and start the middleware.
+ *
+ */
 public class RunMW {
 
 	static String myIp = null;

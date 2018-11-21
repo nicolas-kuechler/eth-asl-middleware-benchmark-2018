@@ -7,6 +7,12 @@ import org.apache.logging.log4j.Logger;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
 
+/**
+ * Handles all request related statistics updates, reports and resets.
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class Statistic {
 
 	private final static Logger STATS_LOG = LogManager.getLogger("stat");
@@ -75,6 +81,11 @@ public class Statistic {
 
 	}
 
+	/**
+	 * Update all statistics with the measurements from the request
+	 * 
+	 * @param request
+	 */
 	public void update(AbstractRequest request) {
 		totalHitCount += request.getHitCount();
 		totalKeyCount += request.getKeyCount();
@@ -143,6 +154,10 @@ public class Statistic {
 
 	}
 
+	/**
+	 * reset all collected statistics (usually done every 5 seconds after statistics
+	 * were logged)
+	 */
 	public void reset() {
 		queueWaitingTime.reset();
 
@@ -171,6 +186,9 @@ public class Statistic {
 		slot += 1;
 	}
 
+	/**
+	 * write collected statistics to file
+	 */
 	public void report() {
 
 		StringBuilder getBuilder = new StringBuilder();
@@ -242,6 +260,10 @@ public class Statistic {
 		}
 	}
 
+	/**
+	 * reports a summary of the activity (cache miss ratio, request count per type,
+	 * ...) of this worker (usually written when worker is stopped)
+	 */
 	public void reportWorkerSummary() {
 		double cacheMissRatio = totalKeyCount > 0
 				? 1.0 - (double) totalHitCount / totalKeyCount
@@ -256,6 +278,12 @@ public class Statistic {
 				totalHitCount, totalKeyCount, cacheMissRatio, avgNumberOfKeys);
 	}
 
+	/**
+	 * Log file starts with a header per stat type indicating the meaning of each
+	 * logged information
+	 * 
+	 * @param numberOfServers
+	 */
 	public static void reportHeaders(int numberOfServers) {
 
 		// for stat type queue

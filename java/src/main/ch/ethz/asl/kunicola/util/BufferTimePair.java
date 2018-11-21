@@ -2,6 +2,13 @@ package ch.ethz.asl.kunicola.util;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Utility class to build a pair of a ByteBuffer and a long representing a time
+ * measurement
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class BufferTimePair {
 
 	private ByteBuffer buffer;

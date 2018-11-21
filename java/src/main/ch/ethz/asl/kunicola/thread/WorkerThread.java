@@ -20,6 +20,16 @@ import ch.ethz.asl.kunicola.statistic.Statistic;
 import ch.ethz.asl.kunicola.util.DecoderUtil;
 import ch.ethz.asl.kunicola.util.ServerMessage;
 
+/**
+ * Takes a request from the queue, creates the different messages that need to
+ * be sent to the memcached server/s and waits for the response. On successful
+ * completion of the request the server response is forwarded to the client. In
+ * case of an error the client is informed accordingly. Finally the per worker
+ * statistics are updated with the request.
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class WorkerThread extends Thread {
 
 	private final Logger LOG = LogManager.getLogger();
@@ -144,6 +154,7 @@ public class WorkerThread extends Thread {
 					}
 				}
 
+				// write message back to client
 				ByteBuffer clientResponseBuffer = request.getClientResponseBuffer();
 
 				if (clientResponseBuffer != null) {
@@ -166,6 +177,7 @@ public class WorkerThread extends Thread {
 				long processEndTime = System.nanoTime() / 100000; // in 100 microseconds
 				request.setProcessEndTime(processEndTime);
 
+				// update statistics
 				while ((statisticWindowEnd - processEndTime) < 0) {
 					statistic.report();
 					statisticWindowEnd += STATS_WINDOWS_SIZE;

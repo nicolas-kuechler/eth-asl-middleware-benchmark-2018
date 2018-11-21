@@ -12,6 +12,17 @@ import ch.ethz.asl.kunicola.request.MultiGetRequest;
 import ch.ethz.asl.kunicola.request.SetRequest;
 import ch.ethz.asl.kunicola.request.UnknownRequest;
 
+/**
+ * Tries to decode a request from a byte buffer by parsing the cmd of the
+ * request and checking that the request is complete. If the request is
+ * complete, the necessary number of server id's are allocated to the request to
+ * ensure round robin behaviour for load balancing between the different
+ * servers. In case of an illegal/unknown request, the request is logged and a
+ * dummy request returned.
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class RequestDecoder {
 
 	private final static Logger LOG = LogManager.getLogger();
@@ -22,6 +33,14 @@ public class RequestDecoder {
 
 	boolean lastDecodedRequestContainsMore = false;
 
+	/**
+	 * decodes the buffer into a request
+	 * 
+	 * @param buffer
+	 * @return GetRequest, MultiGetRequest or SetRequest when the buffer contained a
+	 *         valid and complete request. UnknownRequest when the request is not
+	 *         known and null when the request is not complete yet.
+	 */
 	public AbstractRequest decode(ByteBuffer buffer) {
 		AbstractRequest request = null;
 		boolean isCmdComplete = false;

@@ -11,6 +11,13 @@ import org.apache.logging.log4j.Logger;
 import ch.ethz.asl.kunicola.util.DecoderUtil;
 import ch.ethz.asl.kunicola.util.ServerMessage;
 
+/**
+ * Implements functionality shared by all request types. (e.g. statistics,
+ * socket channel to client) All request types must inherit from this class.
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public abstract class AbstractRequest {
 
 	private final static Logger LOG = LogManager.getLogger();

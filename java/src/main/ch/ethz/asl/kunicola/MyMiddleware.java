@@ -18,6 +18,19 @@ import ch.ethz.asl.kunicola.thread.NetThread;
 import ch.ethz.asl.kunicola.thread.WorkerThread;
 import ch.ethz.asl.kunicola.util.MiddlewareExceptionHandler;
 
+/**
+ * The application implements a middleware for memcached supporting the
+ * following operations: set, get and multi-get with up to 10 keys and values of
+ * 4096B.
+ * 
+ * When running the middleware a net-thread accepting client connections and the
+ * configured number of worker threads are started. In addition the middleware
+ * is collecting statistics about the queue length and number of requests over 5
+ * second windows (slots). Finally a shutdow hook is registered to ensure that
+ * everything is properly logged and shutdown before stopping the application.
+ * 
+ * @author nicolas-kuechler
+ */
 public class MyMiddleware {
 
 	final static Logger LOG = LogManager.getLogger();

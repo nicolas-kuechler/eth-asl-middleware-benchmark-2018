@@ -1,5 +1,11 @@
 package ch.ethz.asl.kunicola.util;
 
+/**
+ * Exception that is thrown when an illegal request is detected in the decoding
+ * 
+ * @author nicolas-kuechler
+ *
+ */
 public class IllegalRequestException extends Exception {
 
 	private static final long serialVersionUID = 1L;
