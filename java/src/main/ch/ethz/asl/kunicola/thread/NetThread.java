@@ -104,6 +104,8 @@ public class NetThread extends Thread {
 									LOG.debug("number of bytes read: {} (-1 stands for end of stream)", byteCount);
 									continue;
 								}
+							} catch (ClosedByInterruptException e) {
+								throw new InterruptedException();
 							} catch (IOException e) {
 								LOG.info("close client socket connection");
 								clientSocketChannel.close();
@@ -139,6 +141,8 @@ public class NetThread extends Thread {
 											if (LOG.isDebugEnabled()) {
 												LOG.debug("C<N  {}", DecoderUtil.decode(clientResponseBuffer));
 											}
+										} catch (ClosedByInterruptException e) {
+											throw new InterruptedException();
 										} catch (IOException e) {
 											LOG.error("Error writing response to client: {}", e);
 										}
