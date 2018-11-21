@@ -24,7 +24,7 @@ def load_df_by_rep(suite, exp):
             "write_bandwidth_limit","bandwidth_limit_write_throughput", "read_bandwidth_limit", "bandwidth_limit_read_throughput", "client_rtt", "server_rtt"]
 
     value_cols = ["throughput", "rt_mean", "rt_std", "qwt_mean", "qwt_std", "ntt_mean", "ntt_std", "wtt_mean", "wtt_std",
-            "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std", "queue_size_mean"]
+            "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std", "queue_size_mean", "arrivalrate"]
 
     df = df.set_index(config_cols, drop=False)
     df_slot, config_cols_slot, value_cols_slot = df_aggregate.aggregate_slots(df, config_cols=config_cols, value_cols=value_cols)
@@ -36,9 +36,17 @@ def load_df(suite, exp):
 
     df_rep, config_cols_rep, value_cols_rep = df_aggregate.aggregate_repetitions(df_slot, config_cols=config_cols_slot, value_cols=value_cols_slot)
 
-    return df_rep.reset_index()
+    df_rep = df_rep.reset_index()
+
+    df_rep['nt_util'] = df_rep.apply(lambda row: row['throughput_rep_mean'] * row['ntt_rep_mean'] / 1000 ,axis=1)
+    df_rep['s_util'] = df_rep.apply(lambda row: (row['throughput_rep_mean'] * row['sst_rep_mean']/1000)/(row['n_middleware_vm']*row['n_worker_per_mw']) ,axis=1)
+    df_rep['s0_util'] = df_rep.apply(lambda row: (row['throughput_rep_mean'] * row['sst0_rep_mean']/1000)/(row['n_middleware_vm']*row['n_worker_per_mw']) ,axis=1)
+    df_rep['s1_util'] = df_rep.apply(lambda row: (row['throughput_rep_mean'] * row['sst1_rep_mean']/1000)/(row['n_middleware_vm']*row['n_worker_per_mw']) ,axis=1)
+    df_rep['s2_util'] = df_rep.apply(lambda row: (row['throughput_rep_mean'] * row['sst2_rep_mean']/1000)/(row['n_middleware_vm']*row['n_worker_per_mw']) ,axis=1)
+    df_rep['wt_util'] = df_rep.apply(lambda row: (row['throughput_rep_mean'] * (row['wtt_rep_mean']-row['sst_rep_mean']) / 1000)/(row['n_middleware_vm']*row['n_worker_per_mw']),axis=1)
 
 
+    return df_rep
 
 
 def _build_pipeline(exp):
@@ -106,7 +114,10 @@ def _build_pipeline(exp):
         {"$unwind":"$mw_stats"},
         {"$project": {"mw_stats.rt_hist":0}},
         {"$unwind":"$mw_stats.op"},
-        {"$addFields": {"queue":  { "$arrayElemAt": [ { "$filter": { "input": "$mw_stats.queue", "as": "q", "cond": {"$eq":["$$q.slot", "$mw_stats.op.slot"]} } }, 0 ]}}}, # extract matching queue length according to slot
+        {"$addFields": {"queue":  { "$arrayElemAt": [ { "$filter": { "input": "$mw_stats.queue", "as": "q", "cond": {"$eq":["$$q.slot", "$mw_stats.op.slot"]} } }, 0 ]},
+                        "arrival":  { "$arrayElemAt": [ { "$filter": { "input": "$mw_stats.arrival", "as": "a", "cond": {"$eq":["$$a.slot", "$mw_stats.op.slot"]} } }, 0 ]},
+                        }
+        }, # extract matching queue length and arrival according to slot
         {"$group": {"_id" : {"rep":"$repetition",
                              "slot": "$mw_stats.op.slot",
                              "op_type": "$mw_stats.op.op_type",
@@ -128,6 +139,7 @@ def _build_pipeline(exp):
                    "server_rtt":{"$avg":"$server_rtt"}, # should all be the same anyway
                    "run_count" : {"$sum" :  1},
                    "queue_size_mean":{"$avg":"$queue.size"}, # average over mw's
+                   "nt_arrival_count":{"$sum":"$arrival.arrival_count"}, # sum over mw's
                    "sum_rt_count" : {"$sum": "$mw_stats.op.rt_count"},
                    "rt_arr" :  {"$push": {"m2":"$mw_stats.op.rt_m2", "mean":"$mw_stats.op.rt_mean", "count":"$mw_stats.op.rt_count"}},
                    "qwt_arr" : {"$push": {"m2":"$mw_stats.op.qwt_m2", "mean":"$mw_stats.op.qwt_mean", "count":"$mw_stats.op.qwt_count"}},
@@ -186,6 +198,7 @@ def _build_pipeline(exp):
                         "run_count": 1,
                         "data_origin":1,
                         "queue_size_mean": 1,
+                        "arrivalrate": {"$divide" : ["$nt_arrival_count", stats_window_size]},
                         "throughput":1,
                         "rt_mean" : {"$divide" : ["$rt_mean", 10.0]},
                         "rt_std": {"$divide" : ["$rt_std", 10.0]},

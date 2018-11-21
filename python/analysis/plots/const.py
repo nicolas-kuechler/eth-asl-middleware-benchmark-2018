@@ -35,6 +35,18 @@ label = {
     "network_throughput_limit": "throughput limit"
 }
 
+queueing_color = {
+    "meas" : '#a1dab4',
+    "mm1": '#41b6c4',
+    "mmm": '#2c7fb8'
+}
+
+queueing_label = {
+    "meas" : "measured",
+    "mm1":  "M/M/1",
+    "mmm": "M/M/m"
+}
+
 n_worker_color = {
     8:  seq_colors[0],
     16: seq_colors[1],

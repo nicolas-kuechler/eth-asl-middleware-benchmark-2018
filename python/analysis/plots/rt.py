@@ -202,6 +202,43 @@ def mget(ax, df):
     ax.set_ylim(0, max(np.concatenate([rt_means, rt_interactive_law]))*1.1)
     ax.set_xticks(mget_sizes)
 
+def queueing_model(ax, df):
+    n_workers = np.unique(df.loc[:,'n_worker_per_mw'].values)
+    assert(n_workers.shape[0]==1)
+
+    clients = df.loc[:,'num_clients'].values
+
+    meas_rts = df.loc[:,'meas_rt'].values
+    mm1_rts = df.loc[:,'mm1_rt'].values
+    mmm_rts = df.loc[:,'mmm_rt'].values
+
+    ax.plot(clients, meas_rts,  color=const.queueing_color["meas"],
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label=const.queueing_label["meas"])
+
+    ax.plot(clients, mm1_rts,  color=const.queueing_color["mm1"],
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label=const.queueing_label["mm1"])
+
+    ax.plot(clients, mmm_rts,  color=const.queueing_color["mmm"],
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label=const.queueing_label["mmm"].replace("m", f"{n_workers[0]*2}"))
+
+    ax.legend()
+
+    ax.set_ylabel(const.axis_label['rt'])
+    ax.set_xlabel(const.axis_label['number_of_clients'])
+
+
+    ax.set_xlim(0, max(clients)+2)
+    ax.set_ylim(0, max(np.concatenate([meas_rts]))*1.5)
+    ax.set_xticks(clients)
+
+
+
 def component_nc_w(ax, df):
 
 
