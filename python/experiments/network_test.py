@@ -10,7 +10,9 @@ def execute_network_test(n_client, n_mw, n_server):
     log.info(f"Execute Network Test with Topology: {n_client} clients, {n_mw} mws, {n_server} servers")
 
     d_ping = execute_ping_test(n_client, n_mw, n_server)
+    log.debug(f"d_ping: {d_ping}")
     bw_results = execute_bandwidth_test(n_client, n_mw, n_server)
+    log.debug(f"bw_results: {bw_results}")
     results = []
     for bw_res in  bw_results:
         rtt = d_ping[bw_res['from']][bw_res['to']]["avg_rtt"]
@@ -159,18 +161,22 @@ def _bandwidth_stage_test(iperf_clients, iperf_servers, report_duration=20 ,repo
     log.debug(f"start iperf server side")
     for s in range(n_iperf_server):
         cmd = f"screen -dmS bw_test iperf -s -t {report_duration + report_interval}"
+        log.debug(f"cmd: {cmd}")
         stdin, stdout, stderr = ssh['server'][s].exec_command(cmd)
-
+        utility.format(stdout, stderr)
 
     # start iperf client side to each iperf server
     log.debug(f"start iperf client side")
     for c in range(n_iperf_client):
         for s in range(n_iperf_server):
             log_file = f"{iperf_clients[c]['name']}_{iperf_servers[s]['name']}"
+            log.debug(f"removing old tmp log files")
+            stdin, stdout, stderr = ssh['client'][c].exec_command(f"rm -r tmp{s+1}")
+            utility.format(stdout, stderr)
             cmd = f"mkdir tmp{s+1};cd tmp{s+1};screen -dmS bw_test -L iperf -c {iperf_servers[s]['private_ip']} -t {report_duration} -i {report_interval}"
-
+            log.debug(f"cmd: {cmd}")
             stdin, stdout, stderr = ssh['client'][c].exec_command(cmd)
-
+            utility.format(stdout, stderr)
 
     time.sleep(report_duration+report_interval)
 
@@ -185,8 +191,10 @@ def _bandwidth_stage_test(iperf_clients, iperf_servers, report_duration=20 ,repo
             remote_file = sftp_client.open(log_file)
             try:
                 avg_bandwidth = -1
+                lines = []
                 bws = []
                 for line in remote_file:
+                    lines.append(line)
                     # parse interval
                     objInterval = re.search("(\d+\.?\d*)- (\d+\.?\d*) sec", str(line))
                     if objInterval is None:
@@ -214,6 +222,9 @@ def _bandwidth_stage_test(iperf_clients, iperf_servers, report_duration=20 ,repo
                     results.append(res)
                 else:
                     log.warning(f"no bandwidths found")
+                    log.warning(f"lines: {lines}")
+                    # TODO [nku] remove this value error if worked one more time
+                    raise ValueError("no bandwidths found")
 
             finally:
                 remote_file.close()

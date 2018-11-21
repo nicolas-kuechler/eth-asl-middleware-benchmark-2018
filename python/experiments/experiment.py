@@ -1,6 +1,6 @@
 import time, json, logging, math
 from tqdm import tqdm
-import utility, client_vm, middleware_vm, server_vm, results, network_test
+import utility, client_vm, middleware_vm, server_vm, results, network_test, quick_check
 from configs import config
 
 log = logging.getLogger('asl')
@@ -23,30 +23,45 @@ def run(experiment_suite_id, experiment_name):
             n_client = exp_config['n_client']
             network_stats = network_test.execute_network_test(n_client=n_client, n_mw=n_middleware, n_server=n_server)
 
+        result_ids = []
+
         for repetition in tqdm(range(exp_config['repetitions']), desc="    rep", leave=False):
-            log.info(f"Repetition {repetition}")
-            info = {
-                "experiment_suite_id" : experiment_suite_id,
-                "experiment_name" : experiment_name,
-                "repetition" : repetition
-            }
+            result_id = run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats)
+            result_ids.append(result_id)
 
-            info["working_dir"] = f"/exp_output/{experiment_suite_id}/" + utility.resolve_path(info, exp_config)
+        pass_check = quick_check.throughput_check(suite=experiment_suite_id, result_ids=result_ids, threshold=1300)
 
-            start_experiment(info, exp_config)
+        if not pass_check: # if throughput std threshold is exceeded, run one more repetition (can be assumed that something went wrong)
+            repetition = exp_config['repetitions']
+            run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats)
 
-            for _ in tqdm(range(int(math.ceil(config.EXP_TEST_TIME/2))), desc="      run", leave=False):
-                time.sleep(2)
+def run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats):
+    log.info(f"Repetition {repetition}")
+    info = {
+        "experiment_suite_id" : experiment_suite_id,
+        "experiment_name" : experiment_name,
+        "repetition" : repetition
+    }
 
-            time.sleep(0.1)
+    info["working_dir"] = f"/exp_output/{experiment_suite_id}/" + utility.resolve_path(info, exp_config)
 
-            stop_experiment(info, exp_config)
+    start_experiment(info, exp_config)
 
-            transfer_results(info, exp_config)
+    for _ in tqdm(range(int(math.ceil(config.EXP_TEST_TIME/2))), desc="      run", leave=False):
+        time.sleep(2)
 
-            result_id = results.process(config.BASE_DIR + info["working_dir"], info, exp_config, network_stats=network_stats, rm_local=config.EXP_REMOVE_FILES_LOCAL)
+    time.sleep(0.1)
 
-            log.info(f"Result: {result_id}")
+    stop_experiment(info, exp_config)
+
+    transfer_results(info, exp_config)
+
+    result_id = results.process(config.BASE_DIR + info["working_dir"], info, exp_config, network_stats=network_stats, rm_local=config.EXP_REMOVE_FILES_LOCAL)
+
+    log.info(f"Result: {result_id}")
+
+    return result_id
+
 
 def start_experiment(info, exp_config):
     log.info("Starting Experiment...")
