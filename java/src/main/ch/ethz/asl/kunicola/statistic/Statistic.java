@@ -291,7 +291,7 @@ public class Statistic {
 		STATS_LOG.info("queue; " + queueHeader);
 
 		// for stat type arrival
-		String arrivalHeader = "time; tid; stat_type; slot; arrivalCount";
+		String arrivalHeader = "time; tid; stat_type; slot; arrival_count";
 		STATS_LOG.info("arrival; " + arrivalHeader);
 
 		// for stat type op
