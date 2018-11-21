@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import ch.ethz.asl.kunicola.request.AbstractRequest;
 import ch.ethz.asl.kunicola.util.BufferTimePair;
+import ch.ethz.asl.kunicola.util.DecoderUtil;
 import ch.ethz.asl.kunicola.util.RequestDecoder;
 
 /**
@@ -96,10 +97,16 @@ public class NetThread extends Thread {
 							} else {
 								buffer = ByteBuffer.allocate(BUFFER_SIZE);
 							}
+							try {
 
-							int byteCount = clientSocketChannel.read(buffer);
-							if (byteCount < 1) {
-								LOG.debug("number of bytes read: {} (-1 stands for end of stream)", byteCount);
+								int byteCount = clientSocketChannel.read(buffer);
+								if (byteCount < 1) {
+									LOG.debug("number of bytes read: {} (-1 stands for end of stream)", byteCount);
+									continue;
+								}
+							} catch (IOException e) {
+								LOG.info("close client socket connection");
+								clientSocketChannel.close();
 								continue;
 							}
 
@@ -120,6 +127,22 @@ public class NetThread extends Thread {
 										queue.put(request);
 										arrivalCounter.incrementAndGet();
 										LOG.debug("C>N>Q {}", request);
+									} else {
+										// unknown request -> return error to client
+										ByteBuffer clientResponseBuffer = ByteBuffer.allocate(512);
+										clientResponseBuffer.put("ERROR\r\n".getBytes());
+										clientResponseBuffer.flip();
+										try {
+											while (clientResponseBuffer.hasRemaining()) {
+												clientSocketChannel.write(clientResponseBuffer);
+											}
+											if (LOG.isDebugEnabled()) {
+												LOG.debug("C<N  {}", DecoderUtil.decode(clientResponseBuffer));
+											}
+										} catch (IOException e) {
+											LOG.error("Error writing response to client: {}", e);
+										}
+
 									}
 
 								} else { // request incomplete -> attach dedicated buffer to selection key

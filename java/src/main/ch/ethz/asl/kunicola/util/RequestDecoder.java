@@ -159,7 +159,8 @@ public class RequestDecoder {
 					isRequestComplete = true;
 				}
 			} else {
-				throw new IllegalRequestException("unknown starting char, should be either s or g");
+				throw new IllegalRequestException(
+						"unknown starting char, should be either s or g but is: " + (char) b0);
 			}
 
 		} catch (IllegalRequestException e) {
