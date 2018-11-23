@@ -49,7 +49,7 @@ def get_config(path:str):
         configs.append(c)
 
 
-    configs = sorted(configs, key=lambda c: (c["n_server"], c["n_client"], c["n_middleware"], c["workload_ratio"], -c["n_worker_per_mw"], -c["n_vc"]))
+    configs = sorted(configs, key=lambda c: (c["n_server"], c["n_client"], c["n_middleware"], c["workload_ratio"][-1], -c["n_worker_per_mw"], -c["n_vc"]))
 
     return configs
 

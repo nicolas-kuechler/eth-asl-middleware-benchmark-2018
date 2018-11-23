@@ -223,13 +223,25 @@ def _bandwidth_stage_test(iperf_clients, iperf_servers, report_duration=20 ,repo
                 else:
                     log.warning(f"no bandwidths found")
                     log.warning(f"lines: {lines}")
-                    
+
 
             finally:
                 remote_file.close()
                 # remove log files
                 log.debug(f"remove remote screen log files")
                 stdin, stdout, stderr = ssh['client'][c].exec_command(f"rm -r tmp{s+1}")
+
+
+    # ensure all bw screen sessions are closed
+    for c in range(n_iperf_client):
+        cmd = f"screen -S bw_test -X quit"
+        log.debug(f"cmd: {cmd}")
+        stdin, stdout, stderr = ssh['client'][c].exec_command(cmd)
+
+    for s in range(n_iperf_server):
+        cmd = f"screen -S bw_test -X quit"
+        log.debug(f"cmd: {cmd}")
+        stdin, stdout, stderr = ssh['server'][s].exec_command(cmd)
 
 
     # close all ssh connections

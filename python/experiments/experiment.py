@@ -39,8 +39,8 @@ def run(experiment_suite_id, experiment_name):
                 log.info("Throughput check not passed -> run another repetition")
                 result_id = run_repetition(experiment_suite_id, experiment_name, add_rep, exp_config, network_stats)
                 result_ids.append(result_id)
-                fail_count, total_count = quick_check.throughput_check(suite=experiment_suite_id, result_ids=result_ids, threshold=const.cov_threshold)
-                ok_count = total_count - fail_count
+            fail_count, total_count = quick_check.throughput_check(suite=experiment_suite_id, result_ids=result_ids, threshold=const.cov_threshold)
+            ok_count = total_count - fail_count
 
 def run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats):
     log.info(f"Repetition {repetition}")
