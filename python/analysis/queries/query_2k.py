@@ -22,10 +22,10 @@ def load_2k_base_df(suite, exp_name, r_rep, factor_map, data_origin='mw'):
 
     # load data by rep
     if data_origin=='mw':
-        df, config_cols, _ = query_mw.load_df_by_rep(suite=suite[exp_name], exp=exp_name)
+        df, config_cols, _ = query_mw.load_df_by_rep(suite=suite, exp=exp_name)
         df = df.rename(index=str, columns={"throughput_slot_mean": "throughput", "rt_slot_mean": "rt"})
     elif data_origin == 'client':
-        df, config_cols, _ = query_client.load_df_by_rep(suite=suite[exp_name], exp=exp_name)
+        df, config_cols, _ = query_client.load_df_by_rep(suite=suite, exp=exp_name)
         df = df.rename(index=str, columns={"throughput_mean": "throughput", "rt_mean": "rt"})
     else:
         raise ValueError(f"Unknown data origin: {data_origin}")

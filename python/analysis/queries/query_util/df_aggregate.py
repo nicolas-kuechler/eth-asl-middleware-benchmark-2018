@@ -1,6 +1,8 @@
-def aggregate_slots(df, config_cols, value_cols, start_slot=1, end_slot=13):
+from queries.query_util import const
+
+def aggregate_slots(df, config_cols, value_cols):
     # filter slots (warmup and cooldown phase)
-    df = df.loc[(df.slot>=start_slot) & (df.slot<=end_slot)]
+    df = df.loc[(df.slot>=const.min_slot_inclusive) & (df.slot<=const.max_slot_inclusive)]
 
     # want to group over slots -> remove slots from config columns
     config_cols.remove('slot')

@@ -75,6 +75,16 @@ try:
 
         # run the experiment on the vm's
         experiment.run(experiment_suite_id=experiment_suite_id, experiment_name=exp_id)
+
+    # allows to add some additional experiments add the end while already running simulation
+    with open(f"./configs/additional_names.json") as file:
+        additional_names = json.load(file)
+
+    for exp_id in tqdm(additional_names["exp_names"], desc="suite add"):
+        # run the experiment on the vm's
+        experiment.run(experiment_suite_id=experiment_suite_id, experiment_name=exp_id)
+
+
 finally:
     # Deallocate all VM's
     notify = Notify(config.NOTIFY_URL)

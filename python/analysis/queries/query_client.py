@@ -16,7 +16,7 @@ def load_df_by_rep(suite,exp):
         "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance",
         "write_bandwidth_limit","bandwidth_limit_write_throughput", "read_bandwidth_limit", "bandwidth_limit_read_throughput", "client_rtt", "server_rtt"]
 
-    value_cols = ["throughput_mean", "throughput_std", "rt_mean", "rt_std"]
+    value_cols = ["throughput_mean", "throughput_std", "rt_mean", "rt_std", "throughputset_mean", "throughputset_std", "rtset_mean", "rtset_std", "throughputget_mean", "throughputget_std", "rtget_mean", "rtget_std"]
     df = df.set_index(config_cols, drop=False)
 
     return df, config_cols, value_cols
@@ -120,6 +120,14 @@ def _build_pipeline(exp):
                    "throughput_std" : {"$stdDevSamp": "$client_stats.totals.Ops/sec"},
                    "rt" : {"$avg": "$client_stats.totals.Latency"},
                    "rt_std" : {"$stdDevSamp": "$client_stats.totals.Latency"},
+                   "throughput_set" : {"$sum": "$client_stats.sets.Ops/sec"},
+                   "throughput_set_std" : {"$stdDevSamp": "$client_stats.sets.Ops/sec"},
+                   "rt_set" : {"$avg": "$client_stats.sets.Latency"},
+                   "rt_set_std" : {"$stdDevSamp": "$client_stats.sets.Latency"},
+                   "throughput_get" : {"$sum": "$client_stats.gets.Ops/sec"},
+                   "throughput_get_std" : {"$stdDevSamp": "$client_stats.gets.Ops/sec"},
+                   "rt_get" : {"$avg": "$client_stats.gets.Latency"},
+                   "rt_get_std" : {"$stdDevSamp": "$client_stats.gets.Latency"},
                    }
         },
         {"$addFields":{"data_origin": "client"}},
@@ -144,8 +152,16 @@ def _build_pipeline(exp):
                         "data_origin": 1,
                         "throughput_mean":"$throughput",
                         "throughput_std":"$throughput_std",
+                        "throughputset_mean":"$throughput_set",
+                        "throughputset_std":"$throughput_set_std",
+                        "throughputget_mean":"$throughput_get",
+                        "throughputget_std":"$throughput_get_std",
                         "rt_mean" : "$rt",
                         "rt_std": "$rt_std",
+                        "rtset_mean" : "$rt_set",
+                        "rtset_std": "$rt_set_std",
+                        "rtget_mean" : "$rt_get",
+                        "rtget_std": "$rt_get_std",
                         "read_bandwidth_limit": { "$cond": { "if": { "$eq": ["$read_bandwidth_limit", None]}, "then": "-", "else": "$read_bandwidth_limit" }},
                         "bandwidth_limit_read_throughput": { "$cond": { "if": { "$eq": ["$read_bandwidth_limit", None]}, "then": "-", "else": {"$divide":["$read_bandwidth_limit", value_size_mbit]}}},
                         "write_bandwidth_limit":{ "$cond": { "if": { "$eq": ["$write_bandwidth_limit", None]}, "then": "-", "else": "$write_bandwidth_limit" }},

@@ -35,9 +35,6 @@ def nc(ax, df): # t1
                                                             marker='.',
                                                             markersize=const.markersize,
                                                             label=const.label['measurement'])
-    ax.plot(clients, throughput_interactive_law, color=const.color['single_color_interactive_law'],
-                                                    linestyle='--',
-                                                    label=const.label['interactive_law'])
 
     if op_type == "set":
         bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput'].values
@@ -46,8 +43,18 @@ def nc(ax, df): # t1
     else:
         raise ValueError("Unknown Op Type")
 
+    cur_max_y = max(np.concatenate([throughput_means, bandwidth_throughput_limit]))
+
+    if const.use_interactive_law_in_mw or data_origin[0] == 'client':
+        ax.plot(clients, throughput_interactive_law, color=const.color['single_color_interactive_law'],
+                                                    linestyle='--',
+                                                    label=const.label['interactive_law'])
+        cur_max_y = max(np.concatenate([throughput_means,throughput_interactive_law,bandwidth_throughput_limit]))
+
+
+
     if np.asscalar(np.unique(bandwidth_throughput_limit)) != "-":
-        ax.plot(clients, bandwidth_throughput_limit, linestyle='--', label=const.label['network_throughput_limit'])
+        ax.plot(clients, bandwidth_throughput_limit, linestyle='--', color=const.color['network_throughput_limit'], label=const.label['network_throughput_limit'])
 
     # TODO [nku] decide on legend to use
     ax.legend()
@@ -58,7 +65,7 @@ def nc(ax, df): # t1
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_xlim(0, clients[-1]+2)
-    ax.set_ylim(0, max(np.concatenate([throughput_means,throughput_interactive_law]))*1.1)
+    ax.set_ylim(0, cur_max_y*1.1)
     ax.set_xticks(clients)
 
 
@@ -99,11 +106,16 @@ def nc_w(ax, df):
                                                                 markersize=const.markersize,
                                                                 label=const.n_worker_label[n_worker])
 
-        ax.plot(clients, throughput_interactive_law,color=const.n_worker_color[n_worker],
+        cur_max_y = max(throughput_means)
+
+        if const.use_interactive_law_in_mw or data_origin[0] == 'client':
+            ax.plot(clients, throughput_interactive_law,color=const.n_worker_color[n_worker],
                                                     linestyle='--',
                                                     label=const.n_worker_inter_label[n_worker])
+            cur_max_y = max(np.concatenate([throughput_means, throughput_interactive_law]))
 
-        max_y.append(max(np.concatenate([throughput_means, throughput_interactive_law])))
+
+        max_y.append(cur_max_y)
         max_x.append(max(clients))
 
     if op_type == "set":
@@ -137,6 +149,7 @@ def mget(ax, df):
     mget_sizes = df.loc[:,'multi_get_size'].values
     throughput_means = df.loc[:,'throughput_rep_mean'].values
     throughput_stds = df.loc[:,'throughput_rep_std'].values
+    think_time = df.loc[:,'client_thinktime'].values
 
     data_origin = np.unique(df.loc[:,'data_origin'].values)
     op_type = np.unique(df.loc[:,'op_type'].values)
@@ -156,17 +169,19 @@ def mget(ax, df):
     else:
         rt_means_interactive_law = rt_means
 
-    throughput_interactive_law = clients / rt_means_interactive_law * 1000
+    throughput_interactive_law = clients / (rt_means_interactive_law + think_time) * 1000
 
     ax.errorbar(mget_sizes, throughput_means, throughput_stds, color=const.color['single_color'],
                                                             capsize=const.capsize,
                                                             marker='.',
                                                             markersize=const.markersize,
                                                             label=const.label['measurement'])
-    ax.plot(mget_sizes, throughput_interactive_law, color=const.color['single_color_interactive_law'],
+    max_y = max(throughput_means)
+    if const.use_interactive_law_in_mw or data_origin[0] == 'client':
+        ax.plot(mget_sizes, throughput_interactive_law, color=const.color['single_color_interactive_law'],
                                                     linestyle='--',
                                                     label=const.label['interactive_law'])
-
+        max_y = max(np.concatenate([throughput_means,throughput_interactive_law]))
     if op_type == "set":
         bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput'].values
     elif op_type == "get" or op_type == "mget":
@@ -186,7 +201,7 @@ def mget(ax, df):
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_xlim(0, clients[-1]+2)
-    ax.set_ylim(0, max(np.concatenate([throughput_means,throughput_interactive_law]))*1.1)
+    ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
 def time(ax, df):
@@ -203,8 +218,8 @@ def time(ax, df):
     ax.set_ylabel(const.axis_label['throughput'])
     ax.set_xlabel(const.axis_label['slot'])
 
-    ax.axvspan(0, 2, alpha=0.5, color='grey')
-    ax.axvspan(15, 18, alpha=0.5, color='grey')
+    ax.axvspan(0, const.min_slot_inclusive-0.5, alpha=0.5, color='grey')
+    ax.axvspan(const.max_slot_inclusive+0.5, slots[-1]+2, alpha=0.5, color='grey')
     ax.set_xlim(0, slots[-1]+2)
     ax.set_ylim(0, max(throughputs*1.2))
     ax.set_xticks(slots)

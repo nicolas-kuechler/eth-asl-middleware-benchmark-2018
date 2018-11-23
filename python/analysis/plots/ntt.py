@@ -89,8 +89,8 @@ def time(ax, df):
     ax.set_ylabel('Net Thread Time [ms]')
     ax.set_xlabel(const.axis_label['slot'])
 
-    ax.axvspan(0, 2, alpha=0.5, color='grey')
-    ax.axvspan(15, 18, alpha=0.5, color='grey')
+    ax.axvspan(0, const.min_slot_inclusive- 0.5, alpha=0.5, color='grey')
+    ax.axvspan(const.max_slot_inclusive + 0.5, slots[-1]+2, alpha=0.5, color='grey')
     ax.set_xlim(0, slots[-1]+2)
     ax.set_ylim(0, max(means)*2)
     ax.set_xticks(slots)

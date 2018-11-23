@@ -3,6 +3,8 @@ from tqdm import tqdm
 import utility, client_vm, middleware_vm, server_vm, results, network_test, quick_check
 from configs import config
 
+import const
+
 log = logging.getLogger('asl')
 
 def run(experiment_suite_id, experiment_name):
@@ -29,12 +31,13 @@ def run(experiment_suite_id, experiment_name):
             result_id = run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats)
             result_ids.append(result_id)
 
-        pass_check = quick_check.throughput_check(suite=experiment_suite_id, result_ids=result_ids, threshold=1000)
+        fail_count, total_count = quick_check.throughput_check(suite=experiment_suite_id, result_ids=result_ids, threshold=const.cov_threshold)
+        ok_count = total_count - fail_count
 
-        if not pass_check: # if throughput std threshold is exceeded, run one more repetition (can be assumed that something went wrong)
-            log.info("Throughput check not passed -> run another repetition")
-            repetition = exp_config['repetitions']
-            run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats)
+        while(ok_count < 3 and total_count < 6): # repeat until we have 3 valid repetitions or max 6
+            for add_rep in tqdm(range(total_count, total_count+3-ok_count), desc="    add rep", leave=False):
+                log.info("Throughput check not passed -> run another repetition")
+                run_repetition(experiment_suite_id, experiment_name, add_rep, exp_config, network_stats)
 
 def run_repetition(experiment_suite_id, experiment_name, repetition, exp_config, network_stats):
     log.info(f"Repetition {repetition}")

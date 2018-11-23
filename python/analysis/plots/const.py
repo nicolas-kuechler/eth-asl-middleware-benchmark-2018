@@ -1,7 +1,11 @@
-use_interactive_law_rtt_adjustment = True
+use_interactive_law_rtt_adjustment = False
+use_interactive_law_in_mw = False
 
 markersize = 8
 capsize = 5
+
+min_slot_inclusive = 3
+max_slot_inclusive = 14
 
 
 # from http://colorbrewer2.org
@@ -15,6 +19,7 @@ network_throughput_limit_linestyle = "--"
 color = {
     "single_color":seq_colors[3],
     "single_color_interactive_law": seq_colors[2],
+    "network_throughput_limit": "grey",
     "hist_error": "grey",
     "hist": seq_colors[1]
 }
@@ -32,7 +37,7 @@ axis_label = {
 label = {
     "interactive_law": "interactive law",
     "measurement": "measurement",
-    "network_throughput_limit": "throughput limit"
+    "network_throughput_limit": "bandwidth limit"
 }
 
 queueing_color = {

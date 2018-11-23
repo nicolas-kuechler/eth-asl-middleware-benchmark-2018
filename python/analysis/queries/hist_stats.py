@@ -9,6 +9,8 @@ def aggregate_hist(df, bin_size=0.5, bin_max=20.0):
 
     d = {}
 
+    data_origin = df['data_origin'].unique()
+
     for rep in df.rep.unique():
         df_rep = df[df["rep"]==rep]
 
@@ -25,5 +27,7 @@ def aggregate_hist(df, bin_size=0.5, bin_max=20.0):
     df['rt_bin_low'] = df.apply(lambda row: float(re.split('\(|,\s|\]',row["rt_bin"])[1]) ,axis=1)
     df['rt_bin_high'] = df.apply(lambda row: float(re.split('\(|,\s|\]',row["rt_bin"])[2]) ,axis=1)
     df['rt_bin_avg'] = df.loc[: , "rt_bin_low":"rt_bin_high"].mean(axis=1)
+
+    df['data_origin'] = df.apply(lambda row: data_origin[0] ,axis=1)
 
     return df

@@ -30,9 +30,14 @@ def nc(ax, df):
                                             markersize=const.markersize,
                                             label=const.label['measurement'])
 
-    ax.plot(clients, rt_interactive_law,color=const.color['single_color_interactive_law'],
+    max_y = max(rt_means)
+
+    if const.use_interactive_law_in_mw or data_origin[0] == 'client':
+        ax.plot(clients, rt_interactive_law,color=const.color['single_color_interactive_law'],
                                         linestyle='--',
                                         label=const.label['interactive_law'])
+        max_y = max(np.concatenate([rt_means, rt_interactive_law]))
+
     # TODO [nku] decide on legend
     ax.legend()
     ax.set_ylabel(const.axis_label['rt'])
@@ -41,7 +46,7 @@ def nc(ax, df):
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_xlim(0, clients[-1]+2)
-    ax.set_ylim(0, max(np.concatenate([rt_means, rt_interactive_law]))*1.1)
+    ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(clients)
 
 
@@ -77,11 +82,15 @@ def nc_w(ax, df):
                                                 markersize=const.markersize,
                                                 label=const.n_worker_label[n_worker])
 
-        ax.plot(clients, rt_interactive_law,color=const.n_worker_color[n_worker],
+        cur_max_y = max(rt_means)
+
+        if const.use_interactive_law_in_mw or data_origin[0] == 'client':
+            ax.plot(clients, rt_interactive_law,color=const.n_worker_color[n_worker],
                                             linestyle='--',
                                             label=const.n_worker_inter_label[n_worker])
+            cur_max_y = max(np.concatenate([rt_means, rt_interactive_law]))
 
-        max_y.append(max(np.concatenate([rt_means,rt_interactive_law])))
+        max_y.append(cur_max_y)
         max_x.append(max(clients))
 
     # TODO [nku] decide on legend to use
@@ -148,9 +157,8 @@ def mget_hist(ax,df): # rt 4
     # TODO [nku] set fixed hist ylim
     ylim = max(rt_freqs+5000)
 
-    # TODO [nku] set data origin in hist
-    #data_origin = np.unique(df.loc[:,'data_origin'].values)
-    #assert(data_origin.shape[0]==1)
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    assert(data_origin.shape[0]==1)
 
     y, _ , _ = ax.hist(rts, weights=rt_freqs, bins=bins, color=const.color['hist'])
     ax.errorbar(rts, y, fmt='none', yerr=rt_stds, capsize=const.capsize, color=const.color['hist_error'])
@@ -159,7 +167,7 @@ def mget_hist(ax,df): # rt 4
     ax.set_ylabel(const.axis_label['freq'])
     ax.set_xlabel(const.axis_label['rt'])
 
-    #ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+    ax.text(0.95, 0.95, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_ylim(0, ylim)
 
@@ -167,6 +175,7 @@ def mget(ax, df):
     mget_sizes = df.loc[:,'multi_get_size'].values
     clients = df.loc[:,'num_clients'].values
     throughput_means = df.loc[:,'throughput_rep_mean'].values
+    think_time = df.loc[:,'client_thinktime'].values
     data_origin = np.unique(df.loc[:,'data_origin'].values)
     assert(data_origin.shape[0]==1)
 
@@ -174,7 +183,7 @@ def mget(ax, df):
     rt_means = df.loc[:,'rt_rep_mean'].values
     rt_stds = df.loc[:,'rt_rep_std'].values
 
-    rt_interactive_law = clients / throughput_means * 1000
+    rt_interactive_law = clients / throughput_means * 1000 - think_time
 
     if const.use_interactive_law_rtt_adjustment and data_origin[0] == 'mw':
         rtt_client = np.unique(df.loc[:,'client_rtt'].values)
@@ -187,10 +196,14 @@ def mget(ax, df):
                                             marker='.',
                                             markersize=const.markersize,
                                             label=const.label['measurement'])
+    max_y = max(rt_means)
 
-    ax.plot(mget_sizes, rt_interactive_law,color=const.color['single_color_interactive_law'],
+    if const.use_interactive_law_in_mw or data_origin[0] == 'client':
+        ax.plot(mget_sizes, rt_interactive_law,color=const.color['single_color_interactive_law'],
                                         linestyle='--',
                                         label=const.label['interactive_law'])
+        max_y = max(np.concatenate([rt_means, rt_interactive_law]))
+
     # TODO [nku] decide on legend
     ax.legend()
     ax.set_ylabel(const.axis_label['rt'])
@@ -199,7 +212,7 @@ def mget(ax, df):
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_xlim(0, clients[-1]+2)
-    ax.set_ylim(0, max(np.concatenate([rt_means, rt_interactive_law]))*1.1)
+    ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
 def queueing_model(ax, df):
@@ -289,8 +302,8 @@ def time(ax, df):
     ax.set_ylabel(const.axis_label['rt'])
     ax.set_xlabel(const.axis_label['slot'])
 
-    ax.axvspan(0, 2, alpha=0.5, color='grey')
-    ax.axvspan(15, 18, alpha=0.5, color='grey')
+    ax.axvspan(0, const.min_slot_inclusive- 0.5, alpha=0.5, color='grey')
+    ax.axvspan(const.max_slot_inclusive+ 0.5, slots[-1]+2, alpha=0.5, color='grey')
     ax.set_xlim(0, slots[-1]+2)
     ax.set_ylim(0, max(rt_means)+30)
     ax.set_xticks(slots)
