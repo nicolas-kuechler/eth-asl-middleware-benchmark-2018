@@ -2,7 +2,7 @@ from bson.son import SON
 import pandas as pd
 import numpy as np
 
-from queries.query_util import df_aggregate, utility
+from queries.query_util import df_aggregate, utility, const
 
 def load_df_by_slot(suite,exp):
 
@@ -26,6 +26,7 @@ def load_df_by_rep(suite, exp):
     value_cols = ["throughput", "rt_mean", "rt_std", "qwt_mean", "qwt_std", "ntt_mean", "ntt_std", "wtt_mean", "wtt_std",
             "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std", "queue_size_mean", "arrivalrate"]
 
+
     df = df.set_index(config_cols, drop=False)
     df_slot, config_cols_slot, value_cols_slot = df_aggregate.aggregate_slots(df, config_cols=config_cols, value_cols=value_cols)
 
@@ -33,6 +34,10 @@ def load_df_by_rep(suite, exp):
 
 def load_df(suite, exp):
     df_slot, config_cols_slot, value_cols_slot = load_df_by_rep(suite, exp)
+
+    df_slot["tp_cov"] = df_slot.apply(lambda row: row['throughput_slot_std'] / row['throughput_slot_mean'], axis=1)
+
+    df_slot = df_slot[df_slot["tp_cov"]<const.cov_threshold]
 
     df_rep, config_cols_rep, value_cols_rep = df_aggregate.aggregate_repetitions(df_slot, config_cols=config_cols_slot, value_cols=value_cols_slot)
 
@@ -54,8 +59,10 @@ def _build_pipeline(exp):
     value_size = 4096 # bytes
     value_size_mbit = value_size / 125000.0
 
+    exp_ext = exp + "ext"
+
     pipeline = [
-        {"$match": {"exp": exp}},
+        {"$match": {"$or": [ {"exp": exp }, {"exp": exp_ext } ]}},
         {"$addFields":{"num_clients": {"$multiply": ["$exp_config.n_client",
                                                      "$exp_config.n_instances_mt_per_machine",
                                                      "$exp_config.n_threads_per_mt_instance",
@@ -139,7 +146,7 @@ def _build_pipeline(exp):
                    "server_rtt":{"$avg":"$server_rtt"}, # should all be the same anyway
                    "run_count" : {"$sum" :  1},
                    "queue_size_mean":{"$avg":"$queue.size"}, # average over mw's
-                   "nt_arrival_count":{"$sum":"$arrival.arrival_count"}, # sum over mw's
+                   "nt_arrival_count":{"$sum":"$arrival.arrival_count"}, # sum over mw's TODO needs to be changed because aggregate over mw AND WORKER here
                    "sum_rt_count" : {"$sum": "$mw_stats.op.rt_count"},
                    "rt_arr" :  {"$push": {"m2":"$mw_stats.op.rt_m2", "mean":"$mw_stats.op.rt_mean", "count":"$mw_stats.op.rt_count"}},
                    "qwt_arr" : {"$push": {"m2":"$mw_stats.op.qwt_m2", "mean":"$mw_stats.op.qwt_mean", "count":"$mw_stats.op.qwt_count"}},
@@ -198,7 +205,7 @@ def _build_pipeline(exp):
                         "run_count": 1,
                         "data_origin":1,
                         "queue_size_mean": 1,
-                        "arrivalrate": {"$divide" : ["$nt_arrival_count", stats_window_size]},
+                        "arrivalrate": {"$divide": [{"$divide" : ["$nt_arrival_count", "$_id.n_worker_per_mw"]}, stats_window_size]},
                         "throughput":1,
                         "rt_mean" : {"$divide" : ["$rt_mean", 10.0]},
                         "rt_std": {"$divide" : ["$rt_std", 10.0]},

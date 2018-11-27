@@ -231,11 +231,13 @@ def queueing_model(ax, df):
                                             label=const.queueing_label["meas"])
 
     ax.plot(clients, mm1_rts,  color=const.queueing_color["mm1"],
+                                            linestyle='None',
                                             marker='.',
                                             markersize=const.markersize,
                                             label=const.queueing_label["mm1"])
 
     ax.plot(clients, mmm_rts,  color=const.queueing_color["mmm"],
+                                            linestyle='None',
                                             marker='.',
                                             markersize=const.markersize,
                                             label=const.queueing_label["mmm"].replace("m", f"{n_workers[0]*2}"))

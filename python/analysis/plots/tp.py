@@ -1,10 +1,15 @@
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 import pandas as pd
 import numpy as np
 import os
 
 from plots import const
 
+def tp_format(x, pos):
+    'The two args are the value and tick position'
+    return f"{x/1000}k"
+tp_formatter = FuncFormatter(tp_format)
 
 def nc(ax, df): # t1
     clients = df.loc[:,'num_clients'].values
@@ -53,11 +58,12 @@ def nc(ax, df): # t1
 
 
 
-    if np.asscalar(np.unique(bandwidth_throughput_limit)) != "-":
+    if np.unique(bandwidth_throughput_limit)[0] != "-":
         ax.plot(clients, bandwidth_throughput_limit, linestyle='--', color=const.color['network_throughput_limit'], label=const.label['network_throughput_limit'])
 
     # TODO [nku] decide on legend to use
     ax.legend()
+    ax.yaxis.set_major_formatter(tp_formatter)
 
     ax.set_ylabel(const.axis_label['throughput'])
     ax.set_xlabel(const.axis_label['number_of_clients'])
@@ -125,7 +131,7 @@ def nc_w(ax, df):
     else:
         raise ValueError("Unknown Op Type")
 
-    if np.asscalar(np.unique(bandwidth_throughput_limit)) != "-":
+    if np.unique(bandwidth_throughput_limit)[0] != "-":
         ax.plot(clients, bandwidth_throughput_limit,color=const.network_throughput_limit_color,
                                                     linestyle=const.network_throughput_limit_linestyle,
                                                     label=const.label['network_throughput_limit'])
@@ -190,7 +196,7 @@ def mget(ax, df):
         print(op_type)
         raise ValueError("Unknown Op Type")
 
-    if np.asscalar(np.unique(bandwidth_throughput_limit)) != "-":
+    if np.unique(bandwidth_throughput_limit)[0] != "-":
         ax.plot(mget_sizes, bandwidth_throughput_limit, linestyle='--', label=const.label['network_throughput_limit'])
 
     ax.legend()
@@ -205,6 +211,9 @@ def mget(ax, df):
     ax.set_xticks(mget_sizes)
 
 def time(ax, df):
+
+    slots = None
+
     for rep in np.unique(df.loc[:,'rep'].values):
         df_rep = df[df['rep']==rep]
 
@@ -213,6 +222,9 @@ def time(ax, df):
 
         throughputs = df_rep.loc[:,'throughput'].values
         ax.plot(slots, throughputs, marker='.', markersize=const.markersize, label=f"rep={rep}")
+
+    if slots is None:
+        display(df)
 
     ax.legend()
     ax.set_ylabel(const.axis_label['throughput'])

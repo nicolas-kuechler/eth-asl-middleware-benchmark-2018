@@ -1,0 +1,14 @@
+{
+    "n_server" : 3,
+    "n_client" : 3,
+    "n_instances_mt_per_machine"  : 2,
+    "n_threads_per_mt_instance" : 1,
+    "n_vc" : [64, 80],
+    "workload_ratio" : ["1:0"],
+    "multi_get_behaviour" : null,
+    "multi_get_size" : null,
+    "n_middleware" : 2,
+    "n_worker_per_mw" : [8, 16, 32, 64],
+    "repetitions" : 3,
+    "path_template": "exp41/${workload_ratio}/w_${n_worker_per_mw}/vc_${n_vc}/rep_${repetition}"
+}

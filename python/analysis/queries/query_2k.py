@@ -178,7 +178,8 @@ def load_2k_effect_df(df, r_rep, factor_map):
     tp_ss_sum = df[tp_cols + ['I_tp']].loc['SSj'].sum()
     assert(int(tp['SSE'])==int(tp['SSY'] - tp_ss_sum))
     assert(int(tp['SST'])==int(tp['SSY'] -df['I_tp'].loc['SSj']))
-    assert(100>=tp_variation.sum() and 99.5<=tp_variation.sum())
+    assert(100>=tp_variation.sum() and 99<=tp_variation.sum())
+
 
     rt_ss_sum = df[rt_cols + ['I_rt']].loc['SSj'].sum()
     assert(int(rt['SSE'])==int(rt['SSY'] - rt_ss_sum))

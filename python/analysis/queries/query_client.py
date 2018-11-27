@@ -3,7 +3,7 @@ from bson.son import SON
 import pandas as pd
 import numpy as np
 
-from queries.query_util import df_aggregate, utility
+from queries.query_util import df_aggregate, utility, const
 
 def load_df_by_rep(suite,exp):
 
@@ -26,6 +26,12 @@ def load_df(suite, exp):
 
     df, config_cols, value_cols = load_df_by_rep(suite,exp)
 
+    print(f"Client: {df[df['throughput_mean']==0].shape[0]} repetitions don't have throughput")
+
+    df = df[df["throughput_mean"]!=0]
+    df["tp_cov"] = df.apply(lambda row: row['throughput_std'] / row['throughput_mean'], axis=1)
+
+    #df = df[df["tp_cov"]<const.cov_threshold]
 
     df_rep, config_cols_rep, value_cols_rep = df_aggregate.aggregate_repetitions(df, config_cols=config_cols, value_cols=value_cols)
 
@@ -38,8 +44,10 @@ def _build_pipeline(exp):
     value_size = 4096 # bytes
     value_size_mbit = value_size / 125000.0
 
+    exp_ext = exp + "ext"
+
     pipeline = [
-        {"$match": {"exp": exp}},
+        {"$match": {"$or": [ {"exp": exp }, {"exp": exp_ext} ]}},
         {"$addFields":{"num_clients": {"$multiply": ["$exp_config.n_client",
                                                      "$exp_config.n_instances_mt_per_machine",
                                                      "$exp_config.n_threads_per_mt_instance",

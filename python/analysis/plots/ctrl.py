@@ -12,11 +12,12 @@ output_folder = "./../../exp_plots"
 def generate(plot_func, df, suite=None, name=None):
     plt.rc('font', family='serif', serif='Times')
     plt.rc('text', usetex=False)
-    plt.rc('xtick', labelsize=10)
-    plt.rc('ytick', labelsize=10)
+    plt.rc('xtick', labelsize=9)
+    plt.rc('ytick', labelsize=9)
     plt.rc('axes', labelsize=12)
 
     fig, ax = plt.subplots()
+    #fig, ax = plt.subplots(figsize=(8,4))
     plot_func(ax, df)
 
     if name is not None:
@@ -59,20 +60,23 @@ def dashboard_mget(df):
 
 def dashboard_time(suite, exp_name):
     df = query_mw.load_df_by_slot(suite=suite ,exp=exp_name)
-    for n_w in np.unique(df.loc[:,'n_worker_per_mw'].values):
-        for op_type in np.unique(df.loc[:,'op_type'].values):
-            for num_clients in np.unique(df.loc[:,'num_clients'].values):
-                for mget_size in np.unique(df.loc[:,'multi_get_size'].values):
-                    df_filtered = df[(df['n_worker_per_mw']==n_w) & (df['op_type']==op_type) & (df['num_clients']==num_clients) & (df['multi_get_size']==mget_size)]
-
-                    print(f"n_w={n_w}   op_type={op_type}  num_clients={num_clients}   mget_size={mget_size}")
-                    generate(tp.time, df_filtered)
-                    generate(rt.time, df_filtered)
-                    #generate(qwt.time, df_filtered)
-                    #generate(ntt.time, df_filtered)
-                    #generate(wtt.time, df_filtered)
-                    #generate(sst.time, df_filtered)
-                    #generate(sst.time0, df_filtered)
-                    #generate(sst.time1, df_filtered)
-                    #generate(sst.time2, df_filtered)
-                    #generate(queue.time, df_filtered)
+    for n_mw in np.unique(df.loc[:,'n_middleware_vm'].values):
+        for n_server in np.unique(df.loc[:,'n_server_vm'].values):
+            for n_w in np.unique(df.loc[:,'n_worker_per_mw'].values):
+                for op_type in np.unique(df.loc[:,'op_type'].values):
+                    for num_clients in np.unique(df.loc[:,'num_clients'].values):
+                        for mget_size in np.unique(df.loc[:,'multi_get_size'].values):
+                            df_filtered = df[(df['n_middleware_vm']==n_mw)&(df['n_server_vm']==n_server)&(df['n_worker_per_mw']==n_w) & (df['op_type']==op_type) & (df['num_clients']==num_clients) & (df['multi_get_size']==mget_size)]
+                            if df_filtered.shape[0]== 0:
+                                continue
+                            print(f"n_w={n_w}   op_type={op_type}  num_clients={num_clients}   mget_size={mget_size}")
+                            generate(tp.time, df_filtered)
+                            generate(rt.time, df_filtered)
+                            #generate(qwt.time, df_filtered)
+                            #generate(ntt.time, df_filtered)
+                            #generate(wtt.time, df_filtered)
+                            #generate(sst.time, df_filtered)
+                            #generate(sst.time0, df_filtered)
+                            #generate(sst.time1, df_filtered)
+                            #generate(sst.time2, df_filtered)
+                            #generate(queue.time, df_filtered)
