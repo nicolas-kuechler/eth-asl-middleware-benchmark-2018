@@ -55,6 +55,10 @@ public class MyMiddleware {
 	}
 
 	public void run() throws IOException {
+
+		System.getProperties().setProperty("log4j2.contextSelector",
+				"org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+
 		LOG.info("Middleware Started: " + this);
 
 		Statistic.reportHeaders(mcAddresses.size());
