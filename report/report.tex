@@ -5,6 +5,8 @@
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{array}
+\usepackage{cite}
+\usepackage{float}
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -17,6 +19,7 @@
 \newcommand\Tstrut{\rule{0pt}{2.6ex}}       % "top" strut
 \newcommand\Bstrut{\rule[-0.9ex]{0pt}{0pt}} % "bottom" strut
 \newcommand{\TBstrut}{\Tstrut\Bstrut} % top&bottom struts
+\newcommand*{\escape}[1]{\texttt{\textbackslash#1}}
 
 \fancypagestyle{firstpagefooter} {
 	\lfoot{\tiny{Version: 25.09.2018}}
@@ -55,18 +58,201 @@
 \newpage
 
 \section{System Overview (75 pts)}
+\todo{check 20-35 pages}
+Describe the implementation of your system and highlight design decisions relevant for the experiments. Explain how messages are parsed and how statistics are gathered in a multi-threaded setting. Provide figures containing all the threads and queues in your system (including the network and the memcached servers). Include illustrations that show how requests of different types are handled (e.g., components involved in processing the request and method calls). Please include all details necessary to understand artifacts and effects in your experiments that arise from your implementation choices. \todo{remove}
 
-Describe the implementation of your system and highlight design decisions relevant for the experiments. Explain how messages are parsed and how statistics are gathered in a multi-threaded setting. Provide figures containing all the threads and queues in your system (including the network and the memcached servers). Include illustrations that show how requests of different types are handled (e.g., components involved in processing the request and method calls). Please include all details necessary to understand artifacts and effects in your experiments that arise from your implementation choices.
+
+The system is a middleware platform for the popular main-memory key-value store \emph{memcached}. \todo{cite memcached.org}
+It enables to balance the read workload between up to three memcached instances possibly located on different servers by replicating all writes to all memcached instances.
+
+
+\subsection{Middleware Architecture}
+\subsubsection{High-Level Overview}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{data/system-overview.png}
+	\caption{System Overview}
+\end{figure}
+\todo{do properly with pdf and number components to reference them}
+
+On start up of the middleware a configured number of worker-threads and a single net-thread are started.
+Each worker-thread builds a tcp connection to each memcached server which is kept open during the run of the middleware.
+
+
+The net-thread \emph{(NetThread.java)} listens on a configured tcp port for client requests. The different client channels are handled using a Selector.
+After decoding the incoming request in the net-thread (see \ref{request-decoding}) they are put into a queue.
+
+The worker-threads \emph{(WorkerThread.java)} take requests from the queue and process them according to their their type. (see \ref{request-processing}). Then they send back the response to the client via the channel.
+
+\subsubsection{Request}
+The middleware supports set, get and multi-get requests.
+
+Logically each request from a client is represented using an instance of \emph{SetRequest.java}, \emph{GetRequest.java} or \emph{MultiGetRequest.java}. They all inherit basic functionality from \emph{AbstractRequest.java}.
+These request objects are created in the net-thread by the decoder (see \ref{request-decoding}) and put into a \emph{BlockingQueue} where they wait to be processed by a worker-thread (see \ref{request-processing}).
+
+Apart from containing the request command, they also serve as a container for the tcp socket channel to the client and for timestamps collected at different points in the system (see \ref{measured-points}).
+\todo{write about that they contain server id}
+
+\subsubsection{Request Decoding}\label{request-decoding}
+In the net-thread the incoming requests are decoded one by one using the function \emph{decode(ByteBuffer buffer)} of the request decoder \emph{(RequestDecoder.java)}.
+Since every request needs to pass this function the decoding is done on byte level to avoid unnecessary overhead.
+Apart from checking that the client request is supported by the middleware the decoder also verifies that the request is completely read. In case the decoder encounters an unsupported operation or a malformed request \emph{(UnknownRequest.java)}, the request is discarded until a newline character is read. Then an error is returned to the client and a log entry is created. If a request is not complete yet, the decoder signals the net-thread that more is expected and the net-thread will append the next content arriving from the client channel to the same buffer to complete the request.
+
+In the following the decoding of the three different request types is explained. \todo{maybe add decoding state machine}
+
+\paragraph{SET} \texttt{set <key> <flags> <exptime> <bytes>[noreply]\textbackslash r\textbackslash n<datablock>\textbackslash r\textbackslash n} 
+
+After reading the set in the beginning of the command, the decoder skips over key, flags and expiration time before reading the bytes field to determine if the data block is complete. If the request is complete, a \emph{SetRequest.java} is created.
+
+\paragraph{GET / MULTI-GET} \texttt{get <key>\textbackslash r\textbackslash n} or \texttt{get <key1> <key2> ... <key10>\textbackslash r\textbackslash n}
+
+After reading the get in the beginning of the command, the decoder determines the number of keys and checks that the request is complete. If there is only a single key, then a \emph{GetRequest.java} is created. Otherwise a \emph{MultiGetRequest.java} is created.
+
+For get and multi-get requests the decoder assigns each request a server (or for sharded mutli-get multiple servers) in a round-robin scheme. (see more on workload balancing in \ref{workload-balancing})
+
+
+\subsubsection{Request Processing}\label{request-processing}
+
+A worker-thread takes a request from the queue and processes it depending on the request type.
+
+\emph{ServerMessage.java} by calling the \emph{getServerMessages()} function of the request object.
+
+The worker-thread sends these messages one after the other to the specified servers.
+The different channels to the servers are monitored using a Selector. Whenever a response of a server arrives it 
+is given to the request using the function \emph{putServerResponse(serverId, buffer)}. The request assembles all responses and when all arrived a response is written back to the client through the socket channel.
+
+\paragraph{Set} The request command is sent to all servers. If all servers answer with \texttt{STORED\textbackslash r\textbackslash n} then \texttt{STORED\textbackslash r\textbackslash n} is sent to the client. 
+
+If at least one server answers with an error message, then the error message which arrived last is relayed to the client.
+
+\paragraph{Get} The request command is sent to the server specified by the round-robin scheme in the net-thread.
+The response of the server is directly relayed to the client.
+
+\paragraph{MultiGet} The processing is different depending on the sharded/non-sharded mode. In case of non-sharded mode, the processing is identical to a get request where the message is sent to one server and the response is directly relayed to the client. In case of sharded mode, the request is split into up to three smaller requests\todo{explain splitting rule} . Each of them is sent to the server determined by the round-robin scheme. Then each server response is fed back to the request that is responsible for reordering the results. When all responses arrived, the reordered response is sent to the client.
+
+\subsubsection{Workload Balancing}\label{workload-balancing}
+The round robin scheme applied for get and multi-get requests allows to balance the read-workload among multiple servers.
+
+As described in \ref{request-decoding} each get and multi-get request becomes the server ids allocated in the net-thread.
+For get and multi-get requests in non-sharded mode this is only one server id. For multi-get requests in sharded mode this is a set of server ids. (if the number of keys is larger than the number of server then this will be all servers).
+
+Since the net-thread is a singleton and the request queue offers first come first served processing of requests, the order in which they are processed does not change and hence when neglecting network related effects it can be expected that the work will be distributed evenly among the available servers.
+
+Another form of work balancing takes place with the different number of worker threads. For a single worker-thread there is no balancing. \todo{continue this argument}
+
+The balancing of the read workload comes at the cost of the write-workload. Since the value in each set request is replicated in all memcached servers, the server service time is determined by the slowest server. 
+
+
+\subsubsection{Logging Infrastructure}
+
+log4j2 asynchronous loggers
+
+\todo{cite: https://logging.apache.org/log4j/2.x/manual/async.html}
+
+\subsection{Experimental Setup}
+
+\subsubsection{Measured Points}\label{measured-points}
+\paragraph{Client}
+The memtier clients provide average set/get throughput and response time.
+
+\paragraph{Middleware}
+
+In the middleware the arrival of the request, the time the request is put into the queue, the time a request is taken from the queue, the time a message has been sent to the server, the time of the server response and the time the request left the middleware are recorded.
+
+This allows to calculate response time, net-thread processing time, queue waiting time, worker-thread processing time and individual server service time per request type.
+
+In addition the throughput in the five second window is recorded.
+
+
+In addition in the net-thread the number of arrivals in five seconds window is recorded
+The length of the queue is sampled every 5 seconds.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\linewidth]{data/response-time-decomposition.png}
+	\caption{components of client response time}
+\end{figure}
+\todo{do properly with pdf and color scheme}
+
+\subsubsection{Statistic}
+
+Each worker-thread has a separate statistic unit \emph{(Statistic.java)} which is updated after the processing of each request with the method \emph{update(request)}.  
+The statistic unit is collecting online average and sample standard deviation of several metrics over a five second window using \emph{Welford's Algorithm}.\cite{Knuth:1997:ACP:270146}
+
+\begin{equation}
+	\bar{x}_n = \bar{x}_{n-1} + \frac{x_n -\bar{x}_{n-1}}{n}
+\end{equation}
+
+\begin{equation}
+	M_{2,n} = M_{2,n-1} + (x_n - \bar{x}_{n-1})(x_n - \bar{x}_n)
+\end{equation}
+
+\begin{equation}
+	s^2_n = \frac{M_{2,n}}{n-1}
+\end{equation}
+
+Every five seconds each worker logs these metrics to a log file.
+
+
+
+
+\subsubsection{Base Configuration}
+- memcached (version) 1 thread
+- 4096B values
+- memtier benchmark (version) with configuration
+\subsubsection{Simulation}\label{simulation}
+- simulated on azure cloud using up to three client, two middleware and three server virtual machines (vm) (give specs of VM's)
+- before every experiment the bandwidth between all involved virtual machines is measured using iperf \todo{cite}. This in combination with the 4096B values results in an estimate for the maximal achievable throughput for the given vm configuration and helps to identify when the network bandwidth is the bottleneck of the system.
+- baseline without middleware run separately all other experiments were run without shutting down the vm to allow comparison of results not only within an experiment but also between experiments.
+- after 10 sec warm up and cooldown phase ensured stable 1 minute throughput performance by checking coefficient of variation
+- before every run, restart all memcached instances, initialize them by filling all keys, restart mw's
+
+
+\todo{System Overview
+(Mapping code to functionality / Explanation how queues and threads are implemented 15)
+insert overview picture}
+
+- Description of the data-structures for holding connections 6 
+
+- Parsing Requests: 
+(Description how requests are parsed 6)
+\todo{insert processing schematic}
+
+- Processing of Requests in Worker:
+- Set Request
+- Get Request
+- MultiGet Request (Sharded vs Non Sharded)
+Description how SET requests are processed 6 Description how GET requests are processed 6 Description how Multi-GET requests are processed 6 
+
+- Description how work is balanced (if not round-robin: proof required) 15 
+-> here get, multiget sharded, maybe also worker balances work
+
+- Statistics (Explanations related to statistics 15)
+-> Sampling of queue size, arrival rate in 5 sec windows
+-> Welfords Algorithm Online Averages with Std Deviation within 5 sec windows, reported 5sec aggregations (allows insight std dev gives insight in window without slowing down system too much through logging)
+\todo{cite welford algorithm}
+
 
 \section{Baseline without Middleware (75 pts)}
 
-In this experiments you study the performance characteristics of the memtier clients and memcached servers.
+In this section the performance characteristics of the memtier clients and memcached servers in the azure cloud are studied.
 
 \subsection{One Server}
 
-Both, for a read-only and write-only workload plot the throughput and the response time as a function of NumClients. All clients are connected to a single memcached instance.
+%Both, for a read-only and write-only workload plot the throughput and the response time as a function of NumClients. All clients are connected to a single memcached instance.
 
-Use 3 load generating VMs, with one memtier (CT=2) each, and vary the number of virtual clients (VC) per memtier thread between 1 and 32. Show how the behavior of the server changes as we add more clients.
+%Use 3 load generating VMs, with one memtier (CT=2) each, and vary the number of virtual clients (VC) per memtier thread between 1 and 32. Show how the behavior of the server changes as we add more clients.
+
+This experiment analyses the behaviour of the system with 3 load generating VM's and a single server VM. The detailed experiment configuration is presented in the table below.
+
+For every configuration the throughput and response time as measured on the client is used.
+
+Every graph contains the sample standard deviation over the 3 repetitions as an error metric.
+To validate the measurements the interactive law with a client thinking time Z of 0 is shown in every throughput and response time graph.
+
+As mentioned in section \ref{simulation} before running the experiment the network bandwidth between the VM's was tested using \emph{iperf}. From these measurements a maximal achievable throughput was derived by considering the value size of 4096B. This bandwidth limit is also shown in the throughput graphs.
+
 
 \begin{center}
 	\scriptsize{
@@ -75,60 +261,65 @@ Use 3 load generating VMs, with one memtier (CT=2) each, and vary the number of 
 			\hline Number of client machines        & 3                        \\ 
 			\hline Instances of memtier per machine & 1                        \\ 
 			\hline Threads per memtier instance     & 2                        \\
-			\hline Virtual clients per thread       & [1..32]                  \\ 
+			\hline Virtual clients per thread       & [1, 2, 4, 8, 12, 16, 24, 32]\\ 
 			\hline Workload                         & Write-only and Read-only \\
-			\hline Multi-Get behavior               & N/A                      \\
-			\hline Multi-Get size                   & N/A                      \\
-			\hline Number of middlewares            & N/A                      \\
-			\hline Worker threads per middleware    & N/A                      \\
-			\hline Repetitions                      & 3 or more                \\ 
+			%\hline Multi-Get behavior               & N/A                      \\
+			%\hline Multi-Get size                   & N/A                      \\
+			%\hline Number of middlewares            & N/A                      \\
+			%\hline Worker threads per middleware    & N/A                      \\
+			\hline Repetitions                      & 3 (at least 1 minute each)\\ 
 			\hline 
 		\end{tabular}
-	} 
+	}
 \end{center}
 
-\todo{need better reference to the experiment}
 
 \begin{figure}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp21_ro_tp_nc.pdf}
-		%\caption{Throughput}\label{fig1a}
 	\end{subfigure}\hfill
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp21_ro_rt_nc.pdf}
-		%\caption{Response Time}\label{fig1b}
 	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in read-only workload}
+	\caption{Throughput and response time with interactive law in read-only workload with one memcached server.}
+	\label{exp21_ro_nc}
 \end{figure}
+
 
 \begin{figure}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp21_wo_tp_nc.pdf}
-		%\caption{Throughput}\label{fig1a}
 	\end{subfigure}\hfill
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp21_wo_rt_nc.pdf}
-		%\caption{Response Time}\label{fig1b}
 	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in write-only workload}
+	\caption{Throughput and response time with interactive law in write-only workload with one memcached server.}
+	\label{exp21_wo_nc}
 \end{figure}
 
 
 
 \subsubsection{Explanation}
 
-Describe in which phase the memcached servers are under-saturated, saturated, or over-saturated. Describe how throughput and response time correlate. Explain what further conclusions can be drawn from the experiment.
+%Describe in which phase the memcached servers are under-saturated, saturated, or over-saturated. Describe how throughput and response time correlate. Explain what further conclusions can be drawn from the experiment.
+
+As shown in figure \ref{exp21_ro_nc}, the throughput saturation for the read-only workload is already reached at 6 clients because the upload bandwidth of the single server VM limits the throughput. Before the experiment, the server VM upload bandwidth was measured to be 99.6 MBit/sec. When using a value size of 4096B, this results in a maximum possible throughput of 3040 ops/sec for a read-only workload because all the values need to be sent from the server VM to one of the 3 client VM's. 
+
+Consequently increasing the number of clients has almost no effect on the throughput while the response time grows linearly because more clients results in more requests on the server that wait to be sent to a client VM. \todo{maybe be more precice about why linear increase: I think more clients => more requests => every request needs to "wait" a bit longer on server vm}
+
+In figure \ref{exp21_wo_nc} it can be observed that for a write-only workload the throughput saturation is reached at 72 clients. In this experiment the bottleneck is not the bandwidth but rather the memcached server. 
+As expected the throughput first increases in the number of clients while the memcached servers are still under-saturated and then the response 
 
 
 \subsection{Two Servers}
 
-For a read-only and write-only workload plot throughput and response time as a function of NumClients. The clients are connected to two memcached instances. 
+%For a read-only and write-only workload plot throughput and response time as a function of NumClients. The clients are connected to two memcached instances. 
 
-Use 1 load generating VM, with one memtier (CT=1) connected to each memcached instance (two memcache instances in total), and vary the number of virtual clients (VC) per memtier thread between 1 and 32. Show how the behavior of the server changes and explain what conclusions we can draw from this experiment.
+%Use 1 load generating VM, with one memtier (CT=1) connected to each memcached instance (two memcache instances in total), and vary the number of virtual clients (VC) per memtier thread between 1 and 32. Show how the behavior of the server changes and explain what conclusions we can draw from this experiment.
 
 \begin{center}
 	\scriptsize{
@@ -137,69 +328,94 @@ Use 1 load generating VM, with one memtier (CT=1) connected to each memcached in
 			\hline Number of client machines        & 1                        \\ 
 			\hline Instances of memtier per machine & 2                        \\ 
 			\hline Threads per memtier instance     & 1                        \\
-			\hline Virtual clients per thread       & [1..32]                  \\ 
+			\hline Virtual clients per thread       & [1, 2, 4, 8, 12, 16, 24, 32]\\ 
 			\hline Workload                         & Write-only and Read-only \\
-			\hline Multi-Get behavior               & N/A                      \\
-			\hline Multi-Get size                   & N/A                      \\
-			\hline Number of middlewares            & N/A                      \\
-			\hline Worker threads per middleware    & N/A                      \\
-			\hline Repetitions                      & 3 or more (at least 1 minute each)                \\ 
+			%\hline Multi-Get behavior               & N/A                      \\
+			%\hline Multi-Get size                   & N/A                      \\
+			%\hline Number of middlewares            & N/A                      \\
+			%\hline Worker threads per middleware    & N/A                      \\
+			\hline Repetitions                      & 3 (at least 1 minute each) \\ 
 			\hline 
 		\end{tabular}
 	} 
 \end{center}
 
-\todo{need better reference to the experiment}
+
 
 \begin{figure}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp22_ro_tp_nc.pdf}
-		%\caption{Throughput}\label{fig1a}
 	\end{subfigure}\hfill
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp22_ro_rt_nc.pdf}
-		%\caption{Response Time}\label{fig1b}
 	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in read-only workload}
+	\caption{Throughput and response time with interactive law in read-only workload with one load generating VM.}
+	\label{exp22_ro_nc}
 \end{figure}
+
+
+
 
 \begin{figure}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp22_wo_tp_nc.pdf}
-		%\caption{Throughput}\label{fig1a}
 	\end{subfigure}\hfill
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp22_wo_rt_nc.pdf}
-		%\caption{Response Time}\label{fig1b}
 	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in write-only workload}
+	\caption{Throughput and response time with interactive law in write-only workload with one load generating VM.}
+	\label{exp22_wo_nc}
 \end{figure}
+
+
 
 \subsubsection{Explanation}
 
-Describe how this experiment compares to the previous section. Which results are the same and which ones differ? Explain what further conclusions can be drawn from the experiment.
+%Describe how this experiment compares to the previous section. Which results are the same and which ones differ? Explain what further conclusions can be drawn from the experiment.
+
+For a read-only workload the throughput saturation is reached at 8 clients, as shown in figure \ref{exp22_ro_nc}, because the upload bandwidth of the two servers limits the possible throughput. The measured total upload bandwidth between the 2 server VM's and the client VM is 199 MBit/sec which results in an estimate of 6062 ops/sec for the maximally achievable throughput when using values of 4096B. Before the saturation point is reached at 8 clients, increasing the number of clients results in a higher throughput as expected because the system is still under-saturated. \todo{maybe mention that because cutoff is so abruptly that it could be expected that with 8 clients memcached itself is not saturated at all}
+
+Using a write-only workload with values of 4096B the situation is similar but here instead of the upload bandwidth of the server VM's the bottleneck is the upload bandwidth of the load generating client VM. The measured 199 MBit/sec total upload bandwidth of the client VM limits the throughput of the system to 6062 ops/sec. So as a consequence  the throughput saturation is reached at \todo{choose either 8 or 16} clients as shown in figure \ref{exp22_wo_nc}.
 
 
 \subsection{Summary}
 
-Based on the experiments above, fill out the following table:
 
 \begin{center}
 	{Maximum throughput of different VMs.}
 	\begin{tabular}{|l|p{2cm}|p{2cm}|p{4cm}|}
 		\hline                        & Read-only workload & Write-only workload & Configuration gives max. throughput \\ 
-		\hline One memcached server   &                    &                     &                                     \\ 
-		\hline One load generating VM &                    &                     &                                     \\ 
+		\hline One memcached server   & 2962 ops/sec       & 14097 ops/sec & 6 clients for read-only 72 clients for write-only\\ 
+		\hline One load generating VM & 5878 ops/sec       &  5802 or 6012 ops/sec & 8 clients for read-only 8/16 clients for write-only\\ 
 		\hline 
 	\end{tabular}
 \end{center}
 
 
-Write at least two paragraphs about how both results relate. Describe what is the bottleneck of this setup is. If the maximum throughput for both experiments is the same, explain why. If it is not the case, explain why not. Write down key take-away messages about the behaviour of the memtier clients and the memcached servers.
+%Write at least two paragraphs about how both results relate. Describe what is the bottleneck of this setup is. If the maximum throughput for both experiments is the same, explain why. If it is not the case, explain why not. Write down key take-away messages about the behaviour of the memtier clients and the memcached servers.
+
+\paragraph{Comparison of one memcached server vs. one load generating VM}
+For a read-only workload both experiments are bound by the network upload bandwidth of the server VM(s).
+Despite the fact that they are both network bound, they have a different maximum throughput because having an additional server in the second experiment gives two times the upload bandwidth between server and client VMs and thus resulting in approximately two times the throughput.
+
+The different throughput for write-only workload is explained by considering that only the second experiment is bound by the network. Namely by the upload bandwidth of the client VM. The bottleneck in the first experiment is memcached which saturates for around 72 clients.
+
+\paragraph{Comparison of workloads}
+In the first experiment with one memcached server the throughput is different between write and read workload. This is because in a read-only workload the server needs to transport the value and some control structure which is more than 4096B. For write-only the server VM only needs to transmit the 8 byte confirmation message \texttt{STORED\textbackslash r\textbackslash n} to the client VM. 
+
+Despite the fact that in the second experiment with only one load generating VM the throughput for read-only and write-only is almost identical the bottleneck is a different part of the system. For read-only it is the upload bandwidth of the two server VMs and for the write-only workload it is the upload bandwidth of the load generating client VM.
+
+\paragraph{Key take-away messages}
+\begin{itemize}
+	\item a single server VM cannot handle more than 3000 ops/sec in a read-only workload
+	\item a single client VM cannot simulate a higher write-only workload than 6000 ops/sec
+	\item in a write-only workload the point of saturation for a single memcached server is around 14000 ops/sec
+\end{itemize}
+
 
 \section{Baseline with Middleware (90 pts)}
 
@@ -319,6 +535,7 @@ If in your experiment the middleware is not the bottleneck, repeat the experimen
 	\end{subfigure}%
 	\caption{Throughput and response time with interactive law in write-only workload}
 \end{figure}
+\todo{reference back to baseline without mw here with 2 mw's and 64 worker threads basically reach in write-only the max}
 
 \subsubsection{Explanation}
 
@@ -427,6 +644,7 @@ Based on the data provided in these tables, draw conclusions on the state of you
 For this set of experiments you will use three load generating machines, two middlewares and three memcached servers. Each memtier instance should have 2 virtual clients in total and the number of middleware worker threads is 64, or the one that provides the highest throughput in your system (whichever number of threads is smaller).
 
 For multi-GET workloads, memtier will generate a mixture of SETs, GETs, and multi-GETs. Memtier only allows to specify the maximum number of keys in a multi-GET request. Therefore, be aware that requests can also contain fewer keys than the provided value. It is recommended to record the average size of the multi-GETs. You will have to measure response time on the client as a function of multi-get size, with and without sharding on the middlewares.
+\todo{compare response time decomposition between sharded and non-sharded -> would expect sharded has longer wtt but shorter sst}
 
 \subsection{Sharded Case}
 
@@ -516,7 +734,7 @@ For the case with 6 keys inside the multi-get, display four histograms represent
 \begin{figure}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
-		\includegraphics[width=\linewidth]{data/exp51_sharded_mget6_hist_client.pdf}
+		\includegraphics[width=\linewidth]{data/exp51_sharded_mget6_hist_mw.pdf}
 		\caption{Sharded - Middleware}\label{fig1a}
 	\end{subfigure}\hfill
 	\begin{subfigure}[b]{.49\linewidth}
@@ -638,4 +856,7 @@ Build an M/M/m model based on Section 4, where each middleware worker thread is 
 
 Based on Section 3, build a network of queues which simulates your system. Motivate the design of your network of queues and relate it wherever possible to a component of your system. Motivate your choice of input parameters for the different queues inside the network. Perform a detailed analysis of the utilization of each component and clearly state what the bottleneck of your system is. Explain for which experiments the predictions of the model match and for which they do not.
 
+
+\bibliography{bibdb}{}
+\bibliographystyle{plain}
 \end{document}
