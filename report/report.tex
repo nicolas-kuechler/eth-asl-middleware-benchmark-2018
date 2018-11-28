@@ -7,6 +7,8 @@
 \usepackage{array}
 \usepackage{cite}
 \usepackage{float}
+\usepackage{multirow}
+\usepackage[]{algorithm2e}
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -59,7 +61,7 @@
 
 \section{System Overview (75 pts)}
 \todo{check 20-35 pages}
-Describe the implementation of your system and highlight design decisions relevant for the experiments. Explain how messages are parsed and how statistics are gathered in a multi-threaded setting. Provide figures containing all the threads and queues in your system (including the network and the memcached servers). Include illustrations that show how requests of different types are handled (e.g., components involved in processing the request and method calls). Please include all details necessary to understand artifacts and effects in your experiments that arise from your implementation choices. \todo{remove}
+%Describe the implementation of your system and highlight design decisions relevant for the experiments. Explain how messages are parsed and how statistics are gathered in a multi-threaded setting. Provide figures containing all the threads and queues in your system (including the network and the memcached servers). Include illustrations that show how requests of different types are handled (e.g., components involved in processing the request and method calls). Please include all details necessary to understand artifacts and effects in your experiments that arise from your implementation choices. \todo{remove}
 
 
 The system is a middleware platform for the popular main-memory key-value store \emph{memcached}. \todo{cite memcached.org}
@@ -75,15 +77,28 @@ It enables to balance the read workload between up to three memcached instances 
 	\caption{System Overview}
 \end{figure}
 \todo{do properly with pdf and number components to reference them}
+The middleware system is composed of three main components. 
+A net-thread which uses a Java Nio Selector to handle multiple socket channels to clients listens on a tcp port for client requests. and decodes the incoming requests and puts them into a queue.
 
+A request queue (\emph{LinkedBlockingQueue.java}) that buffers decoded requests while they are waiting for a worker-thread to process them.
+
+Multiple worker-threads that take requests from the queue and process them according to their type.
+
+\paragraph{Start}
+Use command line  arguments to configure the middleware.
 On start up of the middleware a configured number of worker-threads and a single net-thread are started.
 Each worker-thread builds a tcp connection to each memcached server which is kept open during the run of the middleware.
 
-
+\paragraph{Run}
 The net-thread \emph{(NetThread.java)} listens on a configured tcp port for client requests. The different client channels are handled using a Selector.
 After decoding the incoming request in the net-thread (see \ref{request-decoding}) they are put into a queue.
 
 The worker-threads \emph{(WorkerThread.java)} take requests from the queue and process them according to their their type. (see \ref{request-processing}). Then they send back the response to the client via the channel.
+
+
+\paragraph{Shutdown}
+To stop the middleware a shutdown hook was registered that listens for a linux kill command.
+Interrupt the net-thread and all worker-threads and ensures all logs have been written to the respective log file.
 
 \subsubsection{Request}
 The middleware supports set, get and multi-get requests.
@@ -92,7 +107,8 @@ Logically each request from a client is represented using an instance of \emph{S
 These request objects are created in the net-thread by the decoder (see \ref{request-decoding}) and put into a \emph{BlockingQueue} where they wait to be processed by a worker-thread (see \ref{request-processing}).
 
 Apart from containing the request command, they also serve as a container for the tcp socket channel to the client and for timestamps collected at different points in the system (see \ref{measured-points}).
-\todo{write about that they contain server id}
+
+In addition they also contain information about their assigned memcached server id.
 
 \subsubsection{Request Decoding}\label{request-decoding}
 In the net-thread the incoming requests are decoded one by one using the function \emph{decode(ByteBuffer buffer)} of the request decoder \emph{(RequestDecoder.java)}.
@@ -152,21 +168,31 @@ log4j2 asynchronous loggers
 
 \subsection{Experimental Setup}
 
-\subsubsection{Measured Points}\label{measured-points}
-\paragraph{Client}
-The memtier clients provide average set/get throughput and response time.
-
-\paragraph{Middleware}
-
-In the middleware the arrival of the request, the time the request is put into the queue, the time a request is taken from the queue, the time a message has been sent to the server, the time of the server response and the time the request left the middleware are recorded.
-
-This allows to calculate response time, net-thread processing time, queue waiting time, worker-thread processing time and individual server service time per request type.
-
-In addition the throughput in the five second window is recorded.
+\subsubsection{Metrics}\label{measured-points}
 
 
-In addition in the net-thread the number of arrivals in five seconds window is recorded
-The length of the queue is sampled every 5 seconds.
+
+\begin{tabular}{|c|l|l|}
+	\hline 
+	\textbf{Origin} & \textbf{Metric} & \textbf{Description} \Tstrut \\ 
+	\hline 
+	\multirow{2}{*}{client} & - throughput & as measured by memtier \Tstrut \\ 
+	& - response time & as measured by memtier \\ 
+	\hline 
+	\multirow{8}{*}{mw} & - throughput & per 5 second window \Tstrut \\ 
+	& - response time & time between request arrived in mw and left mw\\ 
+	& - net-thread processing time & time between request arrived and was enqueued\\  
+	& - queue waiting time & time request was in the queue \\ 
+	& - worker-thread processing time &  \\ 
+	& - server service time & time memcached needed to process the request\\  
+	& - queue length & sampled every 5 seconds \\  
+	& - request arrival rate & per 5 second window \\ 
+	\hline 
+\end{tabular} 
+\todo{write explanation of worker-thread processing time}
+
+In every graph of the report the origin of the data (i.e. middleware or client) is presented usually in the bottom right corner.
+
 
 \begin{figure}
 	\centering
@@ -178,7 +204,9 @@ The length of the queue is sampled every 5 seconds.
 \subsubsection{Statistic}
 
 Each worker-thread has a separate statistic unit \emph{(Statistic.java)} which is updated after the processing of each request with the method \emph{update(request)}.  
-The statistic unit is collecting online average and sample standard deviation of several metrics over a five second window using \emph{Welford's Algorithm}.\cite{Knuth:1997:ACP:270146}
+The statistic unit is collecting online averages and sample standard deviations of the metrics over a five second window using \emph{Welford's Algorithm}.\cite{Knuth:1997:ACP:270146}
+
+\todo{mention record count, M2 and avg => can calculate sample variance}
 
 \begin{equation}
 	\bar{x}_n = \bar{x}_{n-1} + \frac{x_n -\bar{x}_{n-1}}{n}
@@ -192,8 +220,15 @@ The statistic unit is collecting online average and sample standard deviation of
 	s^2_n = \frac{M_{2,n}}{n-1}
 \end{equation}
 
-Every five seconds each worker logs these metrics to a log file.
+Essentially this allows to get an insight into the respective metric without affecting the system performance too much through extensive logging of the performance of every single request to a file. 
 
+Every five seconds the metrics are logged to a file and then reset afterwards.
+
+This allows to calculate offline three different error every metrics for each 
+
+- standard deviation within the 5 second window
+- standard deviation of 5 second averages over the run of the middleware
+- standard deviation over experiment repetitions 
 
 
 
@@ -202,11 +237,62 @@ Every five seconds each worker logs these metrics to a log file.
 - 4096B values
 - memtier benchmark (version) with configuration
 \subsubsection{Simulation}\label{simulation}
-- simulated on azure cloud using up to three client, two middleware and three server virtual machines (vm) (give specs of VM's)
-- before every experiment the bandwidth between all involved virtual machines is measured using iperf \todo{cite}. This in combination with the 4096B values results in an estimate for the maximal achievable throughput for the given vm configuration and helps to identify when the network bandwidth is the bottleneck of the system.
+
+The simulation results were obtained using up to 8 virtual machines on the \emph{Microsoft Azure} cloud:
+\begin{itemize}
+	\item 3 Client VMs of type Basic A2 (2 vcpus, 3.5 GB memory) each running one or two instances of the \emph{memtier benchmark}
+	\item 2 Middleware of type Basic A4 (8 vcpus, 14 GB memory) running the middleware software
+	\item 3 Server VM of type Basic A1 (1 vcpus, 1.75 GB memory) each running an instance of the \emph{memcached} key value store
+\end{itemize}
+
+All experiments were orchestrated with the \emph{python} script outlined in algorithm \ref{exp-suite-algo} running on a local machine that uses temporary \emph{ssh} connections to start, initialize and stop the run of an experiment. After each run  the resulting log files were transferred to the local machine and stored in a \emph{MongoDB}.
+ 
+Before every experiment the network topology of all involved VMs was analysed by running a bandwidth test using \emph{iperf}. This in combination with the 4096B value size results in an estimate for the maximal achievable throughput for the given VM configuration and helps to identify when the network bandwidth is the bottleneck of the system.
+
+The obtained results are filtered (10 seconds warmup and cooldown phase) and aggregated off-line using \emph{MongoDB} queries before being visualized using matlibplot.
+
+\begin{algorithm}
+	\ForEach
+	{
+		experiment
+	}{
+		- measure bandwidth and ping of the current network topology using \emph{iperf} and \emph{ping}
+		
+		\ForEach{config}{
+			\ForEach
+			{
+				repetition
+			}{
+				- start all memcached instances with one thread
+				
+				- initialize all memcached instances by populating the key value store to avoid cache misses
+				
+				- start all middlewares according to the config
+				
+				- start all client benchmarks for 80 seconds with a value size of 4096B according to the config
+				
+				- wait 80 seconds
+				
+				- stop all middlewares
+				
+				- stop all memcached instances
+				
+				- transfer results using \emph{SCP}
+				
+				- store results in local \emph{MongoDB}
+			
+				- validate results
+			}
+		}
+	}
+	\caption{Each section of the report represents an experiment where different configurations were evaluated using at least three repetitions each.}\label{exp-suite-algo}
+\end{algorithm}
+
+
 - baseline without middleware run separately all other experiments were run without shutting down the vm to allow comparison of results not only within an experiment but also between experiments.
-- after 10 sec warm up and cooldown phase ensured stable 1 minute throughput performance by checking coefficient of variation
+- after 10 sec warm up and cooldown phase ensured stable 1 minute throughput performance by checking coefficient of variation. In case an external source on the cloud prevented a stable execution phase of one minute, the experiment was repeated.
 - before every run, restart all memcached instances, initialize them by filling all keys, restart mw's
+
 
 
 \todo{System Overview
