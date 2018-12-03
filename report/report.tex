@@ -60,6 +60,9 @@
 \newpage
 
 \section{System Overview (75 pts)}
+
+The column width is: \the\columnwidth
+
 \todo{check 20-35 pages}
 %Describe the implementation of your system and highlight design decisions relevant for the experiments. Explain how messages are parsed and how statistics are gathered in a multi-threaded setting. Provide figures containing all the threads and queues in your system (including the network and the memcached servers). Include illustrations that show how requests of different types are handled (e.g., components involved in processing the request and method calls). Please include all details necessary to understand artifacts and effects in your experiments that arise from your implementation choices. \todo{remove}
 
@@ -254,11 +257,11 @@ The obtained results are filtered (10 seconds warmup and cooldown phase) and agg
 \begin{algorithm}
 	\ForEach
 	{
-		experiment
+		set of experiments
 	}{
 		- measure bandwidth and ping of the current network topology using \emph{iperf} and \emph{ping}
 		
-		\ForEach{config}{
+		\ForEach{experiment}{
 			\ForEach
 			{
 				repetition
@@ -285,7 +288,7 @@ The obtained results are filtered (10 seconds warmup and cooldown phase) and agg
 			}
 		}
 	}
-	\caption{Each section of the report represents an experiment where different configurations were evaluated using at least three repetitions each.}\label{exp-suite-algo}
+	\caption{Each section of the report represents a set of experiment where different configurations were evaluated using at least three repetitions each.}\label{exp-suite-algo}
 \end{algorithm}
 
 
@@ -320,11 +323,11 @@ Description how SET requests are processed 6 Description how GET requests are pr
 \todo{cite welford algorithm}
 
 
-\section{Baseline without Middleware (75 pts)}
+\section{Baseline without Middleware (75 pts)}\label{exp2}
 
 In this section the performance characteristics of the memtier clients and memcached servers in the azure cloud are studied.
 
-\subsection{One Server}
+\subsection{One Server}\label{exp21}
 
 %Both, for a read-only and write-only workload plot the throughput and the response time as a function of NumClients. All clients are connected to a single memcached instance.
 
@@ -401,7 +404,7 @@ In figure \ref{exp21_wo_nc} it can be observed that for a write-only workload th
 As expected the throughput first increases in the number of clients while the memcached servers are still under-saturated and then the response 
 
 
-\subsection{Two Servers}
+\subsection{Two Servers}\label{exp22}
 
 %For a read-only and write-only workload plot throughput and response time as a function of NumClients. The clients are connected to two memcached instances. 
 
@@ -503,15 +506,33 @@ Despite the fact that in the second experiment with only one load generating VM 
 \end{itemize}
 
 
-\section{Baseline with Middleware (90 pts)}
+\section{Baseline with Middleware (90 pts)}\label{exp3}
 
-In this set of experiments, you will have to use 1 load generator VM and 1 memcached server, measuring how the throughput of the system changes when increasing the number of clients. Scaling virtual clients inside memtier has to be done as explained in the previous sections. Plot both throughput and response time as measured on the middleware.
+%In this set of experiments, you will have to use 1 load generator VM and 1 memcached server, measuring how the throughput of the system changes when increasing the number of clients. Scaling virtual clients inside memtier has to be done as explained in the previous sections. Plot both throughput and response time as measured on the middleware.
 
-\subsection{One Middleware}
+In this set of experiments the impact of the number of clients on the  performance of the system is studied when using 3 load generating VMs and 1 memcached server. 
 
-Connect one load generator machine (one instance of memtier with CT=2) to a single middleware and use 1 memcached server. Run a read-only and a write-only workload with increasing number of clients (between 2 and 64) and measure response time \emph{both at the client and at the middleware}, and plot the throughput and response time measured in the middleware.
+All measurements are validated using the interactive law, which describes the relationship between throughput $X$ and response time $R$ in a closed system with $N$ clients where each client has a client waiting time of $Z$ (Eq. \ref{ilaw}). For all experiments a client waiting time of $Z = 0$ is used.
 
-Repeat this experiment for different number of worker threads inside the middleware: 8, 16, 32, 64.
+\begin{equation}\label{ilaw}
+R = \frac{N}{X} - Z
+\qquad\qquad\qquad\qquad
+Error = R_{client} - (\frac{N}{X_{mw}}  - Z)
+\end{equation}
+
+However the interactive law cannot be applied directly to validate the throughput and response time measurements from the middleware.
+This is due to the fact that the middleware cannot measure the time a request needs for the transport over the network between client and middleware. This results in a shorter response time measurement in the middleware than the actual response time measured on the client.
+Hence when using the middleware response time, this would result in a throughput that is higher than the measured throughput.
+To circumvent this issue while still being able to use the interactive law as a sanity check for the collected data, the response time as measured on the client is used instead. In addition a manual check was applied that the response time differences between client and middleware measurements is approximately the round trip time between client VM and middleware VM: $R_{client} - R_{mw} \approx rtt$.
+
+
+\subsection{One Middleware}\label{exp31}
+
+%Connect one load generator machine (one instance of memtier with CT=2) to a single middleware and use 1 memcached server. Run a read-only and a write-only workload with increasing number of clients (between 2 and 64) and measure response time \emph{both at the client and at the middleware}, and plot the throughput and response time measured in the middleware.
+
+%Repeat this experiment for different number of worker threads inside the middleware: 8, 16, 32, 64.
+Three load generating VMs are connected to one middleware handling requests for a single server. 
+The number of clients is varied between 6 and 288 depending on the saturation of the system with 8, 16, 32 and 64 worker threads inside the middleware for both a read-only and write-only workload. The details of the configuration are shown in the table below.
 
 \begin{center}
 	\scriptsize{
@@ -520,59 +541,186 @@ Repeat this experiment for different number of worker threads inside the middlew
 			\hline Number of client machines        & 3                        \\ 
 			\hline Instances of memtier per machine & 1                        \\ 
 			\hline Threads per memtier instance     & 2                        \\
-			\hline Virtual clients per thread       & [1..32]                  \\ 
+			\hline Virtual clients per thread       & [1, 2, 4, 8, 12, 16, 24, 32, 48] \\ 
 			\hline Workload                         & Write-only and Read-only \\
-			\hline Multi-Get behavior               & N/A                      \\
-			\hline Multi-Get size                   & N/A                      \\
+			%\hline Multi-Get behavior               & N/A                      \\
+			%\hline Multi-Get size                   & N/A                      \\
 			\hline Number of middlewares            & 1                        \\
-			\hline Worker threads per middleware    & [8..64]                  \\
+			\hline Worker threads per middleware    & [8, 16, 32, 64]                  \\
 			\hline Repetitions                      & 3 or more (at least 1 minute each)                \\ 
 			\hline 
 		\end{tabular}
 	} 
 \end{center}
 
-\todo{need better reference to the experiment}
 
-\begin{figure}
-	\begin{subfigure}[b]{.49\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{data/exp31_ro_tp_nc_w.pdf}
-		%\caption{Throughput}\label{fig1a}
-	\end{subfigure}\hfill
-	\begin{subfigure}[b]{.49\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{data/exp31_ro_rt_nc_w.pdf}
-		%\caption{Response Time}\label{fig1b}
-	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in read-only workload}
-\end{figure}
+The minor deviations from the interactive law in the table \ref{exp31_ilaw} result from small differences in the measured average throughput on client and middleware. This can be explained because the warmup and cooldown phase are excluded in the middleware measurements while they are present in the measurements from \emph{memtier benchmark}. As the number of clients increases the deviations also increase but when putting that into relation with the response time measurements they remain marginal. This confirms that the interactive law holds for all measurements in this section.
 
-\begin{figure}
-	\begin{subfigure}[b]{.49\linewidth}
+
+\begin{table}
+	\scriptsize{
 		\centering
-		\includegraphics[width=\linewidth]{data/exp31_wo_tp_nc_w.pdf}
-		%\caption{Throughput}\label{fig1a}
-	\end{subfigure}\hfill
-	\begin{subfigure}[b]{.49\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{data/exp31_wo_rt_nc_w.pdf}
-		%\caption{Response Time}\label{fig1b}
-	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in write-only workload}
-\end{figure}
+		\setlength{\tabcolsep}{4.5pt}
+		\begin{tabular}{|cr|*{9}{r}|*{7}{r}|}
+			\cline{3-18}
+			\multicolumn{2}{c|}{} & \multicolumn{9}{c|}{number of clients} & \multicolumn{7}{c|}{number of clients} \Tstrut\\
+			\multicolumn{2}{c|}{} & 6 & 12 & 24 & 48 & 72 & 96 & 144 & 192 & 288 & 6 & 12 & 24 & 48 & 72 & 96 & 144 \\
+			\hline
+			\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=c]{90}{worker}}} & 8 & 0.0 & -0.1 & 0.0 & 0.1 & 0.3 & 0.6 & - & - & - & 0.0 & 0.1 & 0.3 & 0.4 & 1.3 & 2.0 & 1.8\Tstrut\\
+			& 16 & -0.1 & 0.0 & 0.0 & 0.1 & 0.1 & 0.2 & 0.0 & 0.4 & - & 0.0 & 0.0 & 0.1 & 0.9 & 1.2 & 1.0 & 1.1 \\
+			& 32 & -0.1 & -0.1 & 0.0 & 0.0 & 0.0 & 0.1 & 0.2 & 0.2 & - & 0.0 & 0.0 & 0.2 & 0.6 & 0.5 & 0.7 & 1.1 \\
+			& 64 & 0.0 & 0.0 & 0.0 & 0.0 & -0.2 & 0.0 & 0.1 & 0.2 & 0.9 & 0.0 & 0.0 & 0.1 & 0.5 & 0.5 & 0.7 & 1.1 \\
+			& & \multicolumn{9}{c|}{in milliseconds} & \multicolumn{7}{c|}{in milliseconds}\\
+			\hline
+			\multicolumn{2}{c}{} & \multicolumn{9}{c}{write-only} & \multicolumn{7}{c}{read-only} \Tstrut\\ 
+		\end{tabular}
+		\caption{Interactive law response time deviations in milliseconds from client measurements in setting with one middleware according to equation \ref{ilaw}.}\label{exp31_ilaw}
+	}
+\end{table}
+
 
 \subsubsection{Explanation}
 
-Provide a detailed analysis of the results (e.g., bottleneck analysis, component utilizations, average queue lengths, system saturation). Add any additional figures and experiments that help you illustrate your point and support your claims.
+\paragraph{Read-Only Workload}
 
-\subsection{Two Middlewares}
+\begin{figure}
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_ro_tp_nc_w.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_ro_rt_nc_w.pdf}
+	\end{subfigure}%
+	\caption{Throughput and response time in read-only workload for the system with a single middleware for different number of clients. The sample standard deviation over the experiment repetitions is used as the error metric in both graphs.}\label{exp31_ro_tp_nc}
+\end{figure}
 
-Connect one load generator machine (two instances of memtier with CT=1) to two middlewares and use 1 memcached server. Run a read-only and a write-only workload with increasing number of clients (between 2 and 64) and measure response time \emph{both at the client and at the middleware}, and plot the throughput and response time as measured in the middleware.
+As described in section \ref{exp2} the read-only workload with a single \emph{memcached} server VM and values of size of 4096B is bound to around 3000 ops/sec by the upload bandwidth of the server VM. This phenomena is also clearly visible in figure \ref{exp31_ro_tp_nc} when using a single middleware in between client VMs and server VM. Consequently the point of throughput saturation of a read-only workload is reached already with 6 clients. 
 
-Repeat this experiment for different number of worker threads inside the middleware: 8, 16, 32, 64.
+In the following it is analysed how this network bandwidth bottleneck manifests itself in the middleware measurements.
 
-If in your experiment the middleware is not the bottleneck, repeat the experiment that reaches the highest throughput but using two load generator VMs (each with 2x memtier CT=1) instead of one. Otherwise, explain how you know that the middlewares are the limiting factor in terms of throughput.
+As long as the number of clients is less than the number of workers in the middleware the request queue in the middleware is empty (Fig. \ref{exp31_ro_q}). This is because the number of clients in a closed system put a limit on the number of requests that can be concurrently in the system. 
+So when there are more worker-threads than possible requests in the system, every request placed in the queue is processed immediately by one of the idle workers. This is a fact that holds independently of the network bottleneck. 
+
+Figure \ref{exp31_ro_tp_nc} shows that the response time is not affected by the number of worker-threads because already using 8 workers is enough in combination with 12 clients to reach the network bottleneck so adding more workers cannot improve the throughput. 
+However as the number of clients are increased the response time also increases because as explained above the requests that cannot be sent through the network bottleneck are queued on the server or when all workers are already waiting for a response from a server then queued in the middleware.
+
+An interesting observation is made when looking at the different components of the response time.
+The queue waiting time and the server service time are the two dominant factors of the response time as measured on the client while the network-, the net-thread decoding- and worker-thread processing time are negligibly small  (Fig. \ref{exp31_ro_rtcomp}). As the number of workers increases, requests spend less time in the queue and instead stay longer on the server VM where they are waiting in front of the network bottleneck. 
+So the number of workers does not influence the response time but it influences if the requests are queued in the middleware or on the server VM.
+
+The server service time increases up to the point where are all workers are busy and the queue starts to fill up and afterwards it remains constant because the number of workers in the middleware limit the number of requests that can be concurrently at the server VM and hence need to be sent through the network bottleneck. (Fig. \ref{exp31_ro_sst})
+
+
+%Provide a detailed analysis of the results (e.g., bottleneck analysis, component utilizations, average queue lengths, system saturation). Add any additional figures and experiments that help you illustrate your point and support your claims.
+
+
+\begin{figure}
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_ro_queue_nc_w.pdf}
+		\caption{}\label{exp31_ro_q}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_ro_sst_nc_w.pdf}
+		\caption{}\label{exp31_ro_sst}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_ro_rt_component_w.pdf}
+		\caption{}\label{exp31_ro_rtcomp}
+	\end{subfigure}
+	\caption{Queue size and server service time with varying number of clients and client response-time component analysis for 96 clients with different number of worker-threads in a read-only workload with one middleware.}
+\end{figure}
+
+
+\paragraph{Write-Only Workload}
+
+
+The data in figure \ref{exp31_wo_tp_nc} indicates that the throughput saturates for different number of clients when varying the number of worker-threads. This is because there is a trade-off between server service time and queueing time in the middleware when using a different number of workers. For fewer worker, requests start to queue up already with a smaller number of clients because the number of worker-threads controls how many requests can be sent to the server concurrently. However with more requests at the server concurrently, the server also has a longer server service time for each of them.
+
+The throughput saturation for 8 workers is reached at \todo{x} clients, for 16 workers at \todo{x} clients, for 32 workers at \todo{x} clients and for 64 workers at \todo{x} clients.
+
+For every number of worker-threads eventually the waiting time in the queue becomes the dominant factor in the response time when all workers are busy waiting for a response from the server.
+
+The component utilization figure shows that the bottleneck in the system is the number of worker-threads in the middleware that are waiting concurrently for a response of the server. This suggests that increasing the number of worker-threads would further benefit the throughput. However, the increasing server service time for an individual request with a larger number of worker-threads places a limit on this throughput increase.
+
+When there are more clients than worker-threads, then the number of requests in the queue is approximately equal to the difference between number of clients and number of worker-threads.
+
+As in the read-only workload the net-thread decoding and worker-thread processing time remain negligible factors in the response time.
+
+
+
+
+\begin{figure}
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_wo_tp_nc_w.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_wo_rt_nc_w.pdf}
+	\end{subfigure}
+	\caption{Throughput and response time in write-only workload for the system with a single middleware for different number of clients. The sample standard deviation over the experiment repetitions is used as the error metric in both graphs.}\label{exp31_wo_tp_nc}
+\end{figure}
+
+
+\begin{figure}
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_wo_queue_nc_w.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_wo_sst_nc_w.pdf}
+	\end{subfigure}\hfill
+	\caption{Number of requests in queue per middleware and average server service time per request in a write-only workload with one middleware. Both graphs show the sample standard deviation over the repetitions as error metric.}\label{exp31_wo_queue_sst_nc}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_wo_util_nc_w16.pdf}
+		\caption{16 worker-threads}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_wo_util_nc_w64.pdf}
+		\caption{64 worker-threads}
+	\end{subfigure}\hfill
+	\caption{Component utilization between 6 and 192 clients in a write-only workload with one middleware.}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_wo_component_nc_w16.pdf}
+		\caption{16 worker-threads}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp31_wo_component_nc_w64.pdf}
+		\caption{64 worker-threads}
+	\end{subfigure}\hfill
+	\caption{Response time components between 6 and 192 clients in a write-only workload with one middleware.}
+\end{figure}
+
+
+
+
+\subsection{Two Middlewares}\label{exp32}
+
+%Connect one load generator machine (two instances of memtier with CT=1) to two middlewares and use 1 memcached server. Run a read-only and a write-only workload with increasing number of clients (between 2 and 64) and measure response time \emph{both at the client and at the middleware}, and plot the throughput and response time as measured in the middleware.
+
+%Repeat this experiment for different number of worker threads inside the middleware: 8, 16, 32, 64.
+
+%If in your experiment the middleware is not the bottleneck, repeat the experiment that reaches the highest throughput but using two load generator VMs (each with 2x memtier CT=1) instead of one. Otherwise, explain how you know that the middlewares are the limiting factor in terms of throughput.
+
+
+Three load generating VMs are connected to two middlewares handling requests for a single server. 
+The number of clients is varied between 6 and 384 depending on the saturation of the system with 8, 16, 32 and 64 worker-threads inside the middleware for both a read-only and write-only workload. The details of the configuration are shown in the table below.
+
 
 \begin{center}
 	\scriptsize{
@@ -581,65 +729,181 @@ If in your experiment the middleware is not the bottleneck, repeat the experimen
 			\hline Number of client machines        & 3                        \\ 
 			\hline Instances of memtier per machine & 2                        \\ 
 			\hline Threads per memtier instance     & 1                        \\
-			\hline Virtual clients per thread       & [1..32]                  \\ 
+			\hline Virtual clients per thread       & [1, 2, 4, 8, 12, 16, 24, 32, 48, 64] \\ 
 			\hline Workload                         & Write-only and Read-only \\
-			\hline Multi-Get behavior               & N/A                      \\
-			\hline Multi-Get size                   & N/A                      \\
+			%\hline Multi-Get behavior               & N/A                      \\
+			%\hline Multi-Get size                   & N/A                      \\
 			\hline Number of middlewares            & 2                        \\
-			\hline Worker threads per middleware    & [8..64]                  \\
+			\hline Worker threads per middleware    & [8, 16, 32, 64]                  \\
 			\hline Repetitions                      & 3 or more (at least 1 minute each)                \\ 
 			\hline 
 		\end{tabular}
 	} 
 \end{center}
-\todo{need better reference to the experiment}
+
+As explained in the setting with one middleware the minor deviations from the interactive law in the table \ref{exp32_ilaw} result from small differences in the measured average throughput on client and middleware.
+As the number of clients increases the deviations also increase but when putting that into relation with the response time measurements they remain marginal. This confirms that the interactive law holds for all measurements in this section.
+
+\begin{table}
+	\scriptsize{
+		\centering
+		\setlength{\tabcolsep}{4.5pt}
+		\begin{tabular}{|cr|*{10}{r}|*{7}{r}|}
+			\cline{3-19}
+			\multicolumn{2}{c|}{} & \multicolumn{10}{c|}{number of clients} & \multicolumn{7}{c|}{number of clients} \Tstrut\\
+			\multicolumn{2}{c|}{} & 6 & 12 & 24 & 48 & 72 & 96 & 144 & 192 & 288 & 384 & 6 & 12 & 24 & 48 & 72 & 96 & 144 \\
+			\hline
+			\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=c]{90}{worker}}} & 8 & 0.0 & 0.0 & 0.0 & 0.1 & 0.2 & 0.4 & 0.6 & 0.7 & 1.1 & - & 0.0 & 0.0 & 0.2 & 0.8 & 1.0 & 1.4 & 2.0\Tstrut\\
+			& 16 & 0.0 & 0.0 & 0.0 & 0.0 & 0.1 & 0.1 & 0.3 & 0.5 & 0.9 & - & 0.0 & 0.0 & 0.3 & 0.6 & 1.1 & 1.6 & 1.9 \\
+			& 32 & -0.1 & -0.1 & -0.1 & 0.0 & 0.1 & 0.2 & 0.3 & 0.4 & 0.6 & - & 0.0 & 0.1 & 0.4 & 1.0 & 1.2 & 1.6 & 2.9 \\
+			& 64 & -0.1 & -0.1 & 0.0 & 0.1 & 0.1 & 0.1 & 0.3 & 0.2 & 0.4 & 0.3 & 0.0 & 0.1 & 0.3 & 0.8 & 1.1 & 1.4 & 2.5 \\
+			& & \multicolumn{10}{c|}{in milliseconds} & \multicolumn{7}{c|}{in milliseconds}\\
+			\hline
+			\multicolumn{2}{c}{} & \multicolumn{10}{c}{write-only} & \multicolumn{7}{c}{read-only} \Tstrut\\ 
+		\end{tabular}
+		
+		\caption{Interactive law response time deviations in milliseconds from client measurements in the setting with two middlewares according to equation \ref{ilaw}.}\label{exp32_ilaw}
+	}
+\end{table}
+
+
+\subsubsection{Explanation}
+
+%Provide a detailed analysis of the results (e.g., bottleneck analysis, component utilizations, average queue lengths, system saturation). Add any additional figures and experiments that help you illustrate your point and support your claims.
+
+\paragraph{Read-Only Workload}
 
 \begin{figure}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp32_ro_tp_nc_w.pdf}
-		%\caption{Throughput}\label{fig1a}
 	\end{subfigure}\hfill
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp32_ro_rt_nc_w.pdf}
-		%\caption{Response Time}\label{fig1b}
 	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in read-only workload}
+	\caption{Throughput and response time in read-only workload for the system with a two middlewares for different number of clients. The sample standard deviation over the experiment repetitions is used as the error metric in both graphs.}\label{exp32_ro_tp_nc}
 \end{figure}
+
+As seen in the setting with a single middleware the read-workload is bound by the upload bandwidth of the server VM. Since the bottleneck is not related to the middleware it is no surprise that adding an additional middleware does not change the observed behaviour and the throughput saturation is still reached at 6 clients independent of the number of worker-threads. (Fig. \ref{exp32_ro_tp_nc})
+
+However since the two middlewares share the workload, each middleware has only half of the clients.
+Thus requests are only starting to be queued up when there are two times more clients than worker-threads (Fig \ref{exp32_ro_q}).
+The same holds for the server service times that start becoming constant in the number of clients when there are more than two times more clients than worker-threads but for the same reasons outlined in section \ref{exp31}. 
+The trade-off between queue waiting time and server service time as the dominating components of the response time is also evident in the setting with two middlewares (Fig. \ref{exp32_ro_rtcomp}) and so the number of workers does still not influence the total response time but it influences in which part of the system the requests are queued.
+
+
+
+\begin{figure}
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_ro_queue_nc_w.pdf}
+		\caption{}\label{exp32_ro_q}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_ro_sst_nc_w.pdf}
+		\caption{}\label{exp32_ro_sst}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_ro_rt_component_w.pdf}
+		\caption{}\label{exp32_ro_rtcomp}
+	\end{subfigure}
+	\caption{Queue size and server service time with varying number of clients and client response-time component analysis for 144 clients with different number of worker-threads in a read-only workload with two middlewares.}
+\end{figure}
+
+\paragraph{Write-Only Workload}
+
+In the write-only workload the system with two middlewares behaves in a similar way as the system with one middleware. 
+As shown in figure \ref{exp32_wo_util_nc} the bottleneck remains the number of worker-threads that are waiting for a server response, while the server service time depends only on the number of busy worker-threads (Fig. \ref{exp32_wo_rtcomp_nc})
+
+
+However, by adding an additional middleware the total number worker-threads in the system is multiplied by two and hence the maximal throughput achieved in the experiments is higher for the same number of worker-threads per middleware.
+For 8 worker-threads per middleware the point of saturation is reached with \todo{x} clients, for 16 workers with \todo{x} clients, for 32 workers with {x} clients and for 64 workers with \todo{x} clients.  \todo{maybe reduce to 64 workers}
+
+
+The collected data indicates that the total number of worker-threads in the system is the decisive factor for performance.
+So essentially the system with two middlewares has a similar performance to the system with one middleware with two times as many worker-threads. (i.e. system with two middlewares with 32 workers each has approximately the same performance as the system with a single middleware with 64 worker-threads)
+This results from the fact that neither the net-thread nor the middleware VM network bandwidth is the bottleneck and so by duplicating the middleware VM the only performance gain is the consequence of more worker-threads in the system.
+The total number of worker-threads in the system affect the performance because the server service time depends only on the number of worker-threads that are sending requests concurrently. (Fig. \ref{exp31_wo_queue_sst_nc} and \ref{exp32_wo_queue_sst_nc})
+Consequently each request needs to wait in the queue for approximately the same time and hence the total response time is the same which leads to the same throughput in systems with the same number of total worker-threads. (Fig. \ref{exp31_wo_tp_nc} and \ref{exp32_wo_tp_nc})
+
+The system with one middleware has on average two times as many requests in the queue compared to each queue in the system with two middlewares but the total number of requests in the whole system that are waiting in a middleware queue is the same when the total number of workers is identical. (Fig. \ref{exp31_wo_queue_sst_nc} and \ref{exp32_wo_queue_sst_nc})
+
+
+
 
 \begin{figure}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp32_wo_tp_nc_w.pdf}
-		%\caption{Throughput}\label{fig1a}
 	\end{subfigure}\hfill
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp32_wo_rt_nc_w.pdf}
-		%\caption{Response Time}\label{fig1b}
 	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in write-only workload}
+	\caption{Throughput and response time in write-only workload for the system with a two middlewares for different number of clients. The sample standard deviation over the experiment repetitions is used as the error metric in both graphs.}\label{exp32_wo_tp_nc}
 \end{figure}
-\todo{reference back to baseline without mw here with 2 mw's and 64 worker threads basically reach in write-only the max}
+\todo{mention with 64 worker almost reach 14k throughput from baseline}
 
-\subsubsection{Explanation}
 
-Provide a detailed analysis of the results (e.g., bottleneck analysis, component utilizations, average queue lengths, system saturation). Add any additional figures and experiments that help you illustrate your point and support your claims.
+
+\begin{figure}
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_wo_queue_nc_w.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_wo_sst_nc_w.pdf}
+	\end{subfigure}\hfill
+	\caption{Number of requests in queue per middleware and average server service time per request in a write-only workload with two middlewares. Both graph show the sample standard deviation over the repetitions as error metric.}\label{exp32_wo_queue_sst_nc}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_wo_util_nc_w16.pdf}
+		\caption{16 worker-threads}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_wo_util_nc_w64.pdf}
+		\caption{64 worker-threads}
+	\end{subfigure}\hfill
+	\caption{Component utilization between 6 and 288 clients in a write-only workload with two middlewares.}\label{exp32_wo_util_nc}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_wo_component_nc_w16.pdf}
+		\caption{16 worker-threads}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.499\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp32_wo_component_nc_w64.pdf}
+		\caption{64 worker-threads}
+	\end{subfigure}\hfill
+	\caption{Response time components between 6 and 288 clients in a write-only workload with two middlewares.}\label{exp32_wo_rtcomp_nc}
+\end{figure}
+
+
 
 \subsection{Summary}
 
-Based on the experiments above, fill out the following table. For both of them use the numbers from a single experiment to fill out all lines. Miss rate represents the percentage of GET requests that return no data. Time in the queue refers to the time spent in the queue between the net-thread and the worker threads.
-
+%Based on the experiments above, fill out the following table. For both of them use the numbers from a single experiment to fill out all lines. Miss rate represents the percentage of GET requests that return no data. Time in the queue refers to the time spent in the queue between the net-thread and the worker threads.
+\todo{ask question per e-mail that its okay to use two different configurations for workloads}
 
 \begin{center}
 	{Maximum throughput for one middleware.}
 	\begin{tabular}{|l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
-		\hline                                & Throughput & Response time & Average time in queue & Miss rate \\ 
-		\hline Reads: Measured on middleware  &            &               &                       &           \\ 
-		\hline Reads: Measured on clients     &            &               & n/a                   &           \\ 
-		\hline Writes: Measured on middleware &            &               &                       & n/a       \\ 
-		\hline Writes: Measured on clients    &            &               & n/a                   & n/a       \\ 
+		\hline                                & Throughput [ops/sec] & Response time [ms] & Average time in queue [ms] & Miss rate \\ 
+		\hline Reads: Measured on middleware  &                 2814 &                1.2 &                        0.1 & 0.0       \\ 
+		\hline Reads: Measured on clients     &                 2780 &                2.2 &                        n/a & 0.0       \\ 
+		\hline Writes: Measured on middleware &                12030 &                9.8 &                        4.6 & n/a       \\ 
+		\hline Writes: Measured on clients    &                12144 &                11.8 &                       n/a & n/a       \\ 
 		\hline 
 	\end{tabular}
 \end{center}
@@ -647,23 +911,53 @@ Based on the experiments above, fill out the following table. For both of them u
 \begin{center}
 	{Maximum throughput for two middlewares.}
 	\begin{tabular}{|l|p{2cm}|p{2cm}|p{2cm}|p{2cm}|}
-		\hline                                & Throughput & Response time & Average time in queue & Miss rate \\ 
-		\hline Reads: Measured on middleware  &            &               &                       &           \\ 
-		\hline Reads: Measured on clients     &            &               & n/a                   &           \\ 
-		\hline Writes: Measured on middleware &            &               &                       & n/a       \\ 
-		\hline Writes: Measured on clients    &            &               & n/a                   & n/a       \\ 
+		\hline                                & Throughput [ops/sec] & Response time [ms] & Average time in queue [ms] & Miss rate \\ 
+		\hline Reads: Measured on middleware  &                 2869 &                1.2 &                        0.1 & 0.0       \\ 
+		\hline Reads: Measured on clients     &                 2827 &                2.1 &                        n/a & 0.0       \\ 
+		\hline Writes: Measured on middleware &                13569 &               12.8 &                        3.5 & n/a       \\ 
+		\hline Writes: Measured on clients    &                13776 &               14.0 &                        n/a & n/a       \\ 
 		\hline 
 	\end{tabular}
 \end{center}
 
-Based on the data provided in these tables, write at least two paragraphs summarizing your findings about the performance of the middleware in the baseline experiments.
+%Based on the data provided in these tables, write at least two paragraphs summarizing your findings about the performance of the middleware in the baseline experiments.
+
+\paragraph{Analysis}
+
+As shown in sections \ref{exp31} and \ref{exp32} the read-only workload is independent of the number of middlewares in the setup with one server VM and thus in the follwing results are summarized for systems with both one and two middlewares together.
+The optimal number of clients for the read-only workload is somewhere in between 6 and 12 clients but the configuration with 12 clients is already strongly affected by the bandwidth bottleneck and results in a response time that is almost two times as long with only a small gain in throughput. So under the evaluated configurations the maximum throughput is achieved with 6 clients and is independent of the number of worker-threads. Thus there is no point in using more than 8 workers. 
+There are no misses because before every experiment \emph{memcached} is initialized with all keys and thus misses have no influence on the response time. Since in the optimal configuration the number of worker threads is greater than the number of clients the queue basically remains empty and consequently the average time of a request in the queue is a negligible factor in the response time.
+
+For a write-only workload the maximum throughput  in the system with a single middleware is achieved with 144 clients and 64 middleware worker-threads. In the system with two middlewares the point of throughput saturation is reached at 192 clients when using 64 worker-threads per middleware. The maximum throughput of the system involving two middlewares comes close to the maximum throughput of 14000 ops/sec recorded in the baseline without a middleware\footnote{The experiments of this section were run after restarting the VMs used in the baseline without middleware and so the measurements are not perfectly comparable but they should be close enough.} which poses an upper bound on what can be achieved for a write-only workload. It can be concluded that the overhead of using a middleware in a write-only workload with a single server is minimal.
+
+Since in both setups there are more clients than worker-threads, requests usually spend some time waiting in the queue. However, the additionally gained throughput outweighs the longer response time incurred by this waiting.
+
+The difference between response time measurements on the client and the middleware is between 1 and 2 milliseconds for both workloads which is consistent with the round trip time measurements between the involved VMs using \emph{ping}. The small difference in throughput measurements can be explained by the exclusion of warm up and cooldown phase in the middleware. 
+
+\paragraph{One middleware vs. two middlewares}
+
+For the read-only workload having one or two middlewares does not make a difference because the server VM network bottleneck is not affected by the number of middlewares in the system.
+
+For a write-only workload the maximal throughput achieved with two middlewares is higher than with a single middleware but  this is only an indirect consequence of having an additional middleware because the maximum total number of workers evaluated in the two systems is different and this is the important parameter for the performance as outlined in section \ref{exp32}. The maximal throughput in the system with two middlewares is achieved with 64 worker-threads per middleware and thus 128 workers in total. The configuration with a single middleware and 128 worker-threads was not evaluated but the data indicates that this could produce a similar performance assuming the middleware VM does not start to get a problem with context switches or another effect slowing down individual threads.
+
+
+
+\paragraph{Key take-away messages}
+\begin{itemize}
+	\item the number of worker-threads is the decisive factor for performance in a write-only workload
+	\item with two middlewares and the resulting 128 worker-threads the maximal throughput of the baseline without middleware is almost reached
+	\item round trip time between client and middleware VM is varying between 1 and 2 milliseconds
+\end{itemize}
 
 \section{Throughput for Writes (90 pts)}
 
 \subsection{Full System}
 
-Connect three load generating VMs to two middlewares and three memchached servers. Run a write-only experiment. 
-You need to plot throughput and response time measured on the middleware as a function of number of clients. The measurements have to be performed for 8, 16, 32 and 64 worker threads inside each middleware.
+%Connect three load generating VMs to two middlewares and three memchached servers. Run a write-only experiment. 
+%You need to plot throughput and response time measured on the middleware as a function of number of clients. The measurements have to be performed for 8, 16, 32 and 64 worker threads inside each middleware.
+Three load generating VMs are connected to a system  consisting of two middleware VMs and three server VMs running \emph{memcached}.
+The number of clients is varied between 6 and 384 and the performance of a write-only workload is evaluated for configurations with 8, 16, 32 and 64 worker-threads per middleware. The details of the configuration are shown in the table below.
+
 
 \begin{center}
 	\scriptsize{
@@ -672,53 +966,119 @@ You need to plot throughput and response time measured on the middleware as a fu
 			\hline Number of client machines        & 3          \\ 
 			\hline Instances of memtier per machine & 2          \\ 
 			\hline Threads per memtier instance     & 1          \\
-			\hline Virtual clients per thread       & [1..32]    \\ 
+			\hline Virtual clients per thread       & [1, 2, 4, 8, 12, 16, 24, 32, 48, 64]    \\ 
 			\hline Workload                         & Write-only \\
-			\hline Multi-Get behavior               & N/A        \\
-			\hline Multi-Get size                   & N/A        \\
+			%\hline Multi-Get behavior               & N/A        \\
+			%\hline Multi-Get size                   & N/A        \\
 			\hline Number of middlewares            & 2          \\
-			\hline Worker threads per middleware    & [8..64]    \\
+			\hline Worker threads per middleware    & [8, 16, 32, 64]    \\
 			\hline Repetitions                      & 3 or more (at least 1 minute each)  \\ 
 			\hline 
 		\end{tabular}
 	} 
 \end{center}
 
-\todo{need better reference to experiment}
+Table \ref{exp41_ilaw} shows that the interactive law holds for all measurements shown in this set of experiments. As previously stated the small differences in response time are a result of small throughput measurement differences between client and middleware.
+
+
+\begin{table}
+	\scriptsize{
+		\centering
+		\setlength{\tabcolsep}{4.5pt}
+		\begin{tabular}{|cr|*{10}{r}|}
+			\cline{3-12}
+			\multicolumn{2}{c|}{} & \multicolumn{10}{c|}{number of clients} \Tstrut\\
+			\multicolumn{2}{c|}{} & 6 & 12 & 24 & 48 & 72 & 96 & 144 & 192 & 288 & 384 \\
+			\hline
+			\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=c]{90}{worker}}} & 8 & -0.1 & 0.0 & 0.0 & 0.1 & 0.1 & 0.3 & 0.7 & 1.0 & 1.6 & 1.8\Tstrut\\
+			& 16 & -0.1 & -0.1 & 0.0 & 0.0 & 0.1 & 0.0 & 0.4 & 0.2 & 1.0 & 2.7 \\
+			& 32 & -0.1 & -0.1 & 0.0 & 0.0 & 0.0 & 0.1 & 0.2 & 0.4 & 0.7 & 0.5 \\
+			& 64 & -0.1 & -0.1 & 0.0 & 0.0 & 0.1 & 0.1 & 0.2 & 0.3 & 0.3 & 0.9 \\
+			& & \multicolumn{10}{c|}{in milliseconds} \\
+			\hline
+			\multicolumn{2}{c}{} & \multicolumn{10}{c}{write-only} \Tstrut\\ 
+		\end{tabular}
+		\caption{Interactive law response time deviations in milliseconds from client measurements in the full system according to equation \ref{ilaw}.}\label{exp41_ilaw}
+	}
+\end{table}
+
+
+
 \begin{figure}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp41_wo_tp_nc_w.pdf}
-		%\caption{Throughput}\label{fig1a}
 	\end{subfigure}\hfill
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp41_wo_rt_nc_w.pdf}
-		%\caption{Response Time}\label{fig1b}
 	\end{subfigure}%
-	\caption{Throughput and response time with interactive law in write-only workload}
+	\caption{Throughput and response time in a write-only workload in the full system with different number of worker-threads per middleware as a function of the number of clients. Both graphs show the sample standard deviation of the measurements over the repetitions as an error metric.}\label{exp41_tp_rt_nc}
+\end{figure}
+
+
+\begin{figure}
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp41_util_nc_w8.pdf}
+		\caption{8 worker-threads}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp41_util_nc_w64.pdf}
+		\caption{64 worker-threads}
+	\end{subfigure}%
+	\caption{Component utilization}\label{exp41_util_nc}
+\end{figure}
+
+
+\begin{figure}
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp41_sst_detail_nc_w8.pdf}
+		\caption{8 worker-threads}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp41_sst_detail_nc_w64.pdf}
+		\caption{64 worker-threads}
+	\end{subfigure}%
+	\caption{Server service time per server}\label{exp41_sst_detail_nc}
 \end{figure}
 
 
 
 \subsubsection{Explanation}
 
-Provide a detailed analysis of the results (e.g., bottleneck analysis, component utilizations, average queue lengths, system saturation). Add any additional figures and experiments that help you illustrate your point and support your claims.
+%Provide a detailed analysis of the results (e.g., bottleneck analysis, component utilizations, average queue lengths, system saturation). Add any additional figures and experiments that help you illustrate your point and support your claims.
+
+\begin{itemize}
+	\item bottleneck is the number of worker-threads (see component utilization)
+	\item particular problem of write-only workload worker needs to wait for response from all servers and so the slowest server determines effect
+	\item this waiting for slowest server is reason performance in middleware baseline cannot be replicated
+	\item vm placement huge impact, here in experiments consistently server 2 slowest and hence automatically becomes part of the bottleneck
+\end{itemize}
 
 \subsection{Summary}
 
 Based on the experiments above, fill out the following table with the data corresponding to the maximum throughput point for all four worker-thread scenarios.
+\begin{itemize}
+	\item wt=8 48 clients
+	\item wt=16 72 clients
+	\item wt=32 96 clients
+	\item wt=64 144 clients
+\end{itemize}
 
 \begin{center}
 	{Maximum throughput for the full system}
 	\begin{tabular}{|l|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|}
-		\hline                                            & WT=8 & WT=16 & WT=32 & WT=64 \\ 
-		\hline Throughput (Middleware)                    &      &       &       &       \\ 
-		\hline Throughput (Derived from MW response time) &      &       &       &       \\ 
-		\hline Throughput (Client)                        &      &       &       &       \\ 
-		\hline Average time in queue                      &      &       &       &       \\ 
-		\hline Average length of queue                    &      &       &       &       \\ 
-		\hline Average time waiting for memcached         &      &       &       &       \\ 
+		\hline                                            			& WT=8 & WT=16 & WT=32 & WT=64 \\ 
+		\hline Throughput [ops/sec] (Middleware)                    & 6262 &  8102 & 10154 & 11206 \\ 
+		\hline Throughput [ops/sec] (Derived from MW response time) & 6057 &  8081 & 10186 & 11562 \\ 
+		\hline Throughput [ops/sec] (Client)              			& 6389 &  8250 & 10242 & 11391 \\ 
+		\hline Average time in queue [ms]                 			&  4.0 &   3.6 &   2.1 &   1.3 \\ 
+		\hline Average length of queue                    			&   12 &    15 &    11 &     8 \\ 
+		\hline Average time waiting for memcached [ms]    			&  2.0 &   3.2 &   5.0 &   8.8 \\ 
 		\hline 
 	\end{tabular}
 \end{center}

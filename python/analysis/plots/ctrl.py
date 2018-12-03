@@ -3,22 +3,56 @@ import pandas as pd
 import numpy as np
 import os
 
+from plots import const
 from queries import query_mw
 from plots import rt, tp, qwt, ntt, wtt, sst, queue
 
 pd.options.display.max_columns = None
 output_folder = "./../../exp_plots"
 
-def generate(plot_func, df, suite=None, name=None):
-    plt.rc('font', family='serif', serif='Times')
-    plt.rc('text', usetex=False)
-    plt.rc('xtick', labelsize=9)
-    plt.rc('ytick', labelsize=9)
-    plt.rc('axes', labelsize=12)
+def generate(plot_func, df, suite=None, name=None, figsize=2, opt=None):
 
-    fig, ax = plt.subplots()
-    #fig, ax = plt.subplots(figsize=(8,4))
-    plot_func(ax, df)
+
+    width_pt = 452.9679 # measured from latex
+    inches_per_pt = 1.0/72.27
+    golden_mean = (np.sqrt(5)-1.0)/2.0         # Aesthetic ratio
+    fig_width2 = 0.49 * width_pt*inches_per_pt  # width in inches
+    fig_height2 = fig_width2*golden_mean       # height in inches
+
+    #plt.rc('font', family='serif', serif='Times')
+    #plt.rc('text', usetex=False, size=6)
+    #plt.rc('xtick', labelsize=4.5)
+    #plt.rc('ytick', labelsize=4.5)
+    #plt.rc('legend', fontsize=5)
+    #plt.rc('axes', labelsize=8)
+
+    #print(plt.rcParams.keys())
+    params = {'backend': 'ps',
+                'axes.labelsize': 8,
+                'font.size': 6,
+                'legend.fontsize': 5,
+                'xtick.labelsize': 4.5,
+                'ytick.labelsize': 4.5,
+                'text.usetex': False,
+                'figure.figsize': (fig_width2, fig_height2)}
+    plt.rcParams.update(params)
+
+    params = {'backend': 'ps',
+                'axes.labelsize': 12,
+                'font.size': 9,
+                'legend.fontsize': 9,
+                'xtick.labelsize': 8,
+                'ytick.labelsize': 8,
+                'text.usetex': False,
+                'figure.figsize': (7, 4)}
+    plt.rcParams.update(params)
+
+    #fig, ax = plt.subplots()
+    fig, ax = plt.subplots()#const.figsize[figsize]) # figsize width, height in inches
+    if opt is None:
+        plot_func(ax, df)
+    else:
+        plot_func(ax, df, opt)
 
     if name is not None:
         assert(suite is not None)

@@ -39,7 +39,8 @@ def nc(ax, df): # t1
                                                             capsize=const.capsize,
                                                             marker='.',
                                                             markersize=const.markersize,
-                                                            label=const.label['measurement'])
+                                                            label=const.label['measurement'],
+                                                            linewidth=const.linewidth)
 
     if op_type == "set":
         bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput'].values
@@ -53,13 +54,14 @@ def nc(ax, df): # t1
     if const.use_interactive_law_in_mw or data_origin[0] == 'client':
         ax.plot(clients, throughput_interactive_law, color=const.color['single_color_interactive_law'],
                                                     linestyle='--',
-                                                    label=const.label['interactive_law'])
+                                                    label=const.label['interactive_law'],
+                                                    linewidth=const.linewidth)
         cur_max_y = max(np.concatenate([throughput_means,throughput_interactive_law,bandwidth_throughput_limit]))
 
 
 
     if np.unique(bandwidth_throughput_limit)[0] != "-":
-        ax.plot(clients, bandwidth_throughput_limit, linestyle='--', color=const.color['network_throughput_limit'], label=const.label['network_throughput_limit'])
+        ax.plot(clients, bandwidth_throughput_limit, linestyle='--', color=const.color['network_throughput_limit'], label=const.label['network_throughput_limit'], linewidth=const.linewidth)
 
     # TODO [nku] decide on legend to use
     ax.legend()
@@ -104,20 +106,19 @@ def nc_w(ax, df):
 
         throughput_interactive_law = clients / rt_means_interactive_law * 1000
 
-
-
         ax.errorbar(clients, throughput_means, throughput_stds, color=const.n_worker_color[n_worker],
                                                                 capsize=const.capsize,
                                                                 marker='.',
                                                                 markersize=const.markersize,
-                                                                label=const.n_worker_label[n_worker])
-
+                                                                label=const.n_worker_label[n_worker],
+                                                                linewidth=const.linewidth)
         cur_max_y = max(throughput_means)
 
         if const.use_interactive_law_in_mw or data_origin[0] == 'client':
             ax.plot(clients, throughput_interactive_law,color=const.n_worker_color[n_worker],
                                                     linestyle='--',
-                                                    label=const.n_worker_inter_label[n_worker])
+                                                    label=const.n_worker_inter_label[n_worker],
+                                                    linewidth=const.linewidth)
             cur_max_y = max(np.concatenate([throughput_means, throughput_interactive_law]))
 
 
@@ -125,7 +126,7 @@ def nc_w(ax, df):
         max_x.append(max(clients))
 
     if op_type == "set":
-        bandwidth_throughput_limit = dfw.loc[:,'bandwidth_limit_write_throughput'].values
+        bandwidth_throughput_limit = dfw.loc[:,'bandwidth_limit_write_per_server_throughput'].values
     elif op_type == "get":
         bandwidth_throughput_limit = dfw.loc[:,'bandwidth_limit_read_throughput'].values
     else:
@@ -134,21 +135,27 @@ def nc_w(ax, df):
     if np.unique(bandwidth_throughput_limit)[0] != "-":
         ax.plot(clients, bandwidth_throughput_limit,color=const.network_throughput_limit_color,
                                                     linestyle=const.network_throughput_limit_linestyle,
-                                                    label=const.label['network_throughput_limit'])
-
+                                                    label=const.label['network_throughput_limit'],
+                                                    linewidth=const.linewidth)
+        max_y.append(max(bandwidth_throughput_limit))
 
     # TODO [nku] decide on legend to use
-    ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+    #ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+    ax.text(0.05, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.legend(loc='lower right')
+    ax.yaxis.set_major_formatter(tp_formatter)
 
     ax.set_ylabel(const.axis_label['throughput'])
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
-    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_xlim(0, max(max_x)+2)
-    ax.set_ylim(0, max(max_y)*1.1)
+    ax.set_ylim(0, max(max_y)*1.05)
 
     ax.set_xticks(clients)
+
+    #plt.setp(ax.get_xticklabels(), rotation=90, horizontalalignment='right', verticalalignment='center')
 
 def mget(ax, df):
     clients = df.loc[:,'num_clients'].values

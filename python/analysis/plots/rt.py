@@ -94,12 +94,14 @@ def nc_w(ax, df):
         max_x.append(max(clients))
 
     # TODO [nku] decide on legend to use
-    ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+    #ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.legend()
 
     ax.set_ylabel(const.axis_label['rt'])
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
-    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_xlim(0, max(max_x)+2)
     ax.set_ylim(0, max(max_y)*1.1)
@@ -252,41 +254,114 @@ def queueing_model(ax, df):
     ax.set_ylim(0, max(np.concatenate([meas_rts]))*1.5)
     ax.set_xticks(clients)
 
+def component_w(ax, df):
+    clients = df['num_clients'].unique()
+    assert(clients.shape[0]==1)
+
+    ntts = df.loc[:,'ntt'].values
+    qwts = df.loc[:,'qwt'].values
+
+    if df.loc[:,'workload'].unique() == 'write-only':
+        ssts = df.loc[:,'sstmax'].values
+    else:
+        ssts = df.loc[:,'sst'].values
+
+    wtts = df.loc[:,'wtt'].values
+
+    rts_client = df.loc[:,'rt_client'].values
+    network = rts_client - (wtts+qwts+ntts+ssts)
+    network = network.clip(min=0)
+
+    n_workers = df['n_worker_per_mw'].unique()
+
+    ind = np.arange(n_workers.shape[0])
+    width = 0.7
+    cum = 0
+    ax.bar(ind, ntts, width, bottom = cum,
+                                color=const.rt_component_color['ntt'],
+                                label=const.rt_component_label['ntt'])
+    cum = ntts
+    ax.bar(ind, qwts, width, bottom = cum,
+                                    color=const.rt_component_color['qwt'],
+                                    label=const.rt_component_label['qwt'])
+
+    cum = cum + qwts
+    ax.bar(ind, wtts, width, bottom = cum,
+                                    color=const.rt_component_color['wtt'],
+                                    label=const.rt_component_label['wtt'])
+
+    cum = cum + wtts
+    ax.bar(ind, ssts, width, bottom = cum,
+                                    color=const.rt_component_color['sst'],
+                                    label=const.rt_component_label['sst'])
+
+    cum = cum + ssts
+
+    ax.bar(ind, network, width, bottom = cum,
+                                    color=const.rt_component_color['network'],
+                                    label=const.rt_component_label['network'])
+
+    ax.set_ylabel("Time [ms]")
+
+    labels = [const.n_worker_label_short[n_worker] for n_worker in n_workers]
+    plt.xticks(ind, (8,16,32,64))
+    ax.set_xlabel(const.axis_label['n_worker'])
+    ax.set_xlim(-0.5, 7)
+    ax.legend(loc='lower right')
+    #ax.legend(bbox_to_anchor=(1.0, 0, 0.5, 1), ncol=1, mode="expand", borderaxespad=0)
 
 
-def component_nc_w(ax, df):
 
 
-    n_workers = np.unique(df.loc[:,'n_worker_per_mw'].values)
-    N = np.unique(df.loc[:,'num_clients'].values).shape[0]
-    data_origin = np.unique(df.loc[:,'data_origin'].values)
-    assert(data_origin.shape[0]==1)
+def component_nc(ax, df, max_y):
 
-    ind = np.arange(N)    # the x locations for the groups
-    width = 0.2        # the width of the bars
+    clients = df.loc[:,'num_clients'].values
 
-    for n_worker in n_workers:
-        dfw = df[df["n_worker_per_mw"]==n_worker]
+    ntts = df.loc[:,'ntt'].values
+    qwts = df.loc[:,'qwt'].values
 
-        clients = dfw.loc[:,'num_clients'].values
+    if df.loc[:,'workload'].unique() == 'write-only':
+        ssts = df.loc[:,'sstmax'].values
+    else:
+        ssts = df.loc[:,'sst'].values
+
+    wtts = df.loc[:,'wtt'].values
+
+    rts_client = df.loc[:,'rt_client'].values
+    network = rts_client - (wtts+qwts+ntts+ssts)
+    network = network.clip(min=0)
+
+    cum = ntts
+    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
+
+    cum += qwts
+    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
+
+    cum += wtts
+    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
+
+    cum += ssts
+    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
 
 
+    cum += network
+    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
+    ax.fill_between(clients, 0, cum, alpha=0.2, facecolor=const.rt_component_color['network'], hatch = '/',edgecolor=const.rt_component_color['network'], label=const.rt_component_label['network'])
+    ax.fill_between(clients, 0, cum-network, alpha=0.2, facecolor=const.rt_component_color['sst'], hatch = '/', edgecolor=const.rt_component_color['sst'], label=const.rt_component_label['sst'])
+    ax.fill_between(clients, 0, cum-network-ssts, alpha=0.2, facecolor=const.rt_component_color['wtt'], hatch = '/', edgecolor=const.rt_component_color['wtt'], label=const.rt_component_label['wtt'])
+    ax.fill_between(clients, 0, cum-network-ssts-wtts, alpha=0.2, facecolor=const.rt_component_color['qwt'], hatch = '/', edgecolor=const.rt_component_color['qwt'], label=const.rt_component_label['qwt'])
+    ax.fill_between(clients, 0, cum-network-ssts-wtts-qwts, alpha=0.2, facecolor=const.rt_component_color['ntt'], hatch = '/', edgecolor=const.rt_component_color['ntt'], label=const.rt_component_label['ntt'])
 
-        ntt_means = dfw.loc[:,'ntt_rep_mean'].values
-        qwt_means = dfw.loc[:,'qwt_rep_mean'].values
-        wtt_means = dfw.loc[:,'wtt_rep_mean'].values - dfw.loc[:,'sst_rep_mean'].values
-        sst_means = dfw.loc[:,'sst_rep_mean'].values
+    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
 
-        print(ind)
-        print(ntt_means)
 
-        ax.bar(ind, ntt_means, width, bottom=0, color='r', label="ntt")
-        ax.bar(ind, qwt_means, width, bottom=ntt_means, color='b',  label="qwt")
-        ax.bar(ind, wtt_means, width, bottom=qwt_means+ntt_means, color='y', label="wtt")
-        ax.bar(ind, sst_means, width, bottom=wtt_means+qwt_means+ntt_means, color='g', label="sst")
+    ax.set_ylabel("Time [ms]")
+    ax.set_xlabel(const.axis_label['number_of_clients'])
 
-        ind = ind + width
 
+    ax.set_xlim(0, max(clients)+2)
+    ax.set_ylim(0, max_y)
+    ax.set_xticks(clients)
     ax.legend()
 
 def time(ax, df):

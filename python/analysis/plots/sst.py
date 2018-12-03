@@ -39,21 +39,74 @@ def nc_w(ax, df):
         sst_means = dfw.loc[:,'sst_rep_mean'].values
         sst_stds = dfw.loc[:,'sst_rep_std'].values
 
-        ax.errorbar(clients, sst_means, sst_stds, capsize=5, marker='.', markersize=10, label=f"w={n_worker}")
+        ax.errorbar(clients, sst_means, sst_stds, capsize=const.capsize,
+                                                    color=const.n_worker_color[n_worker],
+                                                    marker='.',
+                                                    markersize=const.markersize,
+                                                    label=const.n_worker_label[n_worker])
 
         max_y.append(max(sst_means))
         max_x.append(max(clients))
 
 
     ax.legend()
-    ax.set_ylabel('Server Service Time [ms]')
-    ax.set_xlabel('Number of Clients')
+    ax.set_ylabel(const.axis_label['sst'])
+    ax.set_xlabel(const.axis_label['number_of_clients'])
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_xlim(0, max(max_x)+1)
     ax.set_ylim(0, max(max_y)*1.1)
     ax.set_xticks(clients)
+
+def detail_nc(ax, df):
+    n_workers = np.unique(df.loc[:,'n_worker_per_mw'].values)
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    assert(data_origin.shape[0]==1)
+    max_y = []
+    max_x = []
+
+
+    clients = df.loc[:,'num_clients'].values
+    sst0_means = df.loc[:,'sst0_rep_mean'].values
+    sst0_stds = df.loc[:,'sst0_rep_std'].values
+
+    sst1_means = df.loc[:,'sst1_rep_mean'].values
+    sst1_stds = df.loc[:,'sst1_rep_std'].values
+
+    sst2_means = df.loc[:,'sst2_rep_mean'].values
+    sst2_stds = df.loc[:,'sst2_rep_std'].values
+
+    ax.errorbar(clients, sst0_means, sst0_stds, capsize=const.capsize,
+                                                color=const.sst_color["sst0"],
+                                                marker='.',
+                                                markersize=const.markersize,
+                                                label=const.sst_label["sst0"])
+
+    ax.errorbar(clients, sst1_means, sst1_stds, capsize=const.capsize,
+                                                color=const.sst_color["sst1"],
+                                                marker='.',
+                                                markersize=const.markersize,
+                                                label=const.sst_label["sst1"])
+
+    ax.errorbar(clients, sst2_means, sst2_stds, capsize=const.capsize,
+                                                color=const.sst_color["sst2"],
+                                                marker='.',
+                                                markersize=const.markersize,
+                                                label=const.sst_label["sst2"])
+
+
+    max_y = max(max(sst0_means),max(sst1_means),max(sst2_means))
+    ax.legend()
+    ax.set_ylabel(const.axis_label['sst'])
+    ax.set_xlabel(const.axis_label['number_of_clients'])
+
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.set_xlim(0, clients[-1]+1)
+    ax.set_ylim(0, max_y*1.1)
+    ax.set_xticks(clients)
+
 
 def mget(ax, df):
     mget_sizes = df.loc[:,'multi_get_size'].values

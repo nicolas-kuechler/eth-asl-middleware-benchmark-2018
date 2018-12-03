@@ -14,7 +14,7 @@ def load_df_by_rep(suite,exp):
 
     config_cols = ["rep", "num_clients", "data_origin", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio","op_type",
         "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance",
-        "write_bandwidth_limit","bandwidth_limit_write_throughput", "read_bandwidth_limit", "bandwidth_limit_read_throughput", "client_rtt", "server_rtt"]
+        "write_bandwidth_limit","bandwidth_limit_write_throughput", "bandwidth_limit_write_per_server_throughput", "read_bandwidth_limit", "bandwidth_limit_read_throughput", "client_rtt", "server_rtt"]
 
     value_cols = ["throughput_mean", "throughput_std", "rt_mean", "rt_std", "throughputset_mean", "throughputset_std", "rtset_mean", "rtset_std", "throughputget_mean", "throughputget_std", "rtget_mean", "rtget_std"]
     df = df.set_index(config_cols, drop=False)
@@ -98,6 +98,7 @@ def _build_pipeline(exp):
                       }
         },
         {"$addFields":{"write_bandwidth_limit": {"$min":["$from_client_netstat.bandwidth", "$to_server_netstat.bandwidth"]},
+                       "write_bandwidth_limit_per_server": {"$min":["$from_client_netstat.bandwidth", {"$divide":["$to_server_netstat.bandwidth", "$exp_config.n_server"]}]},
                        "read_bandwidth_limit":  {"$min":["$from_server_netstat.bandwidth", "$to_client_netstat.bandwidth"]},
                        "client_rtt":{"$divide":["$from_client_netstat.rtt", "$from_client_netstat.count"]},
                        "server_rtt":{"$divide":["$to_server_netstat.rtt", "$to_server_netstat.count"]}
@@ -120,6 +121,7 @@ def _build_pipeline(exp):
                              "n_threads_per_mt_instance":"$exp_config.n_threads_per_mt_instance"},
 
                    "write_bandwidth_limit":{"$avg":"$write_bandwidth_limit"}, # should all be the same anyway
+                   "write_bandwidth_limit_per_server":{"$avg":"$write_bandwidth_limit_per_server"}, # should all be the same anyway
                    "read_bandwidth_limit":{"$avg":"$read_bandwidth_limit"}, # should all be the same anyway
                    "client_rtt":{"$avg":"$client_rtt"}, # should all be the same anyway
                    "server_rtt":{"$avg":"$server_rtt"}, # should all be the same anyway
@@ -174,6 +176,7 @@ def _build_pipeline(exp):
                         "bandwidth_limit_read_throughput": { "$cond": { "if": { "$eq": ["$read_bandwidth_limit", None]}, "then": "-", "else": {"$divide":["$read_bandwidth_limit", value_size_mbit]}}},
                         "write_bandwidth_limit":{ "$cond": { "if": { "$eq": ["$write_bandwidth_limit", None]}, "then": "-", "else": "$write_bandwidth_limit" }},
                         "bandwidth_limit_write_throughput": { "$cond": { "if": { "$eq": ["$write_bandwidth_limit", None]}, "then": "-", "else": {"$divide":["$write_bandwidth_limit", value_size_mbit]}}},
+                        "bandwidth_limit_write_per_server_throughput": { "$cond": { "if": { "$eq": ["$write_bandwidth_limit_per_server", None]}, "then": "-", "else": {"$divide":["$write_bandwidth_limit_per_server", value_size_mbit]}}},
                         "client_rtt":{ "$cond": { "if": { "$eq": ["$client_rtt", None]}, "then": "-", "else": "$client_rtt" }},
                         "server_rtt":{ "$cond": { "if": { "$eq": ["$server_rtt", None]}, "then": "-", "else": "$server_rtt" }},
                      }

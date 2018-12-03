@@ -11,12 +11,14 @@ def nc(ax, df):
     data_origin = np.unique(df.loc[:,'data_origin'].values)
     assert(data_origin.shape[0]==1)
 
-    ax.errorbar(clients, queue_means, queue_stds, capsize=5, marker='.', markersize=10 ,label="queue size")
+    ax.errorbar(clients, queue_means, queue_stds, capsize=const.capsize,
+                                                    color=const.rt_component_color['qwt'],
+                                                    marker='.',
+                                                    markersize=const.markersize)
 
 
-    ax.legend()
-    ax.set_ylabel('Queue Size')
-    ax.set_xlabel('Number of Clients')
+    ax.set_ylabel(const.axis_label['queue_size'])
+    ax.set_xlabel(const.axis_label['number_of_clients'])
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
@@ -39,15 +41,19 @@ def nc_w(ax, df):
         queue_means = dfw.loc[:,'queue_rep_mean'].values
         queue_stds = dfw.loc[:,'queue_rep_std'].values
 
-        ax.errorbar(clients, queue_means, queue_stds, capsize=5, marker='.', markersize=10, label=f"w={n_worker}")
+        ax.errorbar(clients, queue_means, queue_stds, capsize=const.capsize,
+                                                        color=const.n_worker_color[n_worker],
+                                                        marker='.',
+                                                        markersize=const.markersize,
+                                                        label=const.n_worker_label[n_worker])
 
         max_y.append(max(queue_means))
         max_x.append(max(clients))
 
 
     ax.legend()
-    ax.set_ylabel('Queue Size')
-    ax.set_xlabel('Number of Clients')
+    ax.set_ylabel(const.axis_label['queue_size'])
+    ax.set_xlabel(const.axis_label['number_of_clients'])
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 

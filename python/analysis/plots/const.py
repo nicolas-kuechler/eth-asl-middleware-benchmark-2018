@@ -1,12 +1,18 @@
 use_interactive_law_rtt_adjustment = False
 use_interactive_law_in_mw = False
 
-markersize = 8
+markersize = 6
 capsize = 5
+linewidth=1.5
 
 min_slot_inclusive = 3
 max_slot_inclusive = 14
 cov_threshold = 0.05
+
+figsize = {
+    2: (3.54,1.69),
+    3: (3*2.36,3*0.98)
+}
 
 
 # from http://colorbrewer2.org
@@ -25,6 +31,34 @@ color = {
     "hist": seq_colors[1]
 }
 
+rt_component_color = {
+    "network": "#01295f", #"#bfd2bf", #"#f5ee9e",
+    "ntt": "#437f97", #"#646f4b", #"#2d728f",
+    "qwt": "#849324", #"#46351d", #"#3b8ea5",
+    "wtt": "#ffb30f",#"#839d9a", #"#f49e4c",
+    "sst": "#fd151b", #"#7bb2d9"#"#ab3428"
+}
+
+sst_color = {
+    "sst0": "#fb6a4a",
+    "sst1": "#de2d26",
+    "sst2": "#a50f15",
+}
+
+sst_label = {
+    "sst0": "server 1",
+    "sst1": "server 2",
+    "sst2": "server 3",
+}
+
+rt_component_label = {
+    "network": "network mw-client",
+    "ntt": "net-thread decoding",
+    "qwt": "queue waiting time",
+    "wtt": "worker-thread processing",
+    "sst": "server service time"
+}
+
 
 axis_label = {
     "number_of_clients": "Number of Clients",
@@ -32,7 +66,10 @@ axis_label = {
     "rt": "Response Time [ms]",
     "mget_size": "Multi Get Size",
     "freq": "Frequency",
-    "slot": "Slot"
+    "slot": "Slot",
+    "queue_size": "Number of Requests in Queue",
+    "sst":"Server Service Time [ms]",
+    "n_worker": "Number of Worker-Threads"
 }
 
 label = {
@@ -62,10 +99,17 @@ n_worker_color = {
 
 
 n_worker_label = {
-    8:  "  8 worker threads",
-    16: "16 worker threads",
-    32: "32 worker threads",
-    64: "64 worker threads",
+    8:  "  8 worker-threads",
+    16: "16 worker-threads",
+    32: "32 worker-threads",
+    64: "64 worker-threads",
+}
+
+n_worker_label_short = {
+    8:  "  8 worker-threads",
+    16: "16 worker-threads",
+    32: "32 worker-threads",
+    64: "64 worker-threads",
 }
 
 n_worker_inter_label = {
