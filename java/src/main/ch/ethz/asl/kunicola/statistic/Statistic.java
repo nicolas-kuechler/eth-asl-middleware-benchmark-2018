@@ -123,7 +123,7 @@ public class Statistic {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					getServerServiceTime[serverId].update(serverServiceTime);
 
-					if (serverStartTime > 0 && (minServerStartTime == null || minServerStartTime > serverStartTime)) {
+					if (minServerStartTime == null || minServerStartTime > serverStartTime) {
 						minServerStartTime = serverStartTime;
 					}
 					if (maxServerEndTime == null || maxServerEndTime < serverEndTime) {
@@ -155,7 +155,7 @@ public class Statistic {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					setServerServiceTime[serverId].update(serverServiceTime);
 
-					if (serverStartTime > 0 && (minServerStartTime == null || minServerStartTime > serverStartTime)) {
+					if (minServerStartTime == null || minServerStartTime > serverStartTime) {
 						minServerStartTime = serverStartTime;
 					}
 					if (maxServerEndTime == null || maxServerEndTime < serverEndTime) {
@@ -187,7 +187,7 @@ public class Statistic {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					mgetServerServiceTime[serverId].update(serverServiceTime);
 
-					if (serverStartTime > 0 && (minServerStartTime == null || minServerStartTime > serverStartTime)) {
+					if (minServerStartTime == null || minServerStartTime > serverStartTime) {
 						minServerStartTime = serverStartTime;
 					}
 					if (maxServerEndTime == null || maxServerEndTime < serverEndTime) {
