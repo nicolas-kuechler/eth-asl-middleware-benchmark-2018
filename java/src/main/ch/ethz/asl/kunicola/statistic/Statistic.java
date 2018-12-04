@@ -35,8 +35,13 @@ public class Statistic {
 	private OnlineAverage mgetResponseTime;
 
 	private OnlineAverage[] getServerServiceTime;
+	private OnlineAverage getTotalServerServiceTime;
+
 	private OnlineAverage[] setServerServiceTime;
+	private OnlineAverage setTotalServerServiceTime;
+
 	private OnlineAverage[] mgetServerServiceTime;
+	private OnlineAverage mgetTotalServerServiceTime;
 
 	private OnlineAverage getNetThreadTime;
 	private OnlineAverage setNetThreadTime;
@@ -60,6 +65,10 @@ public class Statistic {
 		getResponseTime = new OnlineAverage();
 		setResponseTime = new OnlineAverage();
 		mgetResponseTime = new OnlineAverage();
+
+		getTotalServerServiceTime = new OnlineAverage();
+		setTotalServerServiceTime = new OnlineAverage();
+		mgetTotalServerServiceTime = new OnlineAverage();
 
 		getServerServiceTime = new OnlineAverage[numberofServers];
 		setServerServiceTime = new OnlineAverage[numberofServers];
@@ -104,13 +113,28 @@ public class Statistic {
 			getResponseTime.update(responseTime);
 			getResponseTimeHist.merge(responseTime, 1, Integer::sum);
 
+			Long minServerStartTime = null;
+			Long maxServerEndTime = null;
+
 			for (int serverId = 0; serverId < getServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
 				Long serverStartTime = request.getServerStartTime()[serverId];
 				if (serverEndTime != null && serverStartTime != null) {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					getServerServiceTime[serverId].update(serverServiceTime);
+
+					if (minServerStartTime == null || minServerStartTime > serverStartTime) {
+						minServerStartTime = serverStartTime;
+					}
+					if (maxServerEndTime == null || maxServerEndTime < serverEndTime) {
+						maxServerEndTime = serverEndTime;
+					}
 				}
+			}
+
+			if (maxServerEndTime != null && minServerStartTime != null) {
+				long totalServerServiceTime = (maxServerEndTime - minServerStartTime);
+				getTotalServerServiceTime.update(totalServerServiceTime);
 			}
 
 			getNetThreadTime.update(netThreadTime);
@@ -121,14 +145,29 @@ public class Statistic {
 			setResponseTime.update(responseTime);
 			setResponseTimeHist.merge(responseTime, 1, Integer::sum);
 
+			Long minServerStartTime = null;
+			Long maxServerEndTime = null;
+
 			for (int serverId = 0; serverId < setServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
 				Long serverStartTime = request.getServerStartTime()[serverId];
 				if (serverEndTime != null && serverStartTime != null) {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					setServerServiceTime[serverId].update(serverServiceTime);
+
+					if (minServerStartTime == null || minServerStartTime > serverStartTime) {
+						minServerStartTime = serverStartTime;
+					}
+					if (maxServerEndTime == null || maxServerEndTime < serverEndTime) {
+						maxServerEndTime = serverEndTime;
+					}
 				}
 			}
+			if (maxServerEndTime != null && minServerStartTime != null) {
+				long totalServerServiceTime = (maxServerEndTime - minServerStartTime);
+				setTotalServerServiceTime.update(totalServerServiceTime);
+			}
+
 			setNetThreadTime.update(netThreadTime);
 			setWorkerThreadTime.update(workerThreadTime);
 
@@ -138,14 +177,30 @@ public class Statistic {
 			mgetResponseTime.update(responseTime);
 			mgetResponseTimeHist.merge(responseTime, 1, Integer::sum);
 
+			Long minServerStartTime = null;
+			Long maxServerEndTime = null;
+
 			for (int serverId = 0; serverId < mgetServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
 				Long serverStartTime = request.getServerStartTime()[serverId];
 				if (serverEndTime != null && serverStartTime != null) {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					mgetServerServiceTime[serverId].update(serverServiceTime);
+
+					if (minServerStartTime == null || minServerStartTime > serverStartTime) {
+						minServerStartTime = serverStartTime;
+					}
+					if (maxServerEndTime == null || maxServerEndTime < serverEndTime) {
+						maxServerEndTime = serverEndTime;
+					}
 				}
 			}
+
+			if (maxServerEndTime != null && minServerStartTime != null) {
+				long totalServerServiceTime = (maxServerEndTime - minServerStartTime);
+				mgetTotalServerServiceTime.update(totalServerServiceTime);
+			}
+
 			mgetNetThreadTime.update(netThreadTime);
 			mgetWorkerThreadTime.update(workerThreadTime);
 		} else {
@@ -164,6 +219,10 @@ public class Statistic {
 		getResponseTime.reset();
 		setResponseTime.reset();
 		mgetResponseTime.reset();
+
+		getTotalServerServiceTime.reset();
+		setTotalServerServiceTime.reset();
+		mgetTotalServerServiceTime.reset();
 
 		for (int i = 0; i < numberOfServers; i++) {
 			getServerServiceTime[i].reset();
@@ -225,36 +284,42 @@ public class Statistic {
 		mgetBuilder.deleteCharAt(mgetBuilder.length() - 2);
 
 		if (getResponseTime.getCount() > 0) {
-			STATS_LOG.info("op; {}; get; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}",
+			STATS_LOG.info("op; {}; get; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}",
 					slot,
 					queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 					getResponseTime.getCount(), getResponseTime.getMean(), getResponseTime.getM2(),
 					getNetThreadTime.getCount(), getNetThreadTime.getMean(), getNetThreadTime.getM2(),
 					getWorkerThreadTime.getCount(), getWorkerThreadTime.getMean(), getWorkerThreadTime.getM2(),
+					getTotalServerServiceTime.getCount(), getTotalServerServiceTime.getMean(),
+					getTotalServerServiceTime.getM2(),
 					getBuilder);
 
 			STATS_LOG.info("rt_hist; {}; get; {}", slot, getResponseTimeHist);
 		}
 
 		if (setResponseTime.getCount() > 0) {
-			STATS_LOG.info("op; {}; set; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}",
+			STATS_LOG.info("op; {}; set; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}",
 					slot,
 					queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 					setResponseTime.getCount(), setResponseTime.getMean(), setResponseTime.getM2(),
 					setNetThreadTime.getCount(), setNetThreadTime.getMean(), setNetThreadTime.getM2(),
 					setWorkerThreadTime.getCount(), setWorkerThreadTime.getMean(), setWorkerThreadTime.getM2(),
+					setTotalServerServiceTime.getCount(), setTotalServerServiceTime.getMean(),
+					setTotalServerServiceTime.getM2(),
 					setBuilder);
 			STATS_LOG.info("rt_hist; {}; set; {}", slot, setResponseTimeHist);
 		}
 
 		if (mgetResponseTime.getCount() > 0) {
-			STATS_LOG.info("op; {}; mget; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}",
+			STATS_LOG.info("op; {}; mget; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}; {}",
 					slot,
 					queueWaitingTime.getCount(), queueWaitingTime.getMean(), queueWaitingTime.getM2(),
 					mgetResponseTime.getCount(), mgetResponseTime.getMean(), mgetResponseTime.getM2(),
 					mgetNetThreadTime.getCount(), mgetNetThreadTime.getMean(), mgetNetThreadTime.getM2(),
 					mgetWorkerThreadTime.getCount(), mgetWorkerThreadTime.getMean(),
 					mgetWorkerThreadTime.getM2(),
+					mgetTotalServerServiceTime.getCount(), mgetTotalServerServiceTime.getMean(),
+					mgetTotalServerServiceTime.getM2(),
 					mgetBuilder);
 			STATS_LOG.info("rt_hist; {}; mget; {}", slot, mgetResponseTimeHist);
 		}
@@ -315,7 +380,8 @@ public class Statistic {
 				+ "qwt_count; qwt_mean; qwt_m2; "
 				+ "rt_count; rt_mean; rt_m2; "
 				+ "ntt_count; ntt_mean; ntt_m2; "
-				+ "wtt_count; wtt_mean; wtt_m2";
+				+ "wtt_count; wtt_mean; wtt_m2; "
+				+ "tstt_count; tstt_mean; tstt_m2";
 
 		for (int i = 0; i < numberOfServers; i++) {
 			header += String.format("; sst%d_count; sst%d_mean; sst%d_m2", i, i, i);
