@@ -117,7 +117,7 @@ public class Statistic {
 			for (int serverId = 0; serverId < getServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
 				Long serverStartTime = request.getServerStartTime()[serverId];
-				if (serverEndTime > 0 && serverStartTime > 0 && serverEndTime != null && serverStartTime != null) {
+				if (serverEndTime != null && serverStartTime != null && serverEndTime > 0 && serverStartTime > 0) {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					getServerServiceTime[serverId].update(serverServiceTime);
 
@@ -148,7 +148,7 @@ public class Statistic {
 			for (int serverId = 0; serverId < setServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
 				Long serverStartTime = request.getServerStartTime()[serverId];
-				if (serverEndTime > 0 && serverStartTime > 0 && serverEndTime != null && serverStartTime != null) {
+				if (serverEndTime != null && serverStartTime != null && serverEndTime > 0 && serverStartTime > 0) {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					setServerServiceTime[serverId].update(serverServiceTime);
 
@@ -181,7 +181,7 @@ public class Statistic {
 			for (int serverId = 0; serverId < mgetServerServiceTime.length; serverId++) {
 				Long serverEndTime = request.getServerEndTime()[serverId];
 				Long serverStartTime = request.getServerStartTime()[serverId];
-				if (serverEndTime > 0 && serverStartTime > 0 && serverEndTime != null && serverStartTime != null) {
+				if (serverEndTime != null && serverStartTime != null && serverEndTime > 0 && serverStartTime > 0) {
 					long serverServiceTime = (serverEndTime - serverStartTime);
 					mgetServerServiceTime[serverId].update(serverServiceTime);
 
