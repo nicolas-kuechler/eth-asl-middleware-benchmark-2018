@@ -1,0 +1,85 @@
+\documentclass[report.tex]{subfiles}
+\begin{document}
+\section{2K Analysis (90 pts)}
+
+For 3 client machines (with 64 total virtual clients per client VM) measure the throughput and response time of your system in a 2k experiment with repetitions. All GET operations have a single key. Investigate the following parameters:
+
+\begin{itemize}
+		
+	\item Memcached servers: 1 and 3
+	\item Middlewares: 1 and 2
+	\item Worker threads per MW: 8 and 32
+	      	      
+\end{itemize}
+
+Repeat the experiment for (a)~a write-only and (b)~a read-only workload.
+For each of the two workloads, what is the impact of these parameters on throughput, respectively response time?
+
+\begin{center}
+	\scriptsize{
+		\begin{tabular}{|l|c|}
+			\hline Number of servers                & 1 and 3                                     \\ 
+			\hline Number of client machines        & 3                                           \\ 
+			\hline Instances of memtier per machine & 1 (1 middleware) or 2 (2 middlewares) \\ 
+			\hline Threads per memtier instance     & 2 (1 middleware) or 1 (2 middlewares)   \\
+			\hline Virtual clients per thread       &  32                                     \\ 
+			\hline Workload                         & Write-only and Read-only\\
+			\hline Multi-Get behavior               & N/A                                         \\
+			\hline Multi-Get size                   & N/A                                         \\
+			\hline Number of middlewares            & 1 and 2                                     \\
+			\hline Worker threads per middleware    & 8 and 32                                    \\
+			\hline Repetitions                      & 3 or more (at least 1 minute each)                                   \\ 
+			\hline 
+		\end{tabular}
+	} 
+\end{center}
+
+
+\begin{table}
+	\centering
+	\small{
+		\caption{$2^k3$ Experiment Base Table for Write-Only}
+		\label{exp60_wo_2k_base} 
+		\setlength{\tabcolsep}{4.5pt}
+		\input{data/exp60_wo_2k_base}
+	}
+\end{table}
+
+
+\begin{table}
+	\small{
+		\centering
+		\caption{Write-Only}
+		\label{exp60_wo_2k_effect}
+		\setlength{\tabcolsep}{4.7pt}
+		\newcommand{\rlft}[0]{\raggedleft\arraybackslash}
+		\input{data/exp60_wo_2k_effect}
+	}
+\end{table}
+
+
+
+\begin{table}
+	\centering
+	\small{
+		\caption{$2^k3$ Experiment Base Table for Read-Only}
+		\label{exp60_ro_2k_base} 
+		\setlength{\tabcolsep}{4.5pt}
+		\input{data/exp60_ro_2k_base}
+	}
+\end{table}
+
+
+\begin{table}
+	\small{
+		\centering
+		\caption{Read-Only}
+		\label{exp60_ro_2k_effect}
+		\setlength{\tabcolsep}{4.7pt}
+		\newcommand{\rlft}[0]{\raggedleft\arraybackslash}
+		\input{data/exp60_ro_2k_effect}
+	}
+\end{table}
+
+
+\end{document}
