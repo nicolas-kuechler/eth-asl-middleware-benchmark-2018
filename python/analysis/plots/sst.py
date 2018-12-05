@@ -128,6 +128,64 @@ def mget(ax, df):
     ax.set_ylim(0, max(sst_means)*1.1)
     ax.set_xticks(mget_sizes)
 
+def detail_mget(ax, df):
+    mget_sizes = df.loc[:,'multi_get_size'].values
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    assert(data_origin.shape[0]==1)
+    max_y = []
+    max_x = []
+
+
+    clients = df.loc[:,'num_clients'].values
+
+    tsst_means = df.loc[:,'tsst_rep_mean'].values
+    tsst_stds = df.loc[:,'tsst_rep_std'].values
+
+    sst0_means = df.loc[:,'sst0_rep_mean'].values
+    sst0_stds = df.loc[:,'sst0_rep_std'].values
+
+    sst1_means = df.loc[:,'sst1_rep_mean'].values
+    sst1_stds = df.loc[:,'sst1_rep_std'].values
+
+    sst2_means = df.loc[:,'sst2_rep_mean'].values
+    sst2_stds = df.loc[:,'sst2_rep_std'].values
+
+    ax.errorbar(mget_sizes, tsst_means, tsst_stds, capsize=const.capsize,
+                                                color=const.sst_color["tsst"],
+                                                marker='.',
+                                                markersize=const.markersize,
+                                                label=const.sst_label["tsst"])
+
+    ax.errorbar(mget_sizes, sst0_means, sst0_stds, capsize=const.capsize,
+                                                color=const.sst_color["sst0"],
+                                                marker='.',
+                                                markersize=const.markersize,
+                                                label=const.sst_label["sst0"])
+
+    ax.errorbar(mget_sizes, sst1_means, sst1_stds, capsize=const.capsize,
+                                                color=const.sst_color["sst1"],
+                                                marker='.',
+                                                markersize=const.markersize,
+                                                label=const.sst_label["sst1"])
+
+    ax.errorbar(mget_sizes, sst2_means, sst2_stds, capsize=const.capsize,
+                                                color=const.sst_color["sst2"],
+                                                marker='.',
+                                                markersize=const.markersize,
+                                                label=const.sst_label["sst2"])
+
+
+    max_y = max(max(sst0_means),max(sst1_means),max(sst2_means), 10)
+    ax.legend()
+    ax.set_ylabel(const.axis_label['sst'])
+    ax.set_xlabel(const.axis_label['mget_size'])
+
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_ylim(0, max_y*1.1)
+    ax.set_xticks(mget_sizes)
+
 def time(ax, df):
     for rep in np.unique(df.loc[:,'rep'].values):
         df_rep = df[df['rep']==rep]

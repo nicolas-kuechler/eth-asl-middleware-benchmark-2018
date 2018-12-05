@@ -204,7 +204,8 @@ def mget(ax, df):
         raise ValueError("Unknown Op Type")
 
     if np.unique(bandwidth_throughput_limit)[0] != "-":
-        ax.plot(mget_sizes, bandwidth_throughput_limit, linestyle='--', label=const.label['network_throughput_limit'])
+        sizes = np.arange(min(mget_sizes),max(mget_sizes))
+        ax.plot(sizes, bandwidth_throughput_limit[0] / sizes, linestyle='--', color=const.network_throughput_limit_color, label=const.label['network_throughput_limit'])
 
     ax.legend()
 
@@ -213,7 +214,97 @@ def mget(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, clients[-1]+2)
+    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_ylim(0, max_y*1.1)
+    ax.set_xticks(mget_sizes)
+
+def mget_mix(ax, df):
+    clients = df.loc[:,'num_clients'].values
+    mget_sizes = df.loc[:,'multi_get_size'].values
+    throughput_means_sharded = df.loc[:,'throughput_rep_mean_sharded'].values
+    throughput_stds_sharded = df.loc[:,'throughput_rep_std_sharded'].values
+    think_time_sharded = df.loc[:,'client_thinktime_sharded'].values
+
+    throughput_means_nonsharded = df.loc[:,'throughput_rep_mean_nonsharded'].values
+    throughput_stds_nonsharded = df.loc[:,'throughput_rep_std_nonsharded'].values
+    think_time_nonsharded = df.loc[:,'client_thinktime_nonsharded'].values
+
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    op_type = np.unique(df.loc[:,'op_type'].values)
+
+    assert(op_type.shape[0]==1)
+    assert(data_origin.shape[0]==1)
+
+    rt_means_sharded = df.loc[:,'rt_rep_mean_sharded'].values
+    rt_means_nonsharded = df.loc[:,'rt_rep_mean_nonsharded'].values
+
+    if const.use_interactive_law_rtt_adjustment and data_origin[0] == 'mw':
+        rtt_client_sharded = np.unique(df.loc[:,'client_rtt_sharded'].values)
+        assert(rtt_client_sharded.shape[0]==1)
+
+        rtt_client_nonsharded = np.unique(df.loc[:,'client_rtt_nonsharded'].values)
+        assert(rtt_client_nonsharded.shape[0]==1)
+
+        if rtt_client_sharded[0] != '-':
+            rt_means_sharded_interactive_law = rt_means_sharded + rtt_client_sharded[0]
+        else: rt_means_sharded_interactive_law = rt_means_sharded
+
+        if rtt_client_nonsharded[0] != '-':
+            rt_means_nonsharded_interactive_law = rt_means_nonsharded + rtt_client_nonsharded[0]
+        else: rt_means_nonsharded_interactive_law = rt_means_nonsharded
+    else:
+        rt_means_sharded_interactive_law = rt_means_sharded
+        rt_means_nonsharded_interactive_law = rt_means_nonsharded
+
+    throughput_sharded_interactive_law = clients / (rt_means_sharded_interactive_law + think_time_sharded) * 1000
+    throughput_nonsharded_interactive_law = clients / (rt_means_nonsharded_interactive_law + think_time_nonsharded) * 1000
+
+    ax.errorbar(mget_sizes, throughput_means_nonsharded, throughput_stds_nonsharded, color=const.color['nonsharded'],
+                                                            capsize=const.capsize,
+                                                            marker='.',
+                                                            markersize=const.markersize,
+                                                            label=const.label['nonsharded'])
+
+    ax.errorbar(mget_sizes, throughput_means_sharded, throughput_stds_sharded, color=const.color['sharded'],
+                                                            capsize=const.capsize,
+                                                            marker='.',
+                                                            markersize=const.markersize,
+                                                            label=const.label['sharded'])
+
+
+
+    max_y = max(max(throughput_means_sharded),max(throughput_means_nonsharded))
+
+    if const.use_interactive_law_in_mw or data_origin[0] == 'client':
+        ax.plot(mget_sizes, throughput_sharded_interactive_law, color=const.color['sharded_interactive_law'],
+                                                    linestyle='--',
+                                                    label=const.label['sharded_interactive_law'])
+
+        ax.plot(mget_sizes, throughput_nonsharded_interactive_law, color=const.color['nonsharded_interactive_law'],
+                                                    linestyle='--',
+                                                    label=const.label['nonsharded_interactive_law'])
+        max_y = max(max_y, max(throughput_sharded_interactive_law), max(throughput_nonsharded_interactive_law))
+
+    if op_type == "set":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput_sharded'].values
+    elif op_type == "get" or op_type == "mget":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_read_throughput_sharded'].values
+    else:
+        print(op_type)
+        raise ValueError("Unknown Op Type")
+
+    if np.unique(bandwidth_throughput_limit)[0] != "-":
+        sizes = np.arange(min(mget_sizes),max(mget_sizes)+1)
+        ax.plot(sizes, bandwidth_throughput_limit[0] / sizes, linestyle='--', color=const.network_throughput_limit_color, label=const.label['network_throughput_limit'])
+
+    ax.legend()
+
+    ax.set_ylabel(const.axis_label['throughput'])
+    ax.set_xlabel(const.axis_label['mget_size'])
+
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.set_xlim(0, mget_sizes[-1]+1)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 

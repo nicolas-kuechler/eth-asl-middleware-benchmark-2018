@@ -3,7 +3,7 @@ from bson.son import SON
 import pandas as pd
 import numpy as np
 
-from queries.query_util import utility, df_aggregate
+from queries.query_util import utility, df_aggregate, const
 from  queries import weighted_stats
 
 def load_df_by_rep(suite, exp):
@@ -36,7 +36,7 @@ def load_df(suite, exp):
 
     return df, df_quantiles_rep
 
-def _build_pipeline(exp, min_slot=1, max_slot=13):
+def _build_pipeline(exp):
 
     pipeline = [
         {"$match": {"exp": exp}},
@@ -54,10 +54,10 @@ def _build_pipeline(exp, min_slot=1, max_slot=13):
         {"$unwind": "$mw_stats"},
         {"$unwind": "$mw_stats.rt_hist"},
         # TODO [nku] decide what to do with slot filtering -> if apply this filtering numbers don't match with client measurements
-    #    {"$match":{"mw_stats.rt_hist.slot":{"$gte":min_slot},
-    #            "mw_stats.rt_hist.slot": {"$lte":max_slot}
-    #            }
-    #    },
+        #{"$match":{"mw_stats.rt_hist.slot":{"$gte":const.min_slot_inclusive},
+        #        "mw_stats.rt_hist.slot": {"$lte":const.max_slot_inclusive}
+        #        }
+        #},
         {"$unwind": "$mw_stats.rt_hist.hist"},
         {"$group": {"_id" : {"rep":"$repetition",
                              "op_type": "$mw_stats.rt_hist.op_type",

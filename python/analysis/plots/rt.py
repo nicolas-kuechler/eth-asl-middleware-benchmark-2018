@@ -107,7 +107,7 @@ def nc_w(ax, df):
     ax.set_ylim(0, max(max_y)*1.1)
     ax.set_xticks(clients)
 
-def mget_perc(ax,df): # rt 3
+def mget_perc(ax,df, y_lim=None): # rt 3
     stats = np.unique(df.loc[:,'stat'].values)
     data_origin = np.unique(df.loc[:,'data_origin'].values)
     assert(data_origin.shape[0]==1)
@@ -140,12 +140,16 @@ def mget_perc(ax,df): # rt 3
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
     ax.set_xlim(0, max(max_x)+1)
-    ax.set_ylim(0, max(max_y)*1.1)
+
+    if y_lim is None:
+        y_lim = max(max_y)*1.1
+
+    ax.set_ylim(0, y_lim)
 
     ax.set_xticks(mget_sizes)
 
 
-def mget_hist(ax,df): # rt 4
+def mget_hist(ax,df, y_lim): # rt 4
 
     bins = x = np.sort(np.unique(np.concatenate([df['rt_bin_low'].values,df['rt_bin_high'].values])))
     bins[-1]=15
@@ -156,22 +160,18 @@ def mget_hist(ax,df): # rt 4
 
     rt_stds = df.loc[:,'rt_freq_std'].values
 
-    # TODO [nku] set fixed hist ylim
-    ylim = max(rt_freqs+5000)
-
     data_origin = np.unique(df.loc[:,'data_origin'].values)
     assert(data_origin.shape[0]==1)
 
     y, _ , _ = ax.hist(rts, weights=rt_freqs, bins=bins, color=const.color['hist'])
-    ax.errorbar(rts, y, fmt='none', yerr=rt_stds, capsize=const.capsize, color=const.color['hist_error'])
-
+    ax.errorbar(rts, y, fmt='none', yerr=rt_stds, capsize=const.capsize-2, color=const.color['hist_error'])
 
     ax.set_ylabel(const.axis_label['freq'])
     ax.set_xlabel(const.axis_label['rt'])
 
     ax.text(0.95, 0.95, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
-
-    ax.set_ylim(0, ylim)
+    ax.set_xticks(np.arange(0,16))
+    ax.set_ylim(0, y_lim)
 
 def mget(ax, df):
     mget_sizes = df.loc[:,'multi_get_size'].values
@@ -213,7 +213,7 @@ def mget(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, clients[-1]+2)
+    ax.set_xlim(0, mget_sizes[-1]+1)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
@@ -363,6 +363,60 @@ def component_nc(ax, df, max_y):
     ax.set_ylim(0, max_y)
     ax.set_xticks(clients)
     ax.legend()
+
+def component_mget(ax, df):
+    mget_sizes = df['multi_get_size'].unique()
+
+    ntts = df.loc[:,'ntt'].values
+    qwts = df.loc[:,'qwt'].values
+
+    ssts = df.loc[:,'tsst'].values
+    wtts = df.loc[:,'wtt'].values
+
+    rts_client = df.loc[:,'rt_client'].values
+    network = rts_client - (wtts+qwts+ntts+ssts)
+    network = network.clip(min=0)
+
+    mget_sizes = df['multi_get_size'].unique()
+
+    ind = np.arange(mget_sizes.shape[0])
+    width = 0.7
+    cum = 0
+    ax.bar(ind, ntts, width, bottom = cum,
+                                color=const.rt_component_color['ntt'],
+                                label=const.rt_component_label['ntt'])
+    cum = ntts
+    ax.bar(ind, qwts, width, bottom = cum,
+                                    color=const.rt_component_color['qwt'],
+                                    label=const.rt_component_label['qwt'])
+
+    cum = cum + qwts
+    ax.bar(ind, wtts, width, bottom = cum,
+                                    color=const.rt_component_color['wtt'],
+                                    label=const.rt_component_label['wtt'])
+
+    cum = cum + wtts
+    ax.bar(ind, ssts, width, bottom = cum,
+                                    color=const.rt_component_color['sst'],
+                                    label=const.rt_component_label['sst'])
+
+    cum = cum + ssts
+
+    ax.bar(ind, network, width, bottom = cum,
+                                    color=const.rt_component_color['network'],
+                                    label=const.rt_component_label['network'])
+
+    ax.set_ylabel("Time [ms]")
+
+
+    plt.xticks(ind, (1,3,6,9))
+    ax.set_xlabel(const.axis_label['mget_size'])
+    ax.set_xlim(-0.5, 3.5)
+    ax.set_ylim(0,9)
+    ax.legend(loc='upper left')
+    #ax.legend(bbox_to_anchor=(1.0, 0, 0.5, 1), ncol=1, mode="expand", borderaxespad=0)
+
+
 
 def time(ax, df):
     for rep in np.unique(df.loc[:,'rep'].values):

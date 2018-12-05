@@ -28,8 +28,13 @@ color = {
     "single_color_interactive_law": seq_colors[2],
     "network_throughput_limit": "grey",
     "hist_error": "grey",
-    "hist": seq_colors[1]
+    "hist": seq_colors[1],
+    "sharded": '#a1dab4',
+    "nonsharded": '#2c7fb8',
+    "sharded_interactive_law":"#a1dab4",
+    "nonsharded_interactive_law": "#2c7fb8"
 }
+
 
 rt_component_color = {
     "network": "#01295f", #"#bfd2bf", #"#f5ee9e",
@@ -40,12 +45,14 @@ rt_component_color = {
 }
 
 sst_color = {
+    "tsst": "#849324",
     "sst0": "#fb6a4a",
     "sst1": "#de2d26",
     "sst2": "#a50f15",
 }
 
 sst_label = {
+    "tsst": "total",
     "sst0": "server 1",
     "sst1": "server 2",
     "sst2": "server 3",
@@ -75,7 +82,11 @@ axis_label = {
 label = {
     "interactive_law": "interactive law",
     "measurement": "measurement",
-    "network_throughput_limit": "bandwidth limit"
+    "network_throughput_limit": "bandwidth limit",
+    "sharded": "get sharded",
+    "nonsharded": "get non-sharded",
+    "sharded_interactive_law" : "sharded interactuve law",
+    "nonsharded_interactive_law" : "non-sharded interactuve law"
 }
 
 queueing_color = {
@@ -129,10 +140,10 @@ stat_color = {
 }
 
 stat_label = {
-    "25th percentile": "25th percentile",
-    "50th percentile": "50th percentile",
-    "75th percentile": "75th percentile",
-    "90th percentile": "90th percentile",
-    "99th percentile": "99th percentile",
-    "mean": "mean"
+    "25th percentile": "get 25th percentile",
+    "50th percentile": "get 50th percentile",
+    "75th percentile": "get 75th percentile",
+    "90th percentile": "get 90th percentile",
+    "99th percentile": "get 99th percentile",
+    "mean": "get mean"
 }

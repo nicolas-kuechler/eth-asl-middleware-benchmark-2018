@@ -34,7 +34,7 @@ def run(experiment_suite_id, experiment_name):
         fail_count, total_count = quick_check.throughput_check(suite=experiment_suite_id, result_ids=result_ids, threshold=const.cov_threshold)
         ok_count = total_count - fail_count
 
-        while(ok_count < 3 and total_count < 6): # repeat until we have 3 valid repetitions or max 6
+        while(total_count != 0 and ok_count < 3 and total_count < 6): # repeat until we have 3 valid repetitions or max 6
             for add_rep in tqdm(range(total_count, total_count+3-ok_count), desc="    add rep", leave=False):
                 log.info("Throughput check not passed -> run another repetition")
                 result_id = run_repetition(experiment_suite_id, experiment_name, add_rep, exp_config, network_stats)

@@ -64,6 +64,9 @@ def stop_middleware(mw_id, host):
     stdin, stdout, stderr = ssh.exec_command(f"screen -S mw_0{mw_id} -X quit")
     utility.format(stdout, stderr)
 
+    stdin, stdout, stderr = ssh.exec_command(f"screen -S mw_0{mw_id} -X quit")
+    utility.format(stdout, stderr)
+
     ssh.close()
 
     log.info(f"Finished Stopping Middleware {mw_id}")

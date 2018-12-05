@@ -19,14 +19,12 @@ def load_df_by_rep(suite, exp):
 
     df = load_df_by_slot(suite,exp)
 
-
-
     config_cols = ["rep", "slot", "data_origin", "op_type", "num_clients", "n_server_vm", "n_client_vm", "n_vc", "workload", "workload_ratio",
             "multi_get_behaviour", "multi_get_size", "n_worker_per_mw", "n_middleware_vm", "n_instances_mt_per_machine", "n_threads_per_mt_instance",
             "write_bandwidth_limit","bandwidth_limit_write_throughput","bandwidth_limit_write_per_server_throughput", "read_bandwidth_limit", "bandwidth_limit_read_throughput", "client_rtt", "server_rtt"]
 
     value_cols = ["throughput", "rt_mean", "rt_std", "qwt_mean", "qwt_std", "ntt_mean", "ntt_std", "wtt_mean", "wtt_std",
-            "sst0_mean", "sst0_std", "sst1_mean", "sst1_std", "sst2_mean", "sst2_std", "sst_mean", "sst_std", "sstmax", "queue_size_mean", "arrivalrate"]
+            "tsst_mean", "tsst_std", "sst0_mean", "sst0_std", "sst0count", "sst1_mean", "sst1_std", "sst1count", "sst2_mean", "sst2_std", "sst2count", "sst_mean", "sst_std", "sstmax", "queue_size_mean", "arrivalrate"]
 
 
     df = df.set_index(config_cols, drop=False)
@@ -157,6 +155,7 @@ def _build_pipeline(exp):
                    "qwt_arr" : {"$push": {"m2":"$mw_stats.op.qwt_m2", "mean":"$mw_stats.op.qwt_mean", "count":"$mw_stats.op.qwt_count"}},
                    "ntt_arr" : {"$push": {"m2":"$mw_stats.op.ntt_M2", "mean":"$mw_stats.op.ntt_mean", "count":"$mw_stats.op.ntt_count"}},
                    "wtt_arr" : {"$push": {"m2":"$mw_stats.op.wtt_M2", "mean":"$mw_stats.op.wtt_mean", "count":"$mw_stats.op.wtt_count"}},
+                   "tsst_arr" : {"$push": {"m2":"$mw_stats.op.tsst_M2", "mean":"$mw_stats.op.tsst_mean", "count":"$mw_stats.op.tsst_count"}},
                    "sst0_arr" : {"$push": {"m2":"$mw_stats.op.sst0_M2", "mean":"$mw_stats.op.sst0_mean", "count":"$mw_stats.op.sst0_count"}},
                    "sst1_arr" : {"$push": {"m2":"$mw_stats.op.sst1_M2", "mean":"$mw_stats.op.sst1_mean", "count":"$mw_stats.op.sst1_count"}},
                    "sst2_arr" : {"$push": {"m2":"$mw_stats.op.sst2_M2", "mean":"$mw_stats.op.sst2_mean", "count":"$mw_stats.op.sst2_count"}},
@@ -166,6 +165,7 @@ def _build_pipeline(exp):
                         "qwt": {"$reduce": _reduce_stat("qwt_arr")},
                         "ntt": {"$reduce": _reduce_stat("ntt_arr")},
                         "wtt": {"$reduce": _reduce_stat("wtt_arr")},
+                        "tsst": {"$reduce": _reduce_stat("tsst_arr")},
                         "sst0": {"$reduce": _reduce_stat("sst0_arr")},
                         "sst1": {"$reduce": _reduce_stat("sst1_arr")},
                         "sst2": {"$reduce": _reduce_stat("sst2_arr")}
@@ -180,6 +180,8 @@ def _build_pipeline(exp):
                         "ntt_std":{"$sqrt": {"$divide": ["$ntt.m2", {"$subtract":["$ntt.count", 1]}]}},
                         "wtt_mean" : "$wtt.mean",
                         "wtt_std":{"$sqrt": {"$divide": ["$wtt.m2", {"$subtract":["$wtt.count", 1]}]}},
+                        "tsst_mean" : "$tsst.mean",
+                        "tsst_std":{"$sqrt": {"$divide": ["$tsst.m2", {"$subtract":["$tsst.count", 1]}]}},
                         "sst0_mean" : "$sst0.mean",
                         "sst0_std":{"$sqrt": {"$divide": ["$sst0.m2", {"$subtract":["$sst0.count", 1]}]}},
                         "sst1_mean" : "$sst1.mean",
@@ -220,12 +222,17 @@ def _build_pipeline(exp):
                         "ntt_std": {"$divide" : ["$ntt_std", 10.0]},
                         "wtt_mean" : {"$divide" : ["$wtt_mean", 10.0]},
                         "wtt_std": {"$divide" : ["$wtt_std", 10.0]},
+                        "tsst_mean" : {"$divide" : ["$tsst_mean", 10.0]},
+                        "tsst_std": {"$divide" : ["$tsst_std", 10.0]},
                         "sst0_mean" : {"$divide" : ["$sst0_mean", 10.0]},
                         "sst0_std": {"$divide" : ["$sst0_std", 10.0]},
+                        "sst0count":"$sst0.count",
                         "sst1_mean" :{"$divide" : ["$sst1_mean", 10.0]},
                         "sst1_std": {"$divide" : ["$sst1_std", 10.0]},
+                        "sst1count":"$sst1.count",
                         "sst2_mean" : {"$divide" : ["$sst2_mean", 10.0]},
                         "sst2_std": {"$divide" : ["$sst2_std", 10.0]},
+                        "sst2count":"$sst2.count",
                         "sst_mean": {"$divide" : ["$sst.mean", 10.0]},
                         "sst_std": {"$divide" : [{"$sqrt": {"$divide": ["$sst.m2", {"$subtract":["$sst.count", 1]}]}}, 10.0]},
                         "sstmax": {"$divide" : [{ "$max": ["$sst0_mean", "$sst1_mean", "$sst2_mean"]  }, 10.0]},
