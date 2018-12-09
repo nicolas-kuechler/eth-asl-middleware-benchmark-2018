@@ -182,13 +182,25 @@ Artifac
 
 %Provide a detailed comparison of the sharded and non-shareded modes. For which multi-GET size is sharding the preferred option? Provide a detailed analysis of your system. Add any additional figures and experiments that help you illustrate your point and support your claims.
 
+
+\todo{how can it be that for 6 and 9 the avg response time is smaller in non-sharded but the throughput is the same?}
+
+\paragraph{Number of Keys}
+ \todo{Summary relates performance for different request sizes}
+
+\paragraph{Sharded vs. Non-Sharded}
 Due to the network bottleneck a fair comparison between sharded and non-sharded is difficult. 
-However with 3 keys per multi-GET request the collected data suggests that using the non-sharded mode is better because the gain in server service time as a consequence of only having one instead of three values to fetch is outweighed by the waiting time for the answer of the slowest server. For 6 and 9 keys per multi-GET request there is a trade-of in presence of the network bottleneck. On average the response time in non-sharded mode is smaller than in sharded mode because as explained in the previous section less requests are affected by the network bottleneck. However using the non-sharded mode the tail in the response time distribution is longer and so the 99th percentile rank is significantly higher than in the sharded mode. This results in large response times for some requests.
-
+However with 3 keys per multi-GET request the collected data suggests that using the non-sharded mode is better because the gain in server service time as a consequence of only having one instead of three values to fetch is outweighed by the waiting time for the answer of the slowest server. For 6 and 9 keys per multi-GET request there is a trade-off in presence of the network bottleneck. On average the response time in non-sharded mode is smaller than in sharded mode because as explained in the previous section less requests are affected by the network bottleneck. However using the non-sharded mode the tail in the response time distribution is longer and so the 99th percentile rank is significantly higher than in the sharded mode. This results in large response times for some requests.
 So for multi-GETs with 6 and 9 keys, the preferred option in presence of the network bottleneck depends on whether the application requires to be good on average or not terrible in the worst case. 
-\todo{how can it be that for 6 and 9 the avg response time is smaller in non-sharded but the throughput is the same?} 
 
-\todo{need to add more to satisfy these points}
-Summary is consistent with previous experiments 5 Summary identifies trends and important parameters for performance 5 Summary relates performance for different request sizes 5 Summary related the sharded and non-sharded modes 5 Summary relates the response time on the clients and middleware (e.g. histograms)
+\paragraph{Client vs. Middleware Measurements}
+The histograms in figure \ref{exp5_hist} show that the response time measurements follow the same distribution on client as on the middleware however with a shift of approximately 1 milliseconds representing the transfer between client VM and middleware VM and vice versa. This corresponds with the estimate of the round trip time measured before the experiments. \todo{check if I can figure out why client measurements are bundled for large response times}
+
+\paragraph{Key take-away messages}
+\begin{itemize}
+	\item average response time performance better in non-sharded mode.
+	\item sharded mode for multi-GETs can be used to reduce the 99th percentile of the response time in presence of a server VM network bottleneck.
+	\item in sharded mode the performance of the slowest server is crucial for the response time. In non-sharded mode this effect is much less severe.
+\end{itemize}
 
 \end{document}

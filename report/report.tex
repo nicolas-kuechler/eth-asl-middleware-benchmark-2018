@@ -1,5 +1,5 @@
 \documentclass[11pt,a4paper]{article}
-
+%\usepackage{showframe}
 \usepackage{fullpage}
 \usepackage{hyperref}
 \usepackage{graphicx}
@@ -10,6 +10,12 @@
 \usepackage{multirow}
 \usepackage[]{algorithm2e}
 \usepackage{subfiles}
+\usepackage{amsmath}
+\usepackage[skip=4pt]{caption} % example skip set to 2pt
+
+\usepackage[font=small,labelfont=bf,tableposition=top]{caption}
+
+\DeclareCaptionLabelFormat{andtable}{#1~#2  \&  \tablename~\thetable}
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}

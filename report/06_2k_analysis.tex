@@ -2,18 +2,31 @@
 \begin{document}
 \section{2K Analysis (90 pts)}
 
-For 3 client machines (with 64 total virtual clients per client VM) measure the throughput and response time of your system in a 2k experiment with repetitions. All GET operations have a single key. Investigate the following parameters:
+%To keep the analysis simple, many factors that were known to affect the performance of the interconnection networks were kept fixed at one level as follows: 1.  Number of processors was fixed at 16. 2.  Queued requests were not buffered but blocked. 3.  Circuit switching was used instead of packet switching. 4.  Random arbitration was used instead of round robin. 5.  Infinite interleaving of memory was used so that there was no memory bank contention.
+%A 2^2 factorial experimental design was used.
+%Three different performance metrics were computed using simulation: average throughput (T), 90 transit time in cycles (N), and average response time (R). The measured performance is shown in Table 17.5. The effects, computed using the sip table method, are shown in Table 17.6. The table also contains percentage of variation explained.
 
-\begin{itemize}
-		
-	\item Memcached servers: 1 and 3
-	\item Middlewares: 1 and 2
-	\item Worker threads per MW: 8 and 32
-	      	      
-\end{itemize}
 
-Repeat the experiment for (a)~a write-only and (b)~a read-only workload.
-For each of the two workloads, what is the impact of these parameters on throughput, respectively response time?
+A $2^{k}r$ factorial design analyses the effect of $k$ factors each with two levels in an experiment with $r$ repetitions. In this section the primary factors number of memcached servers, number of middlewares and number of worker-threads per middleware as listed in the table below are investigated using a $2^{3}3$ factorial experimental design for both a read-only and write-only workload. The additive model in equation \ref{exp60_2k_additive_model} is used to model the response variable because between the effect between number of servers and middleware VMs / worker-threads is clearly not additive. However, the relation between number of middlewares and  number of worker-threads can be seen as multiplicative but the two approaches cannot be directly combined and so the additive model was chosen such that 2 out 3 relations are correctly modelled.\todo{add explanation why, maybe argue with checking of underlying assumptions from book}
+
+\begin{center}
+	\begin{tabular}{l|l|l}
+		%\hline
+		Factor S: servers & Factor M:  middlewares & Factor W: worker-threads\Tstrut \\
+		$x_{S\hphantom{M}} = \begin{cases}-1 & \text{for 1 server}\\ \hphantom{-}1 & \text{for 3 servers}\end{cases}$ &
+		$x_{M\hphantom{S}} = \begin{cases}-1 & \text{for 1 MW}\\ \hphantom{-}1 & \text{for 2 MWs}\end{cases}$ & 
+		$x_{W\hphantom{S}} = \begin{cases}-1 & \text{for 8 WT}\\ \hphantom{-}1 & \text{for 32 WT}\end{cases}$\Bstrut\\
+		%\hline
+	\end{tabular} 
+\end{center}
+
+\begin{equation}
+y=q_0 + q_Sx_S + q_Mx_M + q_Wx_W + q_{SM}x_Sx_M + q_{SW}x_Sx_W + q_{MW}x_Mx_W + q_{SMW}x_Sx_Mx_W + e
+\label{exp60_2k_additive_model}
+\end{equation}
+
+In order to keep the analysis simple, secondary factors such as number of clients = 192, number of client VMs = 3, and value size = 4096 remain fixed, even though they are known from previous sections to affect performance.
+The details of the configuration is shown in the following table.
 
 \begin{center}
 	\scriptsize{
@@ -24,8 +37,8 @@ For each of the two workloads, what is the impact of these parameters on through
 			\hline Threads per memtier instance     & 2 (1 middleware) or 1 (2 middlewares)   \\
 			\hline Virtual clients per thread       &  32                                     \\ 
 			\hline Workload                         & Write-only and Read-only\\
-			\hline Multi-Get behavior               & N/A                                         \\
-			\hline Multi-Get size                   & N/A                                         \\
+			%\hline Multi-Get behavior               & N/A                                         \\
+			%\hline Multi-Get size                   & N/A                                         \\
 			\hline Number of middlewares            & 1 and 2                                     \\
 			\hline Worker threads per middleware    & 8 and 32                                    \\
 			\hline Repetitions                      & 3 or more (at least 1 minute each)                                   \\ 
@@ -35,51 +48,118 @@ For each of the two workloads, what is the impact of these parameters on through
 \end{center}
 
 
+Two different performance metrics were computed using simulation: average throughput in ops/sec and average response time in milliseconds. The interactive law characterizes the relation between throughput and response time in a closed system and since both number of clients and client thinking time remain fixed in the experiment, the difference of percentage of variation for a factor should be close between both metrics.
+
+Additionally to checking that the percentage of variations are similar, the interactive law was also verified directly with the obtained measurements. \todo{add table with ilaw}
+
+\paragraph{Methodology}
+
+Effects $q$ of the factor combinations were calculated using the sign table method using the average $\hat{y}_i$ over the 3 repetitions.
+The total variation of the data is defined as: 
+
+\begin{equation}
+ 	SST = \sum_{i=1}^n\sum_{j=1}^r (y_i - \bar{y})^2 = \underbrace{nrq_S^2}_{SSS} + \underbrace{nrq_M^2}_{SSM} + \cdots +  \underbrace{nrq_{SM}^2}_{SSSM} + \cdots + \underbrace{nrq_{SMW}^2}_{SSSMW} + SSE
+\end{equation}
+
+with $n=2^3$, $r=3$ and mean response from all repetitions of all experiments $\bar{y}$. 
+An estimation of the experimental error is done by  calculating  $SSE = \sum_{i}^{2^3}\sum_{j}^{3} e_{ij}^2$ where $e_{ij} = y_{ij} - \hat{y}_{i}$ measures the difference between the result of the $j'th$ repetition and the average obtained in experiment $i$.
+
+This allows to calculate the percentage of variation $\frac{SSA}{SST}$ which is the fraction of the variation explained by a factor A.
+Additionally for the effect of each factor the 90\% confidence interval using the t-value 1.746 was calculated.
+The impact of a factor is significant if 0 is not in the confidence interval.
+Details of the $2^{k}r$ factorial design can be found in \cite{books/daglib/0076234}.
+
 \begin{table}
 	\centering
 	\small{
-		\caption{$2^k3$ Experiment Base Table for Write-Only}
-		\label{exp60_wo_2k_base} 
-		\setlength{\tabcolsep}{4.5pt}
+		\setlength{\tabcolsep}{3.9pt}
 		\input{data/exp60_wo_2k_base}
+		\caption{$2^33$ Experiment Base Table for Write-Only}\label{exp60_wo_2k_base} 
 	}
 \end{table}
 
 
+
 \begin{table}
 	\small{
-		\centering
-		\caption{Write-Only}
-		\label{exp60_wo_2k_effect}
-		\setlength{\tabcolsep}{4.7pt}
+		\centering	
+		
+		\setlength{\tabcolsep}{4.1pt}
 		\newcommand{\rlft}[0]{\raggedleft\arraybackslash}
 		\input{data/exp60_wo_2k_effect}
+		\caption{Effect and percentage of variation of different factors and combination of factors in a write-only workload.}\label{exp60_wo_2k_effect}
 	}
 \end{table}
+
+
+\paragraph{Write-Only}
+
+The experimental measurements of throughput and response time are listed in table \ref{exp60_wo_2k_base}.
+The percentage of variation of the error is small which shows that the variance between the configurations is explained by the different factors.
+
+Table \ref{exp60_wo_2k_effect} shows that the performance of the system in a write-only workload decreases when using three servers.  This is a familiar problem known from section \ref{exp4} because the total server service time for SET requests is determined by the slowest server. The problem is aggravated because server 2, as previous experiments run on the same set of VMs have already shown, is constantly slower than the other servers. 
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+	\cline{2-4} 
+	\multicolumn{1}{c|}{} & Server 1 & Server 2 & Server 3 \\ 
+	\hline 
+	Mean Server Service Time & 1.8 ms & 3.0 ms & 2.0 ms \\ 
+	\hline 
+\end{tabular} 
+\end{center}
+
+The number of middlewares is an important factor which explains 24.3\% of the variation. Using 2 middlewares the throughput is increased because as argued in section \ref{exp3} the resulting increase in worker-threads is beneficial to the write-only workload with 192 clients.
+
+The strongest influence on performance is the number of worker-threads. 
+The percentage of variation of factor W (worker-threads) is higher than of factor M (middleware) because of the chosen levels. If only one of the factors could be on the upper level, factor W would be the better choice 
+because then there are 32 workers in the system in total compared to only 16 when there are 2 middlewares but only 8 workers each. This claim is also supported by the collected data in table \ref{exp60_wo_2k_base} which also shows that as expected ideally both factors are on the upper level.
+	
+The interaction between the different factors does not play a major role in the explanation of the measured throughput and response times.	
 
 
 
 \begin{table}
 	\centering
 	\small{
-		\caption{$2^k3$ Experiment Base Table for Read-Only}
-		\label{exp60_ro_2k_base} 
-		\setlength{\tabcolsep}{4.5pt}
+		\setlength{\tabcolsep}{4.7pt}
 		\input{data/exp60_ro_2k_base}
+		\caption{$2^33$ Experiment Base Table for Read-Only}\label{exp60_ro_2k_base} 
 	}
 \end{table}
+
 
 
 \begin{table}
 	\small{
 		\centering
-		\caption{Read-Only}
-		\label{exp60_ro_2k_effect}
-		\setlength{\tabcolsep}{4.7pt}
+		\setlength{\tabcolsep}{4.5pt}
 		\newcommand{\rlft}[0]{\raggedleft\arraybackslash}
 		\input{data/exp60_ro_2k_effect}
+		\caption{Effect and percentage of variation of different factors and combination of factors in a read-only workload. The effect of factors showing an $a$ next to the 90\% confidence interval are not significant.}\label{exp60_ro_2k_effect}
 	}
 \end{table}
+
+\paragraph{Read-Only}
+
+The response time and throughput measurements for the different configurations in the read-only workload are listed in table \ref{exp60_ro_2k_base}. The percentage of variation of the error is small which indicates that the performance differences between the configurations are not explained by the error. 
+
+The number of servers is the dominant factor in a read-only workload because as shown in the middleware baseline in section \ref{exp3} when using a single server VM, the throughput is bound to around 3000 ops/sec by the upload bandwidth of the server VM. Naturally when using three server VMs the upload bandwidth capacity triples, which leads to a much higher throughput and lower response time. This explains why factor S (server), is responsible for basically all the percentage of variation. (Table \ref{exp60_ro_2k_effect})
+
+Adding an additional middleware or increasing the number of worker-threads has only a marginal positive effect on the performance in presence of the network bottleneck without increasing the number of servers. This is consistent with observations in previous sections. 
+However, the collected data in table \ref{exp60_ro_2k_base} indicates that given there are 3 servers and at least 16 worker-threads in total in the system, the throughput reaches the bandwidth limit of approximately 9000 ops/sec of the 3 server VMs. The 16 worker-threads in total are reached by either using 32 threads in a single middleware or then with 2 middlewares with at least 8 worker-threads per middleware.
+Consequently it is beneficial to the performance of the system in a read-only workload to use 32 worker-threads or 2 middlewares if 3 servers are used.
+The simple additive model fails to capture this effect and in a multiplicative model it is no different.
+
+The combined effects are in general really small and so the interaction between the different factors is small.
+As expected by the interactive law all factors having a positive effect on throughput have a negative effect on the response time and the percentage of variation is proportional to each other.
+
+\paragraph{Key take-away messages}
+\begin{itemize}
+	\item the negative effect on performance when using multiple servers in a write-only workload is shown 
+	\item for write-only workload previously analysed effect of number of workers-threads on throughput and response time also  shows in 2K analysis
+	\item for read-only workload the importance of multiple servers because of the network bandwidth problem is also shown by the 2K analysis 
+\end{itemize}
 
 
 \end{document}

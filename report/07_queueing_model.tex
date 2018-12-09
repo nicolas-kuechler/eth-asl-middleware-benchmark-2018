@@ -4,16 +4,226 @@
 
 Note that for queuing models it is enough to use the experimental results from the previous sections. It is, however, possible that the numbers you need are not only the ones in the figures we asked for, but also the internal measurements that you have obtained through instrumentation of your middleware.
 
+In Section \ref{exp4} it was shown that the interactive law holds for all measurements and so the check is omitted here.
+
+
+\begin{table}
+	\centering
+	\begin{tabular}{r|lcccccccc|}
+		\multicolumn{3}{c}{}  & \multicolumn{7}{c}{Number of Clients}\Tstrut \\ 
+		\multicolumn{3}{c}{}   & 6 & 12 & 24 & 48 & 72 & 96 & \multicolumn{1}{c}{144} \\ 
+		\cline{2-10}
+		\multirow{2}{*}{8 WT } & $\mu_{M/M/1} = 6385$ & $\lambda = $ & 2357 & 4520 & 5562 & 6262 & 6244 & 6173 & 6320\Tstrut \\
+		& $\mu_{M/M/16} = 399$ & $\rho =$ & 0.37 & 0.71 & 0.87 & 0.98 & 0.98 & 0.97 & 0.99 \\
+		\cline{2-10}
+		\multirow{2}{*}{16 WT } & $\mu_{M/M/1} = 8313$ & $\lambda = $ & 2367 & 4335 & 5699 & 7664 & 8103 & 8201 & 8266\Tstrut \\
+		& $\mu_{M/M/32} = 260$ & $\rho =$ & 0.28 & 0.52 & 0.69 & 0.92 & 0.97 & 0.99 & 0.99 \\
+		\cline{2-10}
+		\multirow{2}{*}{32 WT } & $\mu_{M/M/1} = 10504$ & $\lambda = $ & 2397 & 4456 & 5708 & 7975 & 9267 & 10155 & 10420\Tstrut \\
+		& $\mu_{M/M/64} = 164$ & $\rho =$ & 0.23 & 0.42 & 0.54 & 0.76 & 0.88 & 0.97 & 0.99 \\
+		\cline{2-10}
+		\multirow{2}{*}{64 WT } & $\mu_{M/M/1} = 11848$ & $\lambda = $ & 2405 & 4312 & 5738 & 8027 & 9339 & 10300 & 11210\Tstrut \\
+		& $\mu_{M/M/128} = 93$ & $\rho =$ & 0.2 & 0.36 & 0.48 & 0.68 & 0.79 & 0.87 & 0.95 \\
+		\cline{2-10}
+	\end{tabular}
+	\caption{Arrival rates $\lambda$, service rate $\mu$ and traffic intensity $\rho$ for both M/M/1 and M/M/m models for different number of worker-threads} \label{exp70_arrival_service_traffic} 
+\end{table}
+
+
+\begin{figure}
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_rt_w8.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_queue_w8.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_qwt_w8.pdf}
+	\end{subfigure}
+	\caption{Response time, number of requests in queue and waiting time in queue as a function of number of clients as measured in simulation and calculated using an M/M/1 and M/M/m model for the configuration with 8 worker-threads.}\label{exp70_w8}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_rt_w16.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_queue_w16.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_qwt_w16.pdf}
+	\end{subfigure}
+	\caption{Response time, number of requests in queue and waiting time as a function of number of clients in queue as measured in simulation and calculated using an M/M/1 and M/M/m model for the configuration with 16 worker-threads.}\label{exp70_w16}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_rt_w32.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_queue_w32.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_qwt_w32.pdf}
+	\end{subfigure}
+	\caption{Response time, number of requests in queue and waiting time as a function of number of clients in queue as measured in simulation and calculated using an M/M/1 and M/M/m model for the configuration with 32 worker-threads.}\label{exp70_w32}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_rt_w64.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_queue_w64.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.33\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_qwt_w64.pdf}
+	\end{subfigure}
+	\caption{Response time, number of requests in queue and waiting time as a function of number of clients in queue as measured in simulation and calculated using an M/M/1 and M/M/m model for the configuration with 8 worker-threads.}\label{exp70_w64}
+\end{figure}
+
 \subsection{M/M/1}
 
-Build queuing model based on Section 4 (write-only throughput) for each worker-thread configuration of the middleware. Use one M/M/1 queue to model your entire system. Motivate your choice of input parameters to the model. Explain for which experiments the predictions of the model match and for which they do not.
+%Build queuing model based on Section 4 (write-only throughput) for each worker-thread configuration of the middleware. Use one M/M/1 queue to model your entire system. Motivate your choice of input parameters to the model. Explain for which experiments the predictions of the model match and for which they do not.
+
+In this section the entire system from Section \ref{exp4} (write-only throughput) is modelled using one M/M/1 queue. An M/M/1 queue assumes that the interarrival times and service times of requests are exponentially distributed and that requests are waiting in a possibly unbounded FCFS queue\footnote{first come first served queue} for processing by the only server in the system.
+
+A M/M/1 queue is completely defined by two parameters, the arrival rate $\lambda$ and the service rate $\mu$.
+The average number of requests per second arriving in the system depends on the user load and is measured in the net-thread of each middleware. This measurement is then used as the arrival rate $\lambda$ for the M/M/1 queue.
+The service rate $\mu$ is independent of the user load and characterizes how fast the system is able to serve requests in a certain configuration. \todo{verify this formulation} 
+The maximum observed throughput of the system with a certain configuration can be used as an estimate for the service rate because this shows that the system is capable of serving requests this fast. 
+The service rate $\mu$ is defined as the maximum throughput observed for a worker-thread configuration independent of the number of clients.
+
+The chosen parameters are listed in table \ref{exp70_arrival_service_traffic}.
+The system is always stable because the traffic intensity  $\rho= \frac{\lambda}{\mu}$ is always smaller than 1.
+The traffic intensity also represents the utilization of the system and this matches nicely with the results from section \ref{exp4}, where it was shown that the system saturates when there are considerably more clients than total worker-threads in the system. \footnote{recall that there are two middlewares in the system and hence the total number of worker-threads is two times the number of worker-threads per middleware which are listed in table \ref{exp70_arrival_service_traffic})}
+Apart from the traffic intensity the performance of the model is evaluated by comparing it to the measured response time, number of requests in the request queue and waiting time in the request queue.
+
+The M/M/1 model constantly underestimates the response time because it assumes there is only a single server (worker-thread) and so the given service rate implies that this single server processes each job rapidly and hence the predicted response time is much lower than the observed response time. In the actual implementation of the middleware the individual service time of a worker-thread is much larger and the achieved throughput is only possible because multiple worker-threads process requests in parallel.
+In configurations with relatively few worker-threads (Fig. \ref{exp70_w8}, \ref{exp70_w16}) the discrepancies in response time are smaller compared to configurations with more working-threads (Fig. \ref{exp70_w32}, \ref{exp70_w64}) because the concurrency in the system, which the M/M/1 model fails to capture, increases in the number of worker-threads.
+Both the number of requests in the queue and the waiting time in the queue are approximated well with the M/M/1 model because there the assumption of a single FCFS queue matches well with the request queue in the middleware. This accuracy is only possible because the decoding in the net-thread is not a bottleneck where requests are queued for a long time. 
 
 \subsection{M/M/m}
 
-Build an M/M/m model based on Section 4, where each middleware worker thread is represented as one service.  Motivate your choice of input parameters to the model. Explain for which experiments the predictions of the model match and for which they do not.
+%Build an M/M/m model based on Section 4, where each middleware worker thread is represented as one service.  Motivate your choice of input parameters to the model. Explain for which experiments the predictions of the model match and for which they do not.
+
+In this section the entire system from Section \ref{exp4} (write-only throughput) is modelled using one M/M/m queue. An M/M/m queue assumes that the interarrival times and service times of requests are exponentially distributed and that requests are waiting in a possibly unbounded FCFS queue\footnote{first come first served queue} for processing by one of the $m$ servers in the system.
+
+An M/M/m queue is completely defined by three parameters, the arrival rate $\lambda$, the service rate $\mu$ and the number of servers $m$.
+The arrival rate $\lambda$ and the service rate $\mu$ are defined as in the M/M/1 model with the only difference that the service rate is divided by the number of servers $m$ in the system because when assuming that there are $m$ servers that split the workload equally, then each server is responsible for $\frac{1}{m}$ of the total number of serviced requests. The parameter $m$ is chosen such that it matches the total number of worker-threads in the system which is two times the number of worker-threads per middleware since there are two middlewares.
+
+It can be expected that the M/M/m queue is a much better model for the response time than the M/M/1 queue because it accounts for the concurrency of the worker-threads. The predictions for the number of requests in the queue and queue waiting time should be relatively similar to the M/M/1 model. The traffic intensity for the M/M/m model is identical to the traffic intensity in the M/M/1 by construction and as seen in the previous section it nicely captures the utilization of the system.
+
+While the system is under-saturated when there are more worker-threads than clients, the M/M/m model is a bad model for the response time. This becomes in particularly evident in figure \ref{exp70_w64} with 128 worker-threads in total but the same is also visible with less worker-threads. The reason for this phenomena is that \todo{add explanation}.
+Despite the fact that in the under-saturated phase the M/M/m model fails to capture the response time accurately, when the system is running at near to optimal load with approximately equal number of worker-threads in total and clients, then the M/M/m model is a good model for the response time and outperforms the M/M/1 model significantly.
+When there are much more clients per middleware than worker-threads, the accuracy of the model decreases and there can even be some artefacts as observed in figure  \ref{exp70_w8}.
+
+As expected the difference between the predictions for number of requests waiting in queue and waiting time are equally good to the M/M/1 model because the model accurately models the situation in the middleware with a single FCFS request queue where all requests are waiting for service. Additionally it has to be noted that this accuracy is only possible because the net-thread is not the bottleneck of the system because otherwise requests would already be queued there which would not be reflected by the number of requests waiting in the request queue and the waiting time in this queue.
+
 
 \subsection{Network of Queues}
 
-Based on Section 3, build a network of queues which simulates your system. Motivate the design of your network of queues and relate it wherever possible to a component of your system. Motivate your choice of input parameters for the different queues inside the network. Perform a detailed analysis of the utilization of each component and clearly state what the bottleneck of your system is. Explain for which experiments the predictions of the model match and for which they do not.
+%Based on Section 3, build a network of queues which simulates your system. Motivate the design of your network of queues and relate it wherever possible to a component of your system. Motivate your choice of input parameters for the different queues inside the network. Perform a detailed analysis of the utilization of each component and clearly state what the bottleneck of your system is. Explain for which experiments the predictions of the model match and for which they do not.
+
+\begin{figure}
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_noq_tp_wo.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_noq_util_wo.pdf}
+	\end{subfigure}%
+	\caption{Write-Only}\label{exp70_noq_wo}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_noq_tp_ro.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_noq_util_ro.pdf}
+	\end{subfigure}%
+	\caption{Read-Only}\label{exp70_noq_ro}
+\end{figure}
+
+
+\begin{figure}
+	\begin{minipage}[c]{0.45\linewidth}
+		\centering
+		\scriptsize{
+			\begin{tabular}{|l|c|c|l|}
+				\hline 
+				& $V$ & $S$ & Type \Tstrut\\ 
+				\hline 
+				Client & 1 & 0.0  & delay center \Tstrut\\ 
+				\hline 
+				Network Client - MW & 1 &  & delay center \Tstrut\\  
+				Net-Thread & 1 &  & M/M/1 \\ 
+				Worker-Threads & 1 &  & M/M/m  \\ 
+				Network MW - Client & 1 &  & delay center \\ 
+				\hline 
+			\end{tabular} 
+		} 
+	\end{minipage}
+	\hspace{0.5cm}
+	\begin{minipage}[c]{0.45\linewidth}
+	\centering
+	\includegraphics[width=\textwidth]{data/noq_1mw.png}
+\end{minipage}
+	\caption{Network of Queue with one middleware}
+	\label{exp70_noq_1mw}
+\end{figure}
+
+
+
+\begin{figure}
+	\begin{minipage}[c]{0.45\linewidth}
+		\centering
+		\scriptsize{
+			\begin{tabular}{|l|c|c|l|}
+				\hline 
+				& $V$ & $S$ & Type \Tstrut\\ 
+				\hline 
+				Client & 1 & 0.0  & delay center \Tstrut\\ 
+				\hline 
+				Network Client - MW 1 & 0.5 &  & delay center \Tstrut\\ 
+				Net-Thread MW 1 & 0.5 &  & M/M/1 \\ 
+				Worker-Threads MW 1 & 0.5 &  & M/M/m  \\ 
+				Network MW 1 - Client & 0.5 &  & delay center \\ 
+				\hline 
+				Network Client - MW 2 & 0.5 &  & delay center \Tstrut\\  
+				Net-Thread MW 2 & 0.5 &  & M/M/1 \\ 
+				Worker-Threads MW 2 & 0.5 &  & M/M/m  \\
+				Network MW 2 - Client & 0.5 &  & delay center \\ 
+				\hline 
+			\end{tabular} 
+		} 
+	\end{minipage}
+	\hspace{0.5cm}
+	\begin{minipage}[c]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{data/noq_2mw.png}
+	\end{minipage}
+	\caption{Network of Queue with two middlewares}
+	\label{exp70_noq_2mw}
+\end{figure}
+
+\todo{do figures properly and noq for 2 mws needs to be smaller}
+
 
 \end{document}
