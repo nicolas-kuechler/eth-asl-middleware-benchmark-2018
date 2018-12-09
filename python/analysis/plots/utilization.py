@@ -113,3 +113,38 @@ def detail_nc(ax, df):
     ax.set_xlim(0, clients[-1]+2)
     ax.set_ylim(0, 100)
     ax.set_xticks(clients)
+
+def network_queue(ax, df):
+
+    df = df[df['num_clients']<288]
+
+    for mw in df.loc[:,'n_mw'].unique():
+        dfmw = df[df['n_mw']==mw]
+        for dev in dfmw.loc[:,'device'].unique():
+            df_dev = dfmw[dfmw['device']==dev]
+
+            clients = df_dev.loc[:,'num_clients'].values
+            utils = df_dev.loc[:,'utilization'].values * 100
+
+            n_mw = df_dev['n_mw'].unique()[0]
+            if n_mw > 1:
+                label = f"{n_mw}MWs - {dev}"
+            else:
+                label = f"{n_mw}MW  - {dev}"
+            # plot net-thread utilization
+            ax.plot(clients, utils, #color=const.rt_component_color['ntt'],
+                                        marker='.',
+                                        markersize=const.markersize,
+                                        label=label)
+
+
+
+
+    # TODO [nku] decide on legend
+    ax.legend(loc='center right')
+    ax.set_ylabel('Utilization in %')
+    ax.set_xlabel(const.axis_label['number_of_clients'])
+
+    ax.set_xlim(0, clients[-1]+2)
+    ax.set_ylim(0, 101)
+    ax.set_xticks(clients)

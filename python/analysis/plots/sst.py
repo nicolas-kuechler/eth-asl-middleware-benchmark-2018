@@ -186,19 +186,35 @@ def detail_mget(ax, df):
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
-def time(ax, df):
+def time(ax, df, server=None):
     for rep in np.unique(df.loc[:,'rep'].values):
         df_rep = df[df['rep']==rep]
 
         slots = df_rep.loc[:,'slot'].values
         assert(slots.shape[0] == np.unique(slots).shape[0])
 
-        means = df_rep.loc[:,'sst_mean'].values
-        stds = df_rep.loc[:,'sst_std'].values
+        if server is None:
+            means = df_rep.loc[:,'sst_mean'].values
+            stds = df_rep.loc[:,'sst_std'].values
+        elif server == 0:
+            means = df_rep.loc[:,'sst0_mean'].values
+            stds = df_rep.loc[:,'sst0_std'].values
+        elif server == 1:
+            means = df_rep.loc[:,'sst1_mean'].values
+            stds = df_rep.loc[:,'sst1_std'].values
+        elif server == 2:
+            means = df_rep.loc[:,'sst2_mean'].values
+            stds = df_rep.loc[:,'sst2_std'].values
         ax.errorbar(slots, means, stds, marker='.', markersize=const.markersize, capsize=const.capsize, label=f"rep={rep}")
 
     ax.legend()
-    ax.set_ylabel('Server Service Time [ms]')
+    if server is None:
+        ax.set_ylabel('Server Service Time [ms]')
+        print('here1')
+    else:
+        print('here2')
+        ax.set_ylabel(f'Server {server} Service Time [ms]')
+
     ax.set_xlabel(const.axis_label['slot'])
 
     ax.axvspan(0, const.min_slot_inclusive-0.5, alpha=0.5, color='grey')

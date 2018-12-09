@@ -75,6 +75,43 @@ def mget(ax, df):
     ax.set_ylim(0, max(qwt_means)*1.1)
     ax.set_xticks(mget_sizes)
 
+def queueing_model(ax, df):
+    n_workers = np.unique(df.loc[:,'n_worker_per_mw'].values)
+    assert(n_workers.shape[0]==1)
+
+    clients = df.loc[:,'num_clients'].values
+
+    meas_qwt = df.loc[:,'meas_qwt'].values
+    mm1_qwt = df.loc[:,'mm1_qwt'].values
+    mmm_qwt = df.loc[:,'mmm_qwt'].values
+
+    ax.plot(clients, meas_qwt,  color=const.queueing_color["meas"],
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label=const.queueing_label["meas"])
+
+    ax.plot(clients, mm1_qwt,  color=const.queueing_color["mm1"],
+                                            linestyle='None',
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label=const.queueing_label["mm1"])
+
+    ax.plot(clients, mmm_qwt,  color=const.queueing_color["mmm"],
+                                            linestyle='None',
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label=const.queueing_label["mmm"].replace("m", f"{n_workers[0]*2}"))
+
+    ax.legend()
+
+    ax.set_ylabel(const.axis_label['qwt'])
+    ax.set_xlabel(const.axis_label['number_of_clients'])
+
+
+    ax.set_xlim(0, max(clients)+2)
+    ax.set_ylim(0, max(np.concatenate([meas_qwt, mm1_qwt, mmm_qwt]))*1.1)
+    ax.set_xticks(clients)
+
 def time(ax, df):
     for rep in np.unique(df.loc[:,'rep'].values):
         df_rep = df[df['rep']==rep]

@@ -26,8 +26,6 @@ def load_df(suite, exp):
 
     df, config_cols, value_cols = load_df_by_rep(suite,exp)
 
-    print(f"Client: {df[df['throughput_mean']==0].shape[0]} repetitions don't have throughput")
-
     df = df[df["throughput_mean"]!=0]
     df["tp_cov"] = df.apply(lambda row: row['throughput_std'] / row['throughput_mean'], axis=1)
 

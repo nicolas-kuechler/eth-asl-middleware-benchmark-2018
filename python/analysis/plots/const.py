@@ -76,7 +76,8 @@ axis_label = {
     "slot": "Slot",
     "queue_size": "Number of Requests in Queue",
     "sst":"Server Service Time [ms]",
-    "n_worker": "Number of Worker-Threads"
+    "n_worker": "Number of Worker-Threads",
+    "qwt": "Queue Waiting Time [ms]"
 }
 
 label = {

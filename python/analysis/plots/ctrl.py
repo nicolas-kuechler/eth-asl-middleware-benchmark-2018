@@ -92,13 +92,28 @@ def dashboard_mget(df):
     generate(sst.mget, df)
     generate(queue.mget, df)
 
-def dashboard_time(suite, exp_name):
+def export(df, dir, exp_name, suffix=""):
+    path = f"./../../data/{exp_name}/{dir}"
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+    file = f"{path}/processed{suffix}.log"
+    df.to_csv(file, sep=',')
+
+    print(f"Saved Data: {file}")
+
+def dashboard_time(suite, exp_name, n_worker=None, n_clients=None):
     df = query_mw.load_df_by_slot(suite=suite ,exp=exp_name)
     for n_mw in np.unique(df.loc[:,'n_middleware_vm'].values):
         for n_server in np.unique(df.loc[:,'n_server_vm'].values):
             for n_w in np.unique(df.loc[:,'n_worker_per_mw'].values):
+                if n_worker is not None and n_worker != n_w:
+                    continue
                 for op_type in np.unique(df.loc[:,'op_type'].values):
                     for num_clients in np.unique(df.loc[:,'num_clients'].values):
+                        if n_clients is not None and n_clients != num_clients:
+                            continue
                         for mget_size in np.unique(df.loc[:,'multi_get_size'].values):
                             df_filtered = df[(df['n_middleware_vm']==n_mw)&(df['n_server_vm']==n_server)&(df['n_worker_per_mw']==n_w) & (df['op_type']==op_type) & (df['num_clients']==num_clients) & (df['multi_get_size']==mget_size)]
                             if df_filtered.shape[0]== 0:
@@ -110,7 +125,7 @@ def dashboard_time(suite, exp_name):
                             #generate(ntt.time, df_filtered)
                             #generate(wtt.time, df_filtered)
                             #generate(sst.time, df_filtered)
-                            #generate(sst.time0, df_filtered)
-                            #generate(sst.time1, df_filtered)
-                            #generate(sst.time2, df_filtered)
-                            #generate(queue.time, df_filtered)
+                            #generate(sst.time, df_filtered, opt=0)
+                            #generate(sst.time, df_filtered, opt=1)
+                            #generate(sst.time, df_filtered, opt=2)
+                            generate(queue.time, df_filtered)

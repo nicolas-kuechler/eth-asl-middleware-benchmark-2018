@@ -37,7 +37,7 @@ def load_df(suite, exp):
 
     df_slot["tp_cov"] = df_slot.apply(lambda row: row['throughput_slot_std'] / row['throughput_slot_mean'], axis=1)
 
-    df_slot = df_slot[df_slot["tp_cov"]<const.cov_threshold]
+    #df_slot = df_slot[df_slot["tp_cov"]<const.cov_threshold]
 
     df_rep, config_cols_rep, value_cols_rep = df_aggregate.aggregate_repetitions(df_slot, config_cols=config_cols_slot, value_cols=value_cols_slot)
 

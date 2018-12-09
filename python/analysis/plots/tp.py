@@ -308,6 +308,125 @@ def mget_mix(ax, df):
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
+def mget_mix_key(ax, df):
+    clients = df.loc[:,'num_clients'].values
+    mget_sizes = df.loc[:,'multi_get_size'].values
+
+    throughput_means_sharded = df.loc[:,'throughput_rep_mean_sharded'].values
+    throughput_stds_sharded = df.loc[:,'throughput_rep_std_sharded'].values
+
+    throughput_means_nonsharded = df.loc[:,'throughput_rep_mean_nonsharded'].values
+    throughput_stds_nonsharded = df.loc[:,'throughput_rep_std_nonsharded'].values
+
+
+    data_origin = np.unique(df.loc[:,'data_origin'].values)
+    op_type = np.unique(df.loc[:,'op_type'].values)
+
+    assert(op_type.shape[0]==1)
+    assert(data_origin.shape[0]==1)
+
+
+    tp_keys_ns = mget_sizes * throughput_means_nonsharded
+    tp_keys_s = mget_sizes * throughput_means_sharded
+
+    ax.errorbar(mget_sizes, tp_keys_ns, throughput_stds_nonsharded, color=const.color['nonsharded'],
+                                                            capsize=const.capsize,
+                                                            marker='.',
+                                                            markersize=const.markersize,
+                                                            label=const.label['nonsharded'])
+
+    ax.errorbar(mget_sizes, tp_keys_s, throughput_stds_sharded, color=const.color['sharded'],
+                                                            capsize=const.capsize,
+                                                            marker='.',
+                                                            markersize=const.markersize,
+                                                            label=const.label['sharded'])
+
+    max_y = max(max(tp_keys_ns),max(tp_keys_s))
+
+
+    if op_type == "set":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_write_throughput_sharded'].values
+    elif op_type == "get" or op_type == "mget":
+        bandwidth_throughput_limit = df.loc[:,'bandwidth_limit_read_throughput_sharded'].values
+    else:
+        print(op_type)
+        raise ValueError("Unknown Op Type")
+
+    if np.unique(bandwidth_throughput_limit)[0] != "-":
+
+        ax.plot(mget_sizes, bandwidth_throughput_limit, linestyle='--', color=const.network_throughput_limit_color, label=const.label['network_throughput_limit'])
+
+    print(mget_sizes)
+    print("non-sharded")
+    print(np.round(tp_keys_ns))
+
+    print("sharded")
+    print(np.round(tp_keys_s))
+
+    print(np.round(bandwidth_throughput_limit))
+
+    ax.legend()
+
+    ax.set_ylabel("Throughput [key/sec]")
+    ax.set_xlabel(const.axis_label['mget_size'])
+
+    ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
+
+    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_ylim(0, max_y*1.1)
+    ax.set_xticks(mget_sizes)
+
+def network_queue(ax, df):
+    n_workers = np.unique(df.loc[:,'n_worker_per_mw'].values)
+    assert(n_workers.shape[0]==1)
+
+    df = df[df['num_clients']<288]
+
+
+    dfmw1 = df[df['n_mw']==1]
+    meas_tps_mw1 = dfmw1.loc[:,'tp_meas'].values
+    model_tps_mw1 = dfmw1.loc[:,'tp_model'].values
+    clients_mw1 = dfmw1.loc[:,'num_clients'].values
+
+    dfmw2 = df[df['n_mw']==2]
+    meas_tps_mw2 = dfmw2.loc[:,'tp_meas'].values
+    model_tps_mw2 = dfmw2.loc[:,'tp_model'].values
+    clients_mw2 = dfmw2.loc[:,'num_clients'].values
+
+
+    ax.plot(clients_mw1, meas_tps_mw1,  color=const.queueing_color["mm1"],
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label='1 MW  - ' + const.queueing_label["meas"])
+
+
+    ax.plot(clients_mw2, meas_tps_mw2,  color=const.queueing_color["mmm"],
+                                            marker='.',
+                                            markersize=const.markersize,
+                                            label='2 MWs - ' + const.queueing_label["meas"])
+
+    ax.plot(clients_mw1, model_tps_mw1,  color="black",
+                                            linestyle='None',
+                                            marker='x',
+                                            markersize=const.markersize,
+                                            label='1 MW  - model')
+
+    ax.plot(clients_mw2, model_tps_mw2,  color="red",
+                                            linestyle='None',
+                                            marker='x',
+                                            markersize=const.markersize,
+                                            label="2 MWs - model")
+
+    ax.legend(loc='lower right')
+
+    ax.set_ylabel(const.axis_label['throughput'])
+    ax.set_xlabel(const.axis_label['number_of_clients'])
+
+
+    ax.set_xlim(0, max(clients_mw2)+2)
+    ax.set_ylim(0, max(np.concatenate([meas_tps_mw2, model_tps_mw2]))*1.1)
+    ax.set_xticks(clients_mw2)
+
 def time(ax, df):
 
     slots = None
