@@ -1,6 +1,6 @@
 \documentclass[report.tex]{subfiles}
 \begin{document}
-\section{Gets and Multi-gets (90 pts)}
+\section{Gets and Multi-gets (90 pts)}\label{exp5}
 
 %For this set of experiments you will use three load generating machines, two middlewares and three memcached servers. Each memtier instance should have 2 virtual clients in total and the number of middleware worker threads is 64, or the one that provides the highest throughput in your system (whichever number of threads is smaller).
 
@@ -12,6 +12,37 @@ Results from the baseline with two middlewares in section \ref{exp31} show that 
 Details of the configuration are listed in the table below.
 
 For all experiments the average number of keys in the multi-GETs was recorded in order to ensure that the results between different number of keys can be compared. The recordings show that in this \emph{memtier} version, each request contains exactly the specified number of keys.
+
+
+
+\begin{figure}
+	\begin{minipage}[c]{0.45\linewidth}
+		\centering
+		\begin{tabular}{|c|*{4}{r}|}
+			\cline{2-5}
+			\multicolumn{1}{c|}{} & \multicolumn{4}{c|}{multi-get size} \Tstrut\\
+			\multicolumn{1}{c|}{} & 1 & 3 & 6 & 9 \Tstrut\\
+			\hline
+			sharded & -0.1 & -0.1 & 0.1 & 0.4 \Tstrut\\
+			& \multicolumn{4}{c|}{in milliseconds} \\
+			\hline 
+		\end{tabular}
+	\end{minipage}
+	\hspace{0.5cm}
+	\begin{minipage}[c]{0.45\linewidth}
+		\centering
+		\begin{tabular}{|c|*{4}{r}|}
+			\cline{2-5}
+			\multicolumn{1}{c|}{} & \multicolumn{4}{c|}{multi-get size} \Tstrut\\
+			\multicolumn{1}{c|}{} & 1 & 3 & 6 & 9 \Tstrut\\
+			\hline
+			non-sharded & -0.1 & -0.1 & 0.1 & 0.3 \Tstrut\\
+			& \multicolumn{4}{c|}{in milliseconds} \\
+			\hline 
+		\end{tabular}
+	\end{minipage}
+	\caption{Interactive law response time deviations in milliseconds from client measurements according to equation \ref{ilaw} but using the set response time as client thinking time.}\label{exp5_ilaw}
+\end{figure}
 
 \begin{center}
 	\scriptsize{
@@ -34,7 +65,7 @@ For all experiments the average number of keys in the multi-GETs was recorded in
 
 In this setting the focus lies on GET and multi-GET requests because the performance of SET requests was already extensively analysed in section \ref{exp4} in the same setting with 3 clients, 2 middlewares and 3 servers.
 
-However in order to apply the interactive law to validate the throughput and response time measurements for the read workload, the average SET response time as measured on the client is used as client thinking time. This reflects the fact that memtier alternately generates a GET/multi-GET and a SET request. So in the viewpoint of the middleware, the client waits the round trip time and the SET response time before sending the next GET/multi-GET request. As table \todo{add interactive law table} shows, the interactive law holds for all measurements in this section.
+However in order to apply the interactive law to validate the throughput and response time measurements for the read workload, the average SET response time as measured on the client is used as client thinking time. This reflects the fact that memtier alternately generates a GET/multi-GET and a SET request. So in the viewpoint of the middleware, the client waits the round trip time and the SET response time before sending the next GET/multi-GET request. As table \ref{exp5_ilaw} shows, the interactive law holds for all measurements in this section.
 
 %For multi-GET workloads, memtier will generate a mixture of SETs, GETs, and multi-GETs. Memtier only allows to specify the maximum number of keys in a multi-GET request. Therefore, be aware that requests can also contain fewer keys than the provided value. It is recommended to record the average size of the multi-GETs. You will have to measure response time on the client as a function of multi-get size, with and without sharding on the middlewares.
 \todo{compare response time decomposition between sharded and non-sharded -> would expect sharded has longer wtt but shorter sst}

@@ -2,8 +2,8 @@
 \begin{document}
 \section{Queuing Model (90 pts)}
 
-Note that for queuing models it is enough to use the experimental results from the previous sections. It is, however, possible that the numbers you need are not only the ones in the figures we asked for, but also the internal measurements that you have obtained through instrumentation of your middleware.
-
+%Note that for queuing models it is enough to use the experimental results from the previous sections. It is, however, possible that the numbers you need are not only the ones in the figures we asked for, but also the internal measurements that you have obtained through instrumentation of your middleware.
+All results in this section were obtained using the software \cite{queueing}.
 In Section \ref{exp4} it was shown that the interactive law holds for all measurements and so the check is omitted here.
 
 
@@ -137,30 +137,32 @@ As expected the difference between the predictions for number of requests waitin
 
 %Based on Section 3, build a network of queues which simulates your system. Motivate the design of your network of queues and relate it wherever possible to a component of your system. Motivate your choice of input parameters for the different queues inside the network. Perform a detailed analysis of the utilization of each component and clearly state what the bottleneck of your system is. Explain for which experiments the predictions of the model match and for which they do not.
 
-\begin{figure}
-	\begin{subfigure}[b]{.49\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{data/exp70_noq_tp_wo.pdf}
-	\end{subfigure}\hfill
-	\begin{subfigure}[b]{.49\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{data/exp70_noq_util_wo.pdf}
-	\end{subfigure}%
-	\caption{Write-Only}\label{exp70_noq_wo}
-\end{figure}
+The results were obtained using the convolution algorithm for general load-dependent service centers as implemented in \cite{queueing}.
+Details of the algorithm and further references can be found in the documentation of the \emph{queueing} software.
 
-\begin{figure}
-	\begin{subfigure}[b]{.49\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{data/exp70_noq_tp_ro.pdf}
-	\end{subfigure}\hfill
-	\begin{subfigure}[b]{.49\linewidth}
-		\centering
-		\includegraphics[width=\linewidth]{data/exp70_noq_util_ro.pdf}
-	\end{subfigure}%
-	\caption{Read-Only}\label{exp70_noq_ro}
-\end{figure}
 
+\paragraph{One Middleware - Model}
+
+The net-thread is modelled as an M/M/1 queue using the measured decoding time as the service time.
+This is a sensible choice because as shown in previous sections, the decoding time of the net-thread is independent of the number of clients and all requests have to go through this decoding stage which explains the visit ratio of 1.
+
+The request queue in combination with the $m$ worker-threads is modelled as an M/M/m queue with a visit ratio of 1 because with a single middleware all requests pass through there. Due to the architecture of the middleware, the \emph{memcached} server is not modelled as a separate queue because a worker-thread cannot process a new request until the \emph{memcached} server responded and so the time for request to the \emph{memcached} server is part of the worker-thread service time. This modelling choice leads to a conflict in the service time of a worker-thread because as shown in previous sections the server service time of the \emph{memcached} server is depending on the number of busy worker-threads and so in an under-saturated system the worker-thread service time is smaller than in a system where all worker-threads are busy. 
+It was decided to use the measured worker-thread processing time when all worker-threads are busy as the service time for a server in the M/M/m queue. In consequence the model predictions for the throughput are only accurate when there are more clients than worker-threads because as seen in previous sections the worker-thread processing time is independent of the user-load from the point where there are more users than worker-threads.
+
+The network between client VM and middleware VM and vice versa are modelled as two separate delay centers each with a service time of half the measured round trip time. In between there is a client delay center with 0 service time which has no influence on the model but fits well with the conceptual model of the system. All three delay centers have a visit ratio of 1 because all requests pass through them.
+
+Figure \ref{exp70_noq_1mw} shows the detailed structure of the network of queues with the respective parameters.
+
+\paragraph{One Middleware - Model Performance}
+The network of queues model with a single middleware was applied to both the read-only and write-only workload from section \ref{exp31}.
+In order to evaluate the performance of the model, the predicted and measured throughput are compared for different number of clients.
+In addition the utilization of each component as predicted by the model is listed in order to identify the bottleneck component.
+
+
+For the write-only workload the configuration with 64 worker-threads is used because as shown it leads to the highest throughput.
+Figure \ref{exp70_noq_wo} shows that for the reasons described above, the model fails to predict the throughput when there are less clients than worker-threads but afterwards the model is accurate. The component utilizations in figure \ref{exp70_noq_wo} show that worker-threads become the bottleneck if there are considerably more clients than worker-threads. This is consistent with the results from section \ref{exp31}.
+
+For the read-only workload the configuration with 8 worker-threads is used because as shown there is no point in using more worker-threads because the server VM upload bandwidth limit is already reached with 8 worker-threads. The prediction for the throughput is accurate as soon as the user load is such that all 8 worker-threads are kept constantly busy (Fig. \ref{exp70_noq_ro}). This is due to the choice of worker-thread service time as described above . The component utilizations in figure \ref{exp70_noq_ro} show that the worker-threads are the bottleneck in the model. This is only partially true because as seen in section \ref{exp31} the real bottleneck is the upload bandwidth capacity of the server VM. However, since the limited upload bandwidth capacity between server VM and middleware VM is not explicitly modelled, the model also does not have the power to detect this and instead the limit manifests itself in the worker-thread processing time.
 
 \begin{figure}
 	\begin{minipage}[c]{0.45\linewidth}
@@ -190,6 +192,24 @@ As expected the difference between the predictions for number of requests waitin
 \end{figure}
 
 
+\paragraph{Two Middlewares - Model}
+
+The network of queues model for the system in section \ref{exp32} with two middlewares is similar to the network of queues with one middleware.
+The difference is that all components apart from the client delay center are duplicated and in consequence each of them has a visit ratio of 0.5.
+This is a reasonable choice because half of the clients use middleware 1 and the other half uses middleware 2. As shown in section \ref{exp32} the \emph{memcached} service time remains constant when the user load is such that all worker-threads in the system are kept constantly busy and so the dependence between the two middlewares can be neglected. The motivation for the choice of the component service times from the model involving one middleware also directly apply to this model with two middlewares.
+
+The details of the model are listed in figure \ref{exp70_noq_2mw}.
+
+\paragraph{Two Middlewares - Model Performance}
+The network of queues model with a two middlewares was applied to both the read-only and write-only workload from section \ref{exp32}.
+As in the model with a single middleware, the predicted and measured throughput are compared for different number of clients.
+And the utilization of each component as predicted by the model is listed in order to identify the bottleneck component. For the write-only workload the configuration with 64 worker-threads per middleware is used and for the read-only workload the configuration with 8 worker-threads per middleware is used because they lead to the maximal throughput.
+
+In the write-only workload, the model is able to predict the throughput accurately when all 128 worker-threads are busy which happens only for more than 128 clients. This is due to the familiar issue with the worker-thread service time that up to then would depend on the user load in the real system but is kept fixed in the model.
+The component utilizations in figure \ref{exp70_noq_wo} show that the bottleneck is once again the worker-threads which matches the analysis of section \ref{exp32}. \todo{does it? could also be server that is saturating} Compared to the system with one middleware, the point of saturation is reached for a larger number of clients which manifests itself both in the component utilizations and the throughput.
+
+In the read-only workload the situation is the same as in the model with one middleware. The throughput predictions match when the number of clients is such that all 16 workers are constantly busy. The bottleneck is identified as the worker-threads which is correct in the sense that the bandwidth bottleneck of the server VM, which was identified as the actual bottleneck in section \ref{exp32}, is part of this component.
+However, in the read-only workload the granularity of the network model does not allow to detect the bandwidth limit of the server VM as the real problem. 
 
 \begin{figure}
 	\begin{minipage}[c]{0.45\linewidth}
@@ -221,6 +241,31 @@ As expected the difference between the predictions for number of requests waitin
 	\end{minipage}
 	\caption{Network of Queue with two middlewares}
 	\label{exp70_noq_2mw}
+\end{figure}
+
+
+\begin{figure}
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_noq_tp_wo.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_noq_util_wo.pdf}
+	\end{subfigure}%
+	\caption{Write-Only}\label{exp70_noq_wo}
+\end{figure}
+
+\begin{figure}
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_noq_tp_ro.pdf}
+	\end{subfigure}\hfill
+	\begin{subfigure}[b]{.49\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{data/exp70_noq_util_ro.pdf}
+	\end{subfigure}%
+	\caption{Read-Only}\label{exp70_noq_ro}
 \end{figure}
 
 \todo{do figures properly and noq for 2 mws needs to be smaller}
