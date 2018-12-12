@@ -12,7 +12,7 @@
 \usepackage{subfiles}
 \usepackage{amsmath}
 \usepackage[skip=4pt]{caption} % example skip set to 2pt
-
+\usepackage[export]{adjustbox}
 \usepackage[font=small,labelfont=bf,tableposition=top]{caption}
 
 \DeclareCaptionLabelFormat{andtable}{#1~#2  \&  \tablename~\thetable}
@@ -30,6 +30,7 @@
 \newcommand{\TBstrut}{\Tstrut\Bstrut} % top&bottom struts
 \newcommand*{\escape}[1]{\texttt{\textbackslash#1}}
 \newcommand{\vitemsep}{\itemsep-1pt}
+
 
 \fancypagestyle{firstpagefooter} {
 	\lfoot{\tiny{Version: 25.09.2018}}
