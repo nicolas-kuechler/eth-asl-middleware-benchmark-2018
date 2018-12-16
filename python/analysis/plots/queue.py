@@ -12,7 +12,7 @@ def nc(ax, df):
     assert(data_origin.shape[0]==1)
 
     ax.errorbar(clients, queue_means, queue_stds, capsize=const.capsize,
-                                                    color=const.rt_component_color['qwt'],
+                                                    color=const.color_d['qwt'][1],
                                                     marker='.',
                                                     markersize=const.markersize)
 
@@ -22,7 +22,7 @@ def nc(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, clients[-1]+1)
+    ax.set_xlim(max(0, min(clients)-2), clients[-1]+2)
     ax.set_ylim(0, max(6, max(queue_means)*1.1))
     ax.set_xticks(clients)
 
@@ -57,7 +57,7 @@ def nc_w(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, max(max_x)+1)
+    ax.set_xlim(max(0, min(clients)-2), max(max_x)+2)
     ax.set_ylim(0, max(6, max(max_y)*1.1))
     ax.set_xticks(clients)
 
@@ -77,7 +77,7 @@ def mget(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_xlim(max(0, min(mget_sizes)-1), mget_sizes[-1]+1)
     ax.set_ylim(0, max(6,max(queue_means)*1.1))
     ax.set_xticks(mget_sizes)
 
@@ -98,14 +98,14 @@ def queueing_model(ax, df):
 
     ax.plot(clients, mm1_queue,  color=const.queueing_color["mm1"],
                                             linestyle='None',
-                                            marker='.',
-                                            markersize=const.markersize,
+                                            marker='x',
+                                            markersize=const.markersize+2,
                                             label=const.queueing_label["mm1"])
 
     ax.plot(clients, mmm_queue,  color=const.queueing_color["mmm"],
                                             linestyle='None',
-                                            marker='.',
-                                            markersize=const.markersize,
+                                            marker='x',
+                                            markersize=const.markersize+2,
                                             label=const.queueing_label["mmm"].replace("m", f"{n_workers[0]*2}"))
 
     ax.legend()
@@ -114,7 +114,7 @@ def queueing_model(ax, df):
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
 
-    ax.set_xlim(0, max(clients)+2)
+    ax.set_xlim(max(0, min(clients)-2), max(clients)+2)
     ax.set_ylim(0, max(50,max(np.concatenate([meas_queue, mm1_queue, mmm_queue]))*1.1))
     ax.set_xticks(clients)
 

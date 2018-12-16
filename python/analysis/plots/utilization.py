@@ -24,28 +24,28 @@ def nc(ax, df):
         s_utils = df.loc[:,'s_util'].values * 100
 
     # plot net-thread utilization
-    ax.plot(clients, nt_utils, color=const.rt_component_color['ntt'],
+    ax.plot(clients, nt_utils, color=const.color_d['ntt'][0],
                                 marker='.',
                                 markersize=const.markersize,
                                 label="net-thread decoding")
 
-    ax.plot(clients, wt_utils, color=const.rt_component_color['wtt'],
+    ax.plot(clients, wt_utils, color=const.color_d['wtt'][0],
                                 marker='.',
                                 markersize=const.markersize,
                                 label="worker-thread processing")
 
-    ax.plot(clients, s_utils, color=const.rt_component_color['sst'],
+    ax.plot(clients, s_utils, color=const.color_d['sst'][0],
                                 marker='.',
                                 markersize=const.markersize,
                                 label="worker-thread server service time")
 
     # TODO [nku] decide on legend
     ax.legend()
-    ax.set_ylabel('Utilization in %')
+    ax.set_ylabel(const.axis_label['util'])
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
-    ax.set_xlim(0, clients[-1]+2)
-    ax.set_ylim(0, 100)
+    ax.set_xlim(max(0, clients[0]-1), clients[-1]+1)
+    ax.set_ylim(0, 102)
     ax.set_xticks(clients)
 
 def detail_nc(ax, df):
@@ -71,15 +71,15 @@ def detail_nc(ax, df):
         s_utils = df.loc[:,'s_util'].values * 100
 
     # plot net-thread utilization
-    ax.plot(clients, nt_utils, color=const.rt_component_color['ntt'],
-                                marker='.',
-                                markersize=const.markersize,
-                                label="net-thread decoding")
-
-    ax.plot(clients, wt_utils, color=const.rt_component_color['wtt'],
-                                marker='.',
-                                markersize=const.markersize,
-                                label="worker-thread processing")
+    # ax.plot(clients, nt_utils, color=const.rt_component_color['ntt'],
+    #                             marker='.',
+    #                             markersize=const.markersize,
+    #                             label="net-thread decoding")
+    #
+    # ax.plot(clients, wt_utils, color=const.rt_component_color['wtt'],
+    #                             marker='.',
+    #                             markersize=const.markersize,
+    #                             label="worker-thread processing")
 
 
 
@@ -107,11 +107,11 @@ def detail_nc(ax, df):
 
     # TODO [nku] decide on legend
     ax.legend()
-    ax.set_ylabel('Utilization in %')
+    ax.set_ylabel(const.axis_label['util'])
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
     ax.set_xlim(0, clients[-1]+2)
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 102)
     ax.set_xticks(clients)
 
 def network_queue(ax, df):
@@ -120,7 +120,7 @@ def network_queue(ax, df):
 
     for mw in df.loc[:,'n_mw'].unique():
         dfmw = df[df['n_mw']==mw]
-        for dev in dfmw.loc[:,'device'].unique():
+        for dev in sorted(dfmw.loc[:,'device'].unique(), reverse=True):
             df_dev = dfmw[dfmw['device']==dev]
 
             clients = df_dev.loc[:,'num_clients'].values
@@ -128,23 +128,32 @@ def network_queue(ax, df):
 
             n_mw = df_dev['n_mw'].unique()[0]
             if n_mw > 1:
-                label = f"{n_mw}MWs - {dev}"
+                label = f"{n_mw} MWs - {dev}"
+                colors = const.noq_color['2mw']
             else:
-                label = f"{n_mw}MW  - {dev}"
+                label = f"{n_mw} MW  - {dev}"
+                colors = const.noq_color['1mw']
+
+            if dev == 'net-thread':
+                color = colors[0]
+            else:
+                color = colors[1]
+
             # plot net-thread utilization
             ax.plot(clients, utils, #color=const.rt_component_color['ntt'],
                                         marker='.',
                                         markersize=const.markersize,
-                                        label=label)
+                                        label=label, color=color)
 
 
 
 
     # TODO [nku] decide on legend
     ax.legend(loc='center right')
-    ax.set_ylabel('Utilization in %')
+    #ax.legend(loc='upper left')
+    ax.set_ylabel(const.axis_label['util'])
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
     ax.set_xlim(0, clients[-1]+2)
-    ax.set_ylim(0, 101)
+    ax.set_ylim(0, 102)
     ax.set_xticks(clients)

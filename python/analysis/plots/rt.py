@@ -45,7 +45,7 @@ def nc(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, clients[-1]+2)
+    ax.set_xlim(max(0, min(clients)-2), clients[-1]+2)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(clients)
 
@@ -103,7 +103,7 @@ def nc_w(ax, df):
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
 
-    ax.set_xlim(0, max(max_x)+2)
+    ax.set_xlim(max(0, min(clients)-2), max(max_x)+2)
     ax.set_ylim(0, max(max_y)*1.1)
     ax.set_xticks(clients)
 
@@ -132,14 +132,14 @@ def mget_perc(ax,df, y_lim=None): # rt 3
         max_x.append(max(mget_sizes))
 
     # TODO [nku] decide on legend to use
-    ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
-
+    #ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+    ax.legend()
     ax.set_ylabel(const.axis_label['rt'])
     ax.set_xlabel(const.axis_label['mget_size'])
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, max(max_x)+1)
+    ax.set_xlim(max(0.5, min(mget_sizes)-0.25), max(max_x)+0.25)
 
     if y_lim is None:
         y_lim = max(max_y)*1.1
@@ -213,7 +213,7 @@ def mget(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_xlim(max(0.5, min(mget_sizes)-0.5), mget_sizes[-1]+0.5)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
@@ -234,14 +234,14 @@ def queueing_model(ax, df):
 
     ax.plot(clients, mm1_rts,  color=const.queueing_color["mm1"],
                                             linestyle='None',
-                                            marker='.',
-                                            markersize=const.markersize,
+                                            marker='x',
+                                            markersize=const.markersize + 2,
                                             label=const.queueing_label["mm1"])
 
     ax.plot(clients, mmm_rts,  color=const.queueing_color["mmm"],
                                             linestyle='None',
-                                            marker='.',
-                                            markersize=const.markersize,
+                                            marker='x',
+                                            markersize=const.markersize + 2,
                                             label=const.queueing_label["mmm"].replace("m", f"{n_workers[0]*2}"))
 
     ax.legend()
@@ -250,7 +250,7 @@ def queueing_model(ax, df):
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
 
-    ax.set_xlim(0, max(clients)+2)
+    ax.set_xlim(max(0, min(clients)-2), max(clients)+2)
     ax.set_ylim(0, max(np.concatenate([meas_rts]))*1.5)
     ax.set_xticks(clients)
 
@@ -307,6 +307,7 @@ def component_w(ax, df):
     plt.xticks(ind, (8,16,32,64))
     ax.set_xlabel(const.axis_label['n_worker'])
     ax.set_xlim(-0.5, 7)
+    ax.set_ylim(0, max(rts_client) *1.1)
     ax.legend(loc='lower right')
     #ax.legend(bbox_to_anchor=(1.0, 0, 0.5, 1), ncol=1, mode="expand", borderaxespad=0)
 
@@ -331,38 +332,39 @@ def component_nc(ax, df, max_y):
     network = rts_client - (wtts+qwts+ntts+ssts)
     network = network.clip(min=0)
 
+    c = "gray"
     cum = ntts
-    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
+    ax.plot(clients, cum, color=c, linestyle='None', marker='x' ,markersize=const.markersize)
 
     cum += qwts
-    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
+    ax.plot(clients, cum, color=c, linestyle='None', marker='x' ,markersize=const.markersize)
 
     cum += wtts
-    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
+    ax.plot(clients, cum, color=c, linestyle='None', marker='x' ,markersize=const.markersize)
 
     cum += ssts
-    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
-
+    ax.plot(clients, cum, color=c, linestyle='None', marker='x' ,markersize=const.markersize)
 
     cum += network
-    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
-    ax.fill_between(clients, 0, cum, alpha=0.2, facecolor=const.rt_component_color['network'], hatch = '/',edgecolor=const.rt_component_color['network'], label=const.rt_component_label['network'])
-    ax.fill_between(clients, 0, cum-network, alpha=0.2, facecolor=const.rt_component_color['sst'], hatch = '/', edgecolor=const.rt_component_color['sst'], label=const.rt_component_label['sst'])
-    ax.fill_between(clients, 0, cum-network-ssts, alpha=0.2, facecolor=const.rt_component_color['wtt'], hatch = '/', edgecolor=const.rt_component_color['wtt'], label=const.rt_component_label['wtt'])
-    ax.fill_between(clients, 0, cum-network-ssts-wtts, alpha=0.2, facecolor=const.rt_component_color['qwt'], hatch = '/', edgecolor=const.rt_component_color['qwt'], label=const.rt_component_label['qwt'])
-    ax.fill_between(clients, 0, cum-network-ssts-wtts-qwts, alpha=0.2, facecolor=const.rt_component_color['ntt'], hatch = '/', edgecolor=const.rt_component_color['ntt'], label=const.rt_component_label['ntt'])
+    ax.plot(clients, cum, color=c, linestyle='None', marker='x' ,markersize=const.markersize)
 
-    ax.plot(clients, cum, color='black', marker='.' ,markersize=const.markersize)
+    ax.fill_between(clients, 0, cum, facecolor=const.rt_component_color['network'], edgecolor=const.rt_component_color['network'], label=const.rt_component_label['network'])
+    ax.fill_between(clients, 0, cum-network, facecolor=const.rt_component_color['sst'], edgecolor=const.rt_component_color['sst'], label=const.rt_component_label['sst'])
+    ax.fill_between(clients, 0, cum-network-ssts, facecolor=const.rt_component_color['wtt'], edgecolor=const.rt_component_color['wtt'], label=const.rt_component_label['wtt'])
+    ax.fill_between(clients, 0, cum-network-ssts-wtts, facecolor=const.rt_component_color['qwt'], edgecolor=const.rt_component_color['qwt'], label=const.rt_component_label['qwt'])
+    ax.fill_between(clients, 0, cum-network-ssts-wtts-qwts, facecolor=const.rt_component_color['ntt'], edgecolor=const.rt_component_color['ntt'], label=const.rt_component_label['ntt'])
+
+    ax.plot(clients, cum, color=c, linestyle='None', marker='.' ,markersize=const.markersize)
 
 
     ax.set_ylabel("Time [ms]")
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
 
-    ax.set_xlim(0, max(clients)+2)
+    ax.set_xlim(min(clients), max(clients))
     ax.set_ylim(0, max_y)
     ax.set_xticks(clients)
-    ax.legend()
+    ax.legend(loc='upper left')
 
 def component_mget(ax, df):
     mget_sizes = df['multi_get_size'].unique()

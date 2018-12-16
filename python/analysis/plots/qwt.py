@@ -92,14 +92,14 @@ def queueing_model(ax, df):
 
     ax.plot(clients, mm1_qwt,  color=const.queueing_color["mm1"],
                                             linestyle='None',
-                                            marker='.',
-                                            markersize=const.markersize,
+                                            marker='x',
+                                            markersize=const.markersize+2,
                                             label=const.queueing_label["mm1"])
 
     ax.plot(clients, mmm_qwt,  color=const.queueing_color["mmm"],
                                             linestyle='None',
-                                            marker='.',
-                                            markersize=const.markersize,
+                                            marker='x',
+                                            markersize=const.markersize+2,
                                             label=const.queueing_label["mmm"].replace("m", f"{n_workers[0]*2}"))
 
     ax.legend()
@@ -108,7 +108,7 @@ def queueing_model(ax, df):
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
 
-    ax.set_xlim(0, max(clients)+2)
+    ax.set_xlim(max(0, min(clients)-2), max(clients)+2)
     ax.set_ylim(0, max(np.concatenate([meas_qwt, mm1_qwt, mmm_qwt]))*1.1)
     ax.set_xticks(clients)
 

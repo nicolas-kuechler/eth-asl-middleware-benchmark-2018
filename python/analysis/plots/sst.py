@@ -20,7 +20,7 @@ def nc(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, clients[-1]+1)
+    ax.set_xlim(max(0, min(clients)-2), clients[-1]+1)
     ax.set_ylim(0, max(sst_means)*1.1)
     ax.set_xticks(clients)
 
@@ -55,7 +55,7 @@ def nc_w(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, max(max_x)+1)
+    ax.set_xlim(max(0, min(clients)-2), max(max_x)+1)
     ax.set_ylim(0, max(max_y)*1.1)
     ax.set_xticks(clients)
 
@@ -103,7 +103,7 @@ def detail_nc(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, clients[-1]+1)
+    ax.set_xlim(max(0, min(clients)-2), clients[-1]+1)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(clients)
 
@@ -124,7 +124,7 @@ def mget(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_xlim(max(0.25, min(mget_sizes)-0.25), mget_sizes[-1]+0.25)
     ax.set_ylim(0, max(sst_means)*1.1)
     ax.set_xticks(mget_sizes)
 
@@ -151,7 +151,7 @@ def detail_mget(ax, df):
     sst2_stds = df.loc[:,'sst2_rep_std'].values
 
     ax.errorbar(mget_sizes, tsst_means, tsst_stds, capsize=const.capsize,
-                                                color=const.sst_color["tsst"],
+                                                color="gray",
                                                 marker='.',
                                                 markersize=const.markersize,
                                                 label=const.sst_label["tsst"])
@@ -182,7 +182,7 @@ def detail_mget(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_xlim(max(0.25, min(mget_sizes)-0.25), mget_sizes[-1]+0.25)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 

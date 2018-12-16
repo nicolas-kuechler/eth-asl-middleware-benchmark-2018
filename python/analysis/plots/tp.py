@@ -72,7 +72,7 @@ def nc(ax, df): # t1
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, clients[-1]+2)
+    ax.set_xlim(max(0, min(clients)-2), clients[-1]+2)
     ax.set_ylim(0, cur_max_y*1.1)
     ax.set_xticks(clients)
 
@@ -150,7 +150,7 @@ def nc_w(ax, df):
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
 
-    ax.set_xlim(0, max(max_x)+2)
+    ax.set_xlim(max(0, min(clients)-2), max(max_x)+2)
     ax.set_ylim(0, max(max_y)*1.05)
 
     ax.set_xticks(clients)
@@ -214,7 +214,7 @@ def mget(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_xlim(max(0.25, min(mget_sizes)-0.25), mget_sizes[-1]+0.25)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
@@ -304,7 +304,7 @@ def mget_mix(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_xlim(max(0.25, min(mget_sizes)-0.25), mget_sizes[-1]+0.25)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
@@ -372,7 +372,7 @@ def mget_mix_key(ax, df):
 
     ax.text(0.95, 0.05, data_origin[0], ha='center', va='center', transform=ax.transAxes, color='grey')
 
-    ax.set_xlim(0, mget_sizes[-1]+1)
+    ax.set_xlim(max(0.25, min(mget_sizes)-0.25), mget_sizes[-1]+0.25)
     ax.set_ylim(0, max_y*1.1)
     ax.set_xticks(mget_sizes)
 
@@ -394,27 +394,32 @@ def network_queue(ax, df):
     clients_mw2 = dfmw2.loc[:,'num_clients'].values
 
 
-    ax.plot(clients_mw1, meas_tps_mw1,  color=const.queueing_color["mm1"],
-                                            marker='.',
-                                            markersize=const.markersize,
-                                            label='1 MW  - ' + const.queueing_label["meas"])
 
 
-    ax.plot(clients_mw2, meas_tps_mw2,  color=const.queueing_color["mmm"],
+
+
+    ax.plot(clients_mw1, meas_tps_mw1,  color=const.noq_color["1mw"][1],
+                                        marker='.',
+                                        markersize=const.markersize,
+                                        label='1 MW  - ' + const.queueing_label["meas"])
+
+    ax.plot(clients_mw1, model_tps_mw1,  color=const.noq_color["1mw"][0],
+                                            linestyle='None',
+                                            marker='x',
+                                            markersize=const.markersize+2,
+                                            label='1 MW  - model')
+
+    ax.plot(clients_mw2, meas_tps_mw2,  color=const.noq_color["2mw"][1],
                                             marker='.',
                                             markersize=const.markersize,
                                             label='2 MWs - ' + const.queueing_label["meas"])
 
-    ax.plot(clients_mw1, model_tps_mw1,  color="black",
-                                            linestyle='None',
-                                            marker='x',
-                                            markersize=const.markersize,
-                                            label='1 MW  - model')
 
-    ax.plot(clients_mw2, model_tps_mw2,  color="red",
+
+    ax.plot(clients_mw2, model_tps_mw2,  color=const.noq_color["2mw"][0],
                                             linestyle='None',
                                             marker='x',
-                                            markersize=const.markersize,
+                                            markersize=const.markersize+2,
                                             label="2 MWs - model")
 
     ax.legend(loc='lower right')
@@ -423,7 +428,7 @@ def network_queue(ax, df):
     ax.set_xlabel(const.axis_label['number_of_clients'])
 
 
-    ax.set_xlim(0, max(clients_mw2)+2)
+    ax.set_xlim(max(0, min(clients_mw2)-2), max(clients_mw2)+2)
     ax.set_ylim(0, max(np.concatenate([meas_tps_mw2, model_tps_mw2]))*1.1)
     ax.set_xticks(clients_mw2)
 

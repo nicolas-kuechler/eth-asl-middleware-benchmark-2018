@@ -19,6 +19,13 @@ figsize = {
 seq_colors = ['#a1dab4', '#41b6c4', '#2c7fb8', '#253494']
 
 
+color_d = {
+"network":["#3182bd","#6baed6", "#9ecae1", "#c6dbef"],
+"sst":["#e6550d", "#fd8d3c", "#fdae6b", "#fdd0a2"],
+"wtt":["#31a354", "#74c476", "#a1d99b", "#c7e9c0"],
+"qwt":["#756bb1","#9e9ac8", "#bcbddc", "#dadaeb"],
+"ntt": ["#636363","#969696","#bdbdbd", "#d9d9d9"]
+}
 
 network_throughput_limit_color = "black"
 network_throughput_limit_linestyle = "--"
@@ -37,18 +44,18 @@ color = {
 
 
 rt_component_color = {
-    "network": "#01295f", #"#bfd2bf", #"#f5ee9e",
-    "ntt": "#437f97", #"#646f4b", #"#2d728f",
-    "qwt": "#849324", #"#46351d", #"#3b8ea5",
-    "wtt": "#ffb30f",#"#839d9a", #"#f49e4c",
-    "sst": "#fd151b", #"#7bb2d9"#"#ab3428"
+    "network": color_d['network'][2], #"#01295f", #"#bfd2bf", #"#f5ee9e",
+    "ntt": color_d['ntt'][2],#"#437f97", #"#646f4b", #"#2d728f",
+    "qwt": color_d['qwt'][2], #"#849324", #"#46351d", #"#3b8ea5",
+    "wtt": color_d['wtt'][2],#"#ffb30f",#"#839d9a", #"#f49e4c",
+    "sst": color_d['sst'][2]#"#fd151b", #"#7bb2d9"#"#ab3428"
 }
 
 sst_color = {
-    "tsst": "#849324",
-    "sst0": "#fb6a4a",
-    "sst1": "#de2d26",
-    "sst2": "#a50f15",
+    "tsst": color_d['sst'][0], #"#849324",
+    "sst0": color_d['sst'][2],#"#fb6a4a",
+    "sst1": color_d['sst'][0],#"#de2d26",
+    "sst2": "#a50f15"#color_d['sst'][0] #"#a50f15",
 }
 
 sst_label = {
@@ -71,35 +78,41 @@ axis_label = {
     "number_of_clients": "Number of Clients",
     "throughput": "Throughput [req/sec]",
     "rt": "Response Time [ms]",
-    "mget_size": "Multi Get Size",
+    "mget_size": "multi-GET Size",
     "freq": "Frequency",
     "slot": "Slot",
-    "queue_size": "Number of Requests in Queue",
+    "queue_size": "Queue Length",
     "sst":"Server Service Time [ms]",
     "n_worker": "Number of Worker-Threads",
-    "qwt": "Queue Waiting Time [ms]"
+    "qwt": "Queue Waiting Time [ms]",
+    "util": "Utilization [%]"
 }
 
 label = {
     "interactive_law": "interactive law",
     "measurement": "measurement",
     "network_throughput_limit": "bandwidth limit",
-    "sharded": "get sharded",
-    "nonsharded": "get non-sharded",
+    "sharded": "GET sharded",
+    "nonsharded": "GET non-sharded",
     "sharded_interactive_law" : "sharded interactuve law",
     "nonsharded_interactive_law" : "non-sharded interactuve law"
 }
 
 queueing_color = {
-    "meas" : '#a1dab4',
-    "mm1": '#41b6c4',
-    "mmm": '#2c7fb8'
+    "meas" : seq_colors[3],
+    "mm1": "#e6550d",
+    "mmm": "#31a354" #seq_colors[1]
 }
 
 queueing_label = {
     "meas" : "measured",
     "mm1":  "M/M/1",
     "mmm": "M/M/m"
+}
+
+noq_color = {
+    "1mw":["#e6550d", "#fdae6b", "#fdd0a2"],
+    "2mw":["#31a354","#a1d99b"]
 }
 
 n_worker_color = {
@@ -137,14 +150,14 @@ stat_color = {
     "75th percentile": seq_colors[2],
     "90th percentile": seq_colors[3],
     "99th percentile": "black",
-    "mean": "#dfc27d"
+    "mean": "#fd8d3c"#"#dfc27d"
 }
 
 stat_label = {
-    "25th percentile": "get 25th percentile",
-    "50th percentile": "get 50th percentile",
-    "75th percentile": "get 75th percentile",
-    "90th percentile": "get 90th percentile",
-    "99th percentile": "get 99th percentile",
-    "mean": "get mean"
+    "25th percentile": "GET 25th percentile",
+    "50th percentile": "GET 50th percentile",
+    "75th percentile": "GET 75th percentile",
+    "90th percentile": "GET 90th percentile",
+    "99th percentile": "GET 99th percentile",
+    "mean": "GET average"
 }

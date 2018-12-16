@@ -10,7 +10,7 @@ from plots import rt, tp, qwt, ntt, wtt, sst, queue
 pd.options.display.max_columns = None
 output_folder = "./../../exp_plots"
 
-def generate(plot_func, df, suite=None, name=None, figsize=2, opt=None):
+def generate(plot_func, df, suite=None, name=None, figsize=2, opt=None, n_fig=2):
 
 
     width_pt = 452.9679 # measured from latex
@@ -27,15 +27,6 @@ def generate(plot_func, df, suite=None, name=None, figsize=2, opt=None):
     #plt.rc('axes', labelsize=8)
 
     #print(plt.rcParams.keys())
-    params = {'backend': 'ps',
-                'axes.labelsize': 8,
-                'font.size': 6,
-                'legend.fontsize': 5,
-                'xtick.labelsize': 4.5,
-                'ytick.labelsize': 4.5,
-                'text.usetex': False,
-                'figure.figsize': (fig_width2, fig_height2)}
-    plt.rcParams.update(params)
 
     params = {'backend': 'ps',
                 'axes.labelsize': 12,
@@ -46,6 +37,18 @@ def generate(plot_func, df, suite=None, name=None, figsize=2, opt=None):
                 'text.usetex': False,
                 'figure.figsize': (7, 4)}
     plt.rcParams.update(params)
+
+    if n_fig == 3:
+        params = {'backend': 'ps',
+                    'axes.labelsize': 14,
+                    'font.size': 12,
+                    'legend.fontsize': 10,
+                    'xtick.labelsize': 10,
+                    'ytick.labelsize': 10,
+                    'text.usetex': False,
+                    'figure.figsize': (7, 4)}
+        plt.rcParams.update(params)
+
 
     #fig, ax = plt.subplots()
     fig, ax = plt.subplots()#const.figsize[figsize]) # figsize width, height in inches
@@ -121,11 +124,11 @@ def dashboard_time(suite, exp_name, n_worker=None, n_clients=None):
                             print(f"n_w={n_w}   op_type={op_type}  num_clients={num_clients}   mget_size={mget_size}")
                             generate(tp.time, df_filtered)
                             generate(rt.time, df_filtered)
-                            #generate(qwt.time, df_filtered)
-                            #generate(ntt.time, df_filtered)
-                            #generate(wtt.time, df_filtered)
-                            #generate(sst.time, df_filtered)
-                            #generate(sst.time, df_filtered, opt=0)
-                            #generate(sst.time, df_filtered, opt=1)
-                            #generate(sst.time, df_filtered, opt=2)
+                            generate(qwt.time, df_filtered)
+                            generate(ntt.time, df_filtered)
+                            generate(wtt.time, df_filtered)
+                            generate(sst.time, df_filtered)
+                            generate(sst.time, df_filtered, opt=0)
+                            generate(sst.time, df_filtered, opt=1)
+                            generate(sst.time, df_filtered, opt=2)
                             generate(queue.time, df_filtered)
