@@ -10,4 +10,11 @@ __pycache__/
 *$py.class
 .ipynb_checkpoints
 
-*.log
+*.aux
+*.out
+*.synctex.gz
+
+data/
+exp_output/
+exp_plots/
+report/data/
