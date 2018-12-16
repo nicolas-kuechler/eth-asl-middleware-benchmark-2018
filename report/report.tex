@@ -14,8 +14,14 @@
 \usepackage[skip=4pt]{caption} % example skip set to 2pt
 \usepackage[export]{adjustbox}
 \usepackage[font=small,labelfont=bf,tableposition=top]{caption}
+\usepackage[titletoc]{appendix}
 
-\DeclareCaptionLabelFormat{andtable}{#1~#2  \&  \tablename~\thetable}
+\let\OLDthebibliography\thebibliography
+\renewcommand\thebibliography[1]{
+	\OLDthebibliography{#1}
+	\setlength{\parskip}{0pt}
+	\setlength{\itemsep}{0pt plus 0.3ex}
+}
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -81,9 +87,14 @@
 \subfile{06_2k_analysis.tex}
 
 \subfile{07_queueing_model.tex}
+\newpage
+\begin{appendices}
+	\subfile{08_appendix.tex}
+\end{appendices}
 
+\vspace{-3mm}
 
-
+\bibliographystyle{abbrv}
 \bibliography{bibdb}{}
-\bibliographystyle{plain}
+
 \end{document}

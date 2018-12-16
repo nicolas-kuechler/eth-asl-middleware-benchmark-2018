@@ -2,7 +2,7 @@
 \begin{document}
 \section{Baseline without Middleware (75 pts)}\label{exp2}
 
-In this section the performance characteristics of the \emph{memtier benchmark} clients and \emph{memcached} servers in the \emph{Azure} cloud are studied.
+This section establishes a performance baseline of the \emph{memtier benchmark} clients and \emph{memcached} servers in the cloud.
 
 \subsection{One Server}\label{exp21}
 
@@ -10,14 +10,15 @@ In this section the performance characteristics of the \emph{memtier benchmark} 
 
 %Use 3 load generating VMs, with one memtier (CT=2) each, and vary the number of virtual clients (VC) per memtier thread between 1 and 32. Show how the behavior of the server changes as we add more clients.
 
-This set of experiments analyses the behaviour of the system with 3 load generating VMs and a single server VM. The detailed experiment configuration is presented in the table below.
+In this set of experiments the behaviour of the system with 3 load generating VMs and 1 server VM is analysed. The detailed experiment configuration is presented in the table below.
 
 
 \begin{center}
 	\scriptsize{
 		\begin{tabular}{|l|c|}
-			\hline Number of servers                & 1                        \\ 
-			\hline Number of client machines        & 3                        \\ 
+			\multicolumn{2}{l}{3 client VMs and 1 server VM}\\
+			%\hline Number of servers                & 1                        \\ 
+			%\hline Number of client machines        & 3                        \\ 
 			\hline Instances of memtier per machine & 1                        \\ 
 			\hline Threads per memtier instance     & 2                        \\
 			\hline Virtual clients per thread       & [1, 2, 4, 8, 12, 16, 24, 32]\\ 
@@ -26,13 +27,13 @@ This set of experiments analyses the behaviour of the system with 3 load generat
 			%\hline Multi-Get size                   & N/A                      \\
 			%\hline Number of middlewares            & N/A                      \\
 			%\hline Worker threads per middleware    & N/A                      \\
-			\hline Repetitions                      & 3 (at least 1 minute each)\\ 
+			%\hline Repetitions                      & 3 (at least 1 minute each)\\ 
 			\hline 
 		\end{tabular}
 	}
 \end{center}
 
-Apart from the measurements for throughput and response time obtained from the clients, the graphs also contain the throughput and response time derived from the interactive law with a client thinking time of $Z=0$ and a maximal achievable throughput due to the network bandwidth limit between the VMs when using values of size 4096B.
+Apart from the client measurements for throughput and response time, the graphs also contain the throughput and response time derived from the interactive law\footnote{the interactive law $R = \frac{N}{X} - Z$ shows the relationship between response time $R$ and throughput $X$ in a closed system with $N$ clients and a client thinking time of $Z$} with a client thinking time of $Z=0$ and a maximal achievable throughput due to the network bandwidth limit between the VMs when using values of size 4096B.
 
 \begin{figure}[H]
 \begin{subfigure}{\linewidth}
@@ -60,38 +61,34 @@ Apart from the measurements for throughput and response time obtained from the c
 	\caption{write-only workload}
 	\label{exp21_wo_nc}
 \end{subfigure}
-\caption{Throughput and response time with the interactive law in a both a read-only and write-only workload with one \emph{memcached} server as a function of the number of clients. The error metric is the sample standard deviation over the repetitions.}
+\caption{Throughput and response time measurements of the system with one server verified with the interactive law as a function of the number of clients. The error metric is the sample standard deviation over the repetitions and the maximal throughput due to the network bandwidth is shown.}
 \end{figure}
-
 
 
 
 \subsubsection{Explanation}
 
-%Describe in which phase the memcached servers are under-saturated, saturated, or over-saturated. Describe how throughput and response time correlate. Explain what further conclusions can be drawn from the experiment.
 \paragraph{Read-Only Workload}
-As shown in figure \ref{exp21_ro_nc}, the throughput saturation for the read-only workload is already reached at 6 clients because the upload bandwidth of the single server VM limits the throughput. Before the experiment, the server VM upload bandwidth was measured to be 99.6 MBit/sec. When using a value size of 4096B, this results in a maximum possible throughput of 3040 ops/sec for a read-only workload because all values need to be sent from the server VM to one of the 3 client VMs. 
+As shown in figure \ref{exp21_ro_nc}, the throughput saturation for the read-only workload is already reached at 6 clients because the upload bandwidth of the single server VM limits the throughput. The server VM upload bandwidth was measured to be 99.6 MBit/sec. When using a value size of 4096B, this results in a maximum possible throughput of 3040 ops/sec for a read-only workload because all values need to be sent from the server VM to one of the 3 client VMs. 
 Consequently increasing the number of clients has almost no effect on the throughput while the response time grows linearly because more clients result in more requests on the server that need to wait to be sent through the bottleneck to a client VM.
 
 \paragraph{Write-Only Workload}
 In figure \ref{exp21_wo_nc} it can be observed that for a write-only workload the throughput saturation is reached at 72 clients. In this experiment the bottleneck is not the bandwidth but rather the \emph{memcached} server. 
-As expected the throughput first increases in the number of clients while the memcached servers are still under-saturated. The response time of the \emph{memcached} server does not show the typical between the under-saturated and saturated phase, because even though the throughput still increases drastically, the response time is already showing a linear increase without a clear knee.
+As expected the throughput first increases in the number of clients while the memcached servers are still under-saturated. The response time of the \emph{memcached} server does not show the typical behaviour between the under-saturated and saturated phase, because even though the throughput still increases drastically, the response time is already showing a linear increase without a clear knee.
 However even though using 96 clients would result in a marginally higher throughput, the increase in response time does not justify a user load of more than 72 clients as the maximum throughput and hence with more than 72 clients the system is saturated. The over-saturated phase with decreasing throughput is not shown.
 
 
 \subsection{Two Servers}\label{exp22}
 
-%For a read-only and write-only workload plot throughput and response time as a function of NumClients. The clients are connected to two memcached instances. 
-
-%Use 1 load generating VM, with one memtier (CT=1) connected to each memcached instance (two memcache instances in total), and vary the number of virtual clients (VC) per memtier thread between 1 and 32. Show how the behavior of the server changes and explain what conclusions we can draw from this experiment.
 
 This set of experiments analyses the behaviour of the system with 1 load generating VM and a two server VMs. The detailed experiment configuration is presented in the table below.
 
 \begin{center}
 	\scriptsize{
 		\begin{tabular}{|l|c|}
-			\hline Number of servers                & 2                        \\ 
-			\hline Number of client machines        & 1                        \\ 
+			\multicolumn{2}{l}{1 client VM and 2 server VMs}\\
+			%\hline Number of servers                & 2                        \\ 
+			%\hline Number of client machines        & 1                        \\ 
 			\hline Instances of memtier per machine & 2                        \\ 
 			\hline Threads per memtier instance     & 1                        \\
 			\hline Virtual clients per thread       & [1, 2, 4, 8, 12, 16, 24, 32]\\ 
@@ -100,13 +97,13 @@ This set of experiments analyses the behaviour of the system with 1 load generat
 			%\hline Multi-Get size                   & N/A                      \\
 			%\hline Number of middlewares            & N/A                      \\
 			%\hline Worker threads per middleware    & N/A                      \\
-			\hline Repetitions                      & 3 (at least 1 minute each) \\ 
+			%\hline Repetitions                      & 3 (at least 1 minute each) \\ 
 			\hline 
 		\end{tabular}
 	} 
 \end{center}
 
-As in the previous section with only one server VM, the throughput and response time derived from the interactive law with a client thinking time of $Z=0$ and the network bandwidth limit for the throughput are shown in the graphs next to the measurements obtained from the client.
+As in the previous section, the throughput and response time derived from the interactive law with a client thinking time of $Z=0$ and the network bandwidth limit for the throughput presented next to the measurements obtained from the client.
 
 \begin{figure}[H]
 \begin{subfigure}{\linewidth}
@@ -134,22 +131,21 @@ As in the previous section with only one server VM, the throughput and response 
 	\caption{write-only workload}
 	\label{exp22_wo_nc}
 \end{subfigure}
-\caption{Throughput and response time with the interactive law in both a read-only and write-only workload with one load generating VM and two servers as a function of the number of clients. The error metric is the sample standard deviation over the repetitions.}
+\caption{Throughput and response time measurements of the system with one load generating VM verified with the interactive law as a function of the number of clients. The error metric is the sample standard deviation over the repetitions and the maximal throughput due to the network is shown.}
 \end{figure}
 
 
 
 \subsubsection{Explanation}
 
-%Describe how this experiment compares to the previous section. Which results are the same and which ones differ? Explain what further conclusions can be drawn from the experiment.
 \paragraph{Read-Only}
-As with a single server VM, the throughput of the read-only workload with 2 servers is also bound by the total upload bandwidth of the server VMs. This becomes evident when considering that the two server VMs have a measured total upload bandwidth capacity of 199 MBit/sec which results in an estimate of 6062 ops/sec for the maximally achievable throughput when using values of 4096B.
+As with a single server VM, the throughput of the read-only workload with 2 servers is also bound by the total upload bandwidth of the server VMs. This becomes evident when considering that two server VMs have a measured total upload bandwidth capacity of 199 MBit/sec which results in an estimate of 6062 ops/sec for the maximally achievable throughput when using values of 4096B.
 
 The optimal number of clients for a read-only workload would be somewhere in between 4 and 8 clients because when using 8 clients the bandwidth bottleneck is already affecting the throughput and response time. However, from the evaluated number of clients it cannot be justified to state that 4 clients is the load with maximum throughput because the increase in throughput of around 1500 ops/sec with 8 clients simply outweights the cost of only 0.45 ms more in response time on average. Consequently the point of throughput saturation is reached at 8 clients. For fewer number of clients the system is under-saturated and for more it is saturated. The over-saturation phase with decreasing throughput is omitted. (Fig. \ref{exp22_ro_nc})
 
 
 \paragraph{Write-Only}
-Using a write-only workload with values of 4096B the situation is similar but here instead of the upload bandwidth of the server VMs, the bottleneck is the upload bandwidth of the load generating client VM. The measured 199 MBit/sec total upload bandwidth limits the throughput of the system to 6062 ops/sec. So as a consequence  the throughput saturation is reached at 8 clients as shown in figure \ref{exp22_wo_nc}. The increase in response time between 4 and 8 clients is still justified for the additional throughput obtained with 8 clients. But the additional 200 ops/sec for 16 clients does not justify a response time that is almost twice as long.
+Using a write-only workload with values of 4096B the situation is similar but here instead of the upload bandwidth of the server VMs, the bottleneck is the upload bandwidth of the load generating client VM. The measured 199 MBit/sec total upload bandwidth limits the throughput of the system to 6062 ops/sec. So as a consequence  the throughput saturation is reached at 8 clients as shown in figure \ref{exp22_wo_nc}. The increase in response time between 4 and 8 clients is still justified for the additional throughput obtained with 8 clients. But the additional 200 ops/sec for 16 clients is not enough to outweigh a response time that is almost twice as long.
 
 
 \subsection{Summary}
@@ -175,7 +171,8 @@ Despite the fact that they are both network bound, they have a different maximum
 The different throughput for write-only workload is explained by considering that only the second experiment is bound by the network. Namely by the upload bandwidth of the client VM. The bottleneck in the first experiment is \emph{memcached} which saturates for around 72 clients.
 
 \paragraph{Comparison of workloads}
-In the first set of experiments with one \emph{memcached} server the throughput is different between write and read workload. This is because for a GET request the server needs to transport the value and some control structure which is more than 4096B to the client. For a SET request the server VM only needs to transmit the 8 byte confirmation message \texttt{STORED\textbackslash r\textbackslash n} to the client VM. 
+In the first set of experiments with one \emph{memcached} server the throughput is different between write and read workload. 
+This is primarily because only the read workload is network bound. For a SET request the server only needs to transmit the 8B confirmation message \texttt{STORED\textbackslash r\textbackslash n} to the client compared to a GET request where the server needs to transport a message with at least 4096B. 
 
 Despite the fact that in the second set of experiments with only one load generating VM the throughput for read-only and write-only is almost identical the bottleneck is a different part of the system. For read-only it is the upload bandwidth of the two server VMs and for the write-only workload it is the upload bandwidth of the load generating client VM.
 
@@ -184,7 +181,7 @@ Despite the fact that in the second set of experiments with only one load genera
 	\vitemsep
 	\item a single server VM cannot handle more than 3000 ops/sec in a read-only workload
 	\item a single client VM cannot simulate a higher write-only workload than 6000 ops/sec
-	\item in a write-only workload the point of saturation for a single memcached server is around 14000 ops/sec
+	\item in a write-only workload the point of saturation for 1 server VM is around 14000 ops/sec
 \end{itemize}
 
 \end{document}

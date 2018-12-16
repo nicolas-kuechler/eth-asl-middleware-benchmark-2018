@@ -8,6 +8,7 @@ The software \cite{queueing} was used for the queueing models.
 
 \begin{table}[H]
 	\centering
+	\small{
 	\begin{tabular}{r|lcccccccc|}
 		\multicolumn{3}{c}{}  & \multicolumn{7}{c}{Number of Clients}\Tstrut \\ 
 		\multicolumn{3}{c}{}   & 6 & 12 & 24 & 48 & 72 & 96 & \multicolumn{1}{c}{144} \\ 
@@ -24,7 +25,7 @@ The software \cite{queueing} was used for the queueing models.
 		\multirow{2}{*}{64 WT } & $\mu_{M/M/1} = 11848$ & $\lambda = $ & 2405 & 4312 & 5738 & 8027 & 9339 & 10300 & 11210\Tstrut \\
 		& $\mu_{M/M/128} = 93$ & $\rho =$ & 0.2 & 0.36 & 0.48 & 0.68 & 0.79 & 0.87 & 0.95 \\
 		\cline{2-10}
-	\end{tabular}
+	\end{tabular}}
 	\caption{Arrival rates $\lambda$, service rate $\mu$ and traffic intensity $\rho$ for both M/M/1 and M/M/m models for different number of worker-threads} \label{exp70_arrival_service_traffic} 
 \end{table}
 
@@ -85,27 +86,27 @@ The software \cite{queueing} was used for the queueing models.
 		\includegraphics[width=0.31\linewidth,valign=m]{data/exp70_qwt_w64.pdf}
 	\end{tabular}
 \end{subfigure}
-\caption{Response time, number of requests in queue and queue waiting time as a function of number of clients for different number of worker-threads(WT) as measured in simulation and calculated using an M/M/1 and M/M/m model.}\label{exp70_mm1_mmm}
+\caption{Comparison of response time, queue length and queue waiting time as a function of number of clients for 8, 16, 32 and 64 worker-threads (WT) between measurements, M/M/1 and M/M/m model.}\label{exp70_mm1_mmm}
 \end{figure}
 
 \subsection{M/M/1}
 
 In this section the entire system from Section \ref{exp4} (write-only throughput) is modelled using one M/M/1 queue. An M/M/1 queue assumes that the interarrival times and service times of requests are exponentially distributed and that requests are waiting in a possibly unbounded FCFS queue\footnote{first come first served queue} for processing by the only server in the system.
 
-A M/M/1 queue is completely defined by two parameters, the arrival rate $\lambda$ and the service rate $\mu$.
-The average number of requests per second arriving in the system depends on the user load and is measured in the net-thread of each MW. This measurement is then used as the arrival rate $\lambda$ for the M/M/1 queue.
-The service rate $\mu$ is independent of the user load and characterizes how fast the system is able to serve requests in a certain configuration. \todo{verify this formulation} 
+An M/M/1 queue is completely defined by two parameters, the arrival rate $\lambda$ and the service rate $\mu$.
+The average number of requests per second arriving in the system depends on the user load and is measured in the net-thread of each MW. This measurement from both MWs is added up and used as the arrival rate $\lambda$ for the M/M/1 queue.
+The service rate $\mu$ is independent of the user load and characterizes how fast the system is able to serve requests in a certain configuration.
 The maximum observed throughput of the system with a certain configuration can be used as an estimate for the service rate because this shows that the system is capable of serving requests at least as fast as this. 
 The service rate $\mu$ is defined as the maximum throughput observed for a worker-thread configuration independent of the number of clients.
 
 The chosen parameters are listed in table \ref{exp70_arrival_service_traffic}.
 The system is always stable because the traffic intensity  $\rho= \frac{\lambda}{\mu}$ is always smaller than 1.
-The traffic intensity also represents the utilization of the system and this matches nicely with the results from section \ref{exp4}, where it was shown that the system saturates when there are considerably more clients than total worker-threads in the system\footnote{recall that there are two middlewares in the system and hence the total number of worker-threads is two times the number of worker-threads per middleware which are listed in table \ref{exp70_arrival_service_traffic})}.
+The traffic intensity also represents the utilization of the system and this matches nicely with the results from section \ref{exp4}, where it was shown that the system saturates when there are considerably more clients than total worker-threads in the system\footnote{recall that there are 2 MWs in the system and hence the total number of worker-threads is two times the number of worker-threads per MW which are listed in table \ref{exp70_arrival_service_traffic})}.
 Apart from the traffic intensity the performance of the model is evaluated by comparing it to the measured response time, number of requests in the request queue and waiting time in the queue.
 
 The M/M/1 model constantly underestimates the response time because it assumes there is only a single server (worker-thread) and so the given service rate implies that this single server processes each job rapidly and hence the predicted response time is much lower than the observed response time. In reality the service time of a worker-thread is much larger and the achieved throughput is only possible because multiple worker-threads process requests in parallel.
 In configurations with relatively few worker-threads the discrepancies in response time are smaller compared to configurations with more working-threads because the concurrency in the system, which the M/M/1 model fails to capture, increases in the number of worker-threads.
-Both the number of requests in the queue and the waiting time in the queue are approximated well with the M/M/1 model because there the assumption of a single FCFS queue matches well with the request queue in the middleware. This accuracy is only possible because the decoding in the net-thread is not a bottleneck where requests are already queued for a long time before entering the MW request queue. (Fig. \ref{exp70_mm1_mmm})
+Both the number of requests in the queue and the waiting time in the queue are approximated well with the M/M/1 model because there the assumption of a single FCFS queue matches well with the request queue in the middleware. However, this accuracy is only possible because the decoding in the net-thread is not a bottleneck where requests are already queued for a long time before entering the MW request queue. (Fig. \ref{exp70_mm1_mmm})
 
 \subsection{M/M/m}
 
@@ -121,11 +122,11 @@ While the system is under-saturated when there are more worker-threads than clie
 Despite the fact that in the under-saturated phase the M/M/m model fails to capture the response time accurately, when the system is running at near to optimal load with approximately equal number of worker-threads in total and clients, then the M/M/m model is a good model for the response time and outperforms the M/M/1 model significantly.
 When there are much more clients per middleware than worker-threads, the accuracy of the model decreases and there can even be some artefacts as observed in figure \ref{exp70_mm1_mmm} with 8 worker-threads.
 
-As expected the difference between the predictions for number of requests waiting in queue and waiting time are equally good to the M/M/1 model because the model also accurately models the situation in the middleware with a single FCFS request queue where all requests are waiting for service and no major waiting time happens before that.
+As expected the difference between the predictions for number of requests waiting in queue and waiting time are equally good to the M/M/1 model because the model also accurately models the situation in the 2 middlewares with the FCFS request queue where all requests are waiting for service and no major waiting time happens before that.
 
 \subsection{Network of Queues}
 
-The results were obtained using the convolution algorithm for general load-dependent service centers. Details of the algorithm and further references can be found in the documentation of the used \emph{queueing} software \cite{queueing}.
+The results were obtained using the convolution algorithm for general load-dependent service centers. Details of the algorithm and further references can be found in the documentation of the applied \emph{queueing} software \cite{queueing}.
 
 
 \paragraph{One Middleware - Model}
@@ -133,103 +134,83 @@ The results were obtained using the convolution algorithm for general load-depen
 The net-thread is modelled as an M/M/1 queue using the measured decoding time as the service time.
 This is a sensible choice because as shown in previous sections, the decoding time of the net-thread is independent of the number of clients and all requests have to go through this decoding stage which explains the visit ratio of 1.
 
-The request queue in combination with the $m$ worker-threads is modelled as an M/M/m queue with a visit ratio of 1 because with a single middleware all requests pass through there. Due to the architecture of the middleware, the \emph{memcached} server is not modelled as a separate queue because a worker-thread cannot process a new request until the \emph{memcached} server responded and so the time for request to the \emph{memcached} server is part of the worker-thread service time. This modelling choice leads to a conflict in the service time of a worker-thread because as shown in previous sections the server service time of the \emph{memcached} server is depending on the number of busy worker-threads and so in an under-saturated system the worker-thread service time is smaller than in a system where all worker-threads are busy. 
+The request queue in combination with the $m$ worker-threads is modelled as an M/M/m queue with a visit ratio of 1 because with a single middleware all requests pass through there. Due to the architecture of the middleware, the \emph{memcached} server is not modelled as a separate queue because a worker-thread cannot process a new request until the \emph{memcached} server responded and so the time for request to the \emph{memcached} server is part of the worker-thread service time. This modelling choice leads to a conflict in the service time of a worker-thread because as shown in previous sections the server service time of a \emph{memcached} server is depending on the number of busy worker-threads and so in an under-saturated system, the worker-thread service time is smaller than in a system where all worker-threads are busy. 
 It was decided to use the measured worker-thread processing time when all worker-threads are busy as the service time for a server in the M/M/m queue. In consequence the model predictions for the throughput are only accurate when there are more clients than worker-threads because as seen in previous sections the worker-thread processing time is independent of the user-load from the point where there are more users than worker-threads.
 
 The network between client VM and middleware VM and vice versa are modelled as two separate delay centers each with a service time of half the measured round trip time. In between there is a client delay center with 0 service time which has no influence but fits well with the conceptual model of the system. All three delay centers have a visit ratio of 1 because all requests pass through them.
-Figure \ref{exp70_noq_1mw} shows the detailed structure of the network of queues with the respective parameters.
+Figure \ref{exp70_noq} shows the detailed structure of the network of queues with the respective parameters.
 
 \paragraph{One Middleware - Model Performance}
 The network of queues model with a single middleware was applied to both the read-only and write-only workload from section \ref{exp31}.
 In order to evaluate the performance of the model, the predicted and measured throughputs are compared for different number of clients.
 In addition the utilization of each component as predicted by the model is shown in order to identify the bottleneck component.
 
-
 For the write-only workload the configuration with 64 worker-threads is used because as shown it leads to the highest throughput.
-Figure \ref{exp70_noq_wo} shows that for reasons described above, the model fails to predict the throughput when there are less clients than worker-threads but afterwards the model is accurate. The component utilizations in figure \ref{exp70_noq_wo} show that worker-threads become the bottleneck if there are considerably more clients than worker-threads. This is consistent with the results from section \ref{exp31}.
+Figure \ref{exp70_noq_wo} shows that for reasons described in the previous paragraph, the model fails to predict the throughput when there are less clients than worker-threads but afterwards the model is accurate. The component utilizations in figure \ref{exp70_noq_wo} show that worker-threads become the bottleneck if there are considerably more clients than worker-threads. This is consistent with the results from section \ref{exp31}.
 
 For the read-only workload the configuration with 8 worker-threads is used because as shown there is no point in using more worker-threads because the server VM upload bandwidth limit is already reached with 8 worker-threads. The throughput prediction is accurate as soon as the user load is such that all 8 worker-threads are kept constantly busy (Fig. \ref{exp70_noq_ro}). This is due to the choice of worker-thread service time as described above . The component utilizations in figure \ref{exp70_noq_ro} show that the worker-threads are the bottleneck in the model. This is only partially true because as seen in section \ref{exp31} the real bottleneck is the upload bandwidth capacity of the server VM. However, since the limited upload bandwidth capacity between server VM and middleware VM is not explicitly modelled, the model also does not have the power to detect this and instead the limit manifests itself in the worker-thread processing time.
 
+
 \begin{figure}
-	\begin{minipage}[c]{0.45\linewidth}
-		\centering
-		\scriptsize{
-			\begin{tabular}{|l|c|c|l|}
-				\hline 
-				& $V$ & $S$ & Type \Tstrut\\ 
-				\hline 
-				Client & 1 & 0.0  & delay center \Tstrut\\ 
-				\hline 
-				Network Client - MW & 1 &  & delay center \Tstrut\\  
-				Net-Thread & 1 &  & M/M/1 \\ 
-				Worker-Threads & 1 &  & M/M/m  \\ 
-				Network MW - Client & 1 &  & delay center \\ 
-				\hline 
-			\end{tabular} 
-		} 
-	\end{minipage}
-	\hspace{0.5cm}
-	\begin{minipage}[c]{0.45\linewidth}
 	\centering
-	\includegraphics[width=\textwidth]{data/noq_1mw.png}
-\end{minipage}
-	\caption{Network of Queue with one middleware}
-	\label{exp70_noq_1mw}
+	\scriptsize{
+		\setlength{\tabcolsep}{4.5pt}
+		\begin{tabular}{|l|c|c|c|l|}
+			\hline 
+			\textbf{Network 1 MW} & $V$ & $S_{WO}$ &  $S_{RO}$ &Type \Tstrut\\ 
+			\hline 
+			Client & 1 & 0.0 & 0.0  & delay center \Tstrut\\ 
+			\hline 
+			Network C - MW & 1 & 0.916 & 0.916 & delay center \Tstrut\\  
+			Net-Thread & 1 & 0.029 & 0.008 & M/M/1 \\ 
+			Worker-Threads & 1 & 5.147 & 2.716 & M/M/m  \\ 
+			Network MW - C & 1 & 0.916 & 0.916 & delay center \\ 
+			\hline 
+		\end{tabular} 
+		\quad
+		\setlength{\tabcolsep}{4.5pt}
+		\begin{tabular}{|l|c|c|c|l|}
+			\hline 
+			\textbf{Network 2 MWs} & $V$ & $S_{WO}$ &  $S_{RO}$ & Type \Tstrut\\ 
+			\hline 
+			Client & 1 & 0.0 & 0.0 & delay center \Tstrut\\ 
+			\hline 
+			Network C - MW 1 & 0.5 & 0.635 & 0.635 & delay center \Tstrut\\ 
+			Net-Thread MW 1 & 0.5 & 0.026 & 0.010 & M/M/1 \\ 
+			Worker-Threads MW 1 & 0.5 & 8.941 & 5.424 & M/M/m  \\ 
+			Network MW 1 - C & 0.5 & 0.635 & 0.635 & delay center \\ 
+			\hline 
+			Network C - MW 2 & 0.5 & 0.635 & 0.635 & delay center \Tstrut\\  
+			Net-Thread MW 2 & 0.5 & 0.026 & 0.010 & M/M/1 \\ 
+			Worker-Threads MW 2 & 0.5 & 8.941 & 5.424 & M/M/m  \\
+			Network MW 2 - C & 0.5 & 0.635 & 0.635 & delay center \\ 
+			\hline 
+		\end{tabular}
+	} 
+	\caption{Network of Queue with 1 and 2 MWs}\label{exp70_noq}
 \end{figure}
 
 
 \paragraph{Two Middlewares - Model}
 
-The network of queues model for the system with two middlewares in section \ref{exp32} is similar to the network of queues with one MW.
+The network of queues model for the system with two middlewares in section \ref{exp32} is similar to the network of queues with 1 MW.
 The difference is that all components apart from the client delay center are duplicated and in consequence each of them has a visit ratio of 0.5.
 This is a reasonable choice because half of the clients use middleware 1 and the other half uses middleware 2. As shown in section \ref{exp32} the \emph{memcached} service time remains constant when the user load is such that all worker-threads in the system are kept constantly busy and so the dependence between the two middlewares can be neglected. The motivation for the choice of the component service times from the model involving one middleware also directly apply to this model with two middlewares.
-The details of the model are listed in figure \ref{exp70_noq_2mw}.
+The details of the model are listed in figure \ref{exp70_noq}.
 
 \paragraph{Two Middlewares - Model Performance}
-The network of queues model with a two middlewares was applied to both the read-only and write-only workload from section \ref{exp32}.
+The network of queues model with a 2 MWs was applied to both the read-only and write-only workload from section \ref{exp32}.
 As in the model with a single middleware, the predicted and measured throughput are compared for different number of clients.
 And the utilization of each component as predicted by the model is listed in order to identify the bottleneck component. For the write-only workload the configuration with 64 worker-threads per middleware is used and for the read-only workload the configuration with 8 worker-threads per middleware is used because they lead to the maximal throughput.
 
 In the write-only workload, the model is able to predict the throughput accurately when all 128 worker-threads are busy which happens only for more than 128 clients. This is due to the familiar issue with the worker-thread service time that up to then would depend on the user load in the real system but is kept fixed in the model.
-The component utilizations in figure \ref{exp70_noq_wo} show that the bottleneck is once again the worker-threads which matches the analysis of section \ref{exp32}. \todo{does it? could also be server that is saturating} Compared to the system with one middleware, the point of saturation is reached for a larger number of clients which manifests itself both in the component utilizations and the throughput.
+The component utilizations in figure \ref{exp70_noq_wo} show that the bottleneck is once again the worker-threads which matches the analysis of section \ref{exp32}. \todo{does it? could also be server that is saturating} Compared to the system with 1 MW, the point of saturation is reached for a larger number of clients which manifests itself both in the component utilizations and the throughput.
 
 In the read-only workload the situation is the same as in the model with one middleware. The throughput predictions match when the number of clients is such that all 16 workers are constantly busy. The bottleneck is identified as the worker-threads which is correct in the sense that the bandwidth bottleneck of the server VM, which was identified as the actual bottleneck in section \ref{exp32}, is part of this component.
 However, in the read-only workload the granularity of the network model does not allow to detect the bandwidth limit of the server VM as the real problem. 
 
-\begin{figure}
-	\begin{minipage}[c]{0.45\linewidth}
-		\centering
-		\scriptsize{
-			\begin{tabular}{|l|c|c|l|}
-				\hline 
-				& $V$ & $S$ & Type \Tstrut\\ 
-				\hline 
-				Client & 1 & 0.0  & delay center \Tstrut\\ 
-				\hline 
-				Network Client - MW 1 & 0.5 &  & delay center \Tstrut\\ 
-				Net-Thread MW 1 & 0.5 &  & M/M/1 \\ 
-				Worker-Threads MW 1 & 0.5 &  & M/M/m  \\ 
-				Network MW 1 - Client & 0.5 &  & delay center \\ 
-				\hline 
-				Network Client - MW 2 & 0.5 &  & delay center \Tstrut\\  
-				Net-Thread MW 2 & 0.5 &  & M/M/1 \\ 
-				Worker-Threads MW 2 & 0.5 &  & M/M/m  \\
-				Network MW 2 - Client & 0.5 &  & delay center \\ 
-				\hline 
-			\end{tabular} 
-		} 
-	\end{minipage}
-	\hspace{0.5cm}
-	\begin{minipage}[c]{0.45\linewidth}
-		\centering
-		\includegraphics[width=\textwidth]{data/noq_2mw.png}
-	\end{minipage}
-	\caption{Network of Queue with two middlewares}
-	\label{exp70_noq_2mw}
-\end{figure}
-
-
-\begin{figure}
+\begin{figure}[H]
+\begin{subfigure}{\linewidth}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp70_noq_tp_wo.pdf}
@@ -238,10 +219,10 @@ However, in the read-only workload the granularity of the network model does not
 		\centering
 		\includegraphics[width=\linewidth]{data/exp70_noq_util_wo.pdf}
 	\end{subfigure}%
-	\caption{Write-Only}\label{exp70_noq_wo}
-\end{figure}
-
-\begin{figure}
+	\caption{write-only}\label{exp70_noq_wo}
+\end{subfigure}
+\\[1ex]
+\begin{subfigure}{\linewidth}
 	\begin{subfigure}[b]{.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{data/exp70_noq_tp_ro.pdf}
@@ -250,10 +231,9 @@ However, in the read-only workload the granularity of the network model does not
 		\centering
 		\includegraphics[width=\linewidth]{data/exp70_noq_util_ro.pdf}
 	\end{subfigure}%
-	\caption{Read-Only}\label{exp70_noq_ro}
+	\caption{read-only}\label{exp70_noq_ro}
+\end{subfigure}
+\caption{Comparison of throughput and utilization as a function of number of clients between the two network of queues models and the measurements from the MW baseline.}
 \end{figure}
-
-\todo{do figures properly and noq for 2 mws needs to be smaller}
-
 
 \end{document}

@@ -3,68 +3,32 @@
 \section{Gets and Multi-gets (90 pts)}\label{exp5}
 
 
-In this set of experiments the behaviour of sharded and non-sharded mode for different number of keys in GET requests are evaluated using three load generating machines, two middlewares and three \emph{memcached} servers.
-Each \emph{memtier} client instance uses 2 virtual clients and so there are 6 clients per middleware and hence 12 clients in total. 
+In this set of experiments the behaviour of sharded and non-sharded mode for different number of keys in GET requests are evaluated using 3 load generating machines, 2 MWs and 3 \emph{memcached} servers.
+Each \emph{memtier} client instance uses 2 virtual clients and so there are 6 clients per MW and hence 12 clients in total. 
 
-Results from the baseline with two middlewares in section \ref{exp31} show that for 12 clients there is no difference in throughput between 8, 16, 32 and 64 worker-threads and so the configuration with 8 worker-threads is used. This result is also to be expected when considering that in a closed system there can never be more requests than clients in the system and so with 8 worker-threads there are more worker-threads than clients per MW and so for every decoded request there will always be an idle worker available for processing and the queue is always empty. In consequence, having more worker-threads cannot improve the throughput independent of the number of keys in the request or sharded / non-sharded mode.
+Results from the baseline with 2 middlewares in section \ref{exp31} show that for 12 clients there is no difference in throughput between 8, 16, 32 and 64 worker-threads and so the configuration with 8 worker-threads is used. This result is also to be expected when considering that in a closed system there can never be more requests than clients at the same time and so with 8 worker-threads there are more worker-threads than clients per MW and so for every decoded request there will always be an idle worker available for processing and the queue is always empty. In consequence, having more worker-threads cannot improve the throughput independent of the number of keys in the request or sharded / non-sharded mode.
 Details of the configuration are listed in the table below.
-
 For all experiments the average number of keys per multi-GET request was recorded in order to ensure that the results between different number of keys can be compared. The recordings show that in the used \emph{memtier} version, each request contains exactly the specified number of keys.
 
 \begin{center}
 	\scriptsize{
 		\begin{tabular}{|l|c|}
-			\hline Number of servers                & 3                       \\ 
-			\hline Number of client machines        & 3                       \\ 
+			\multicolumn{2}{l}{3 client VMs, 2 middleware VMs and 3 server VMs}\\
+			%\hline Number of servers                & 3                       \\ 
+		%	\hline Number of client machines        & 3                       \\ 
 			\hline Instances of memtier per machine & 2                       \\ 
 			\hline Threads per memtier instance     & 1                       \\
 			\hline Virtual clients per thread       & 2     		           \\ 
 			\hline Workload                         & ratio=1:$<$Multi-Get size$>$         \\
 			\hline Multi-Get behavior               & Sharded and Non-Sharded  \\
 			\hline Multi-Get size                   & [1, 3, 6, 9]            \\
-			\hline Number of middlewares            & 2                       \\
+			%\hline Number of middlewares            & 2                       \\
 			\hline Worker threads per middleware    & 8 \\
-			\hline Repetitions                      & 3 or more (at least 1 minute each)               \\ 
+			%\hline Repetitions                      & 3 or more (at least 1 minute each)               \\ 
 			\hline 
 		\end{tabular}
 	} 
 \end{center}
-
-
-\begin{figure}[H]
-	\begin{minipage}[c]{0.45\linewidth}
-		\centering
-		\scriptsize{
-		\setlength{\tabcolsep}{4.5pt}
-		\begin{tabular}{|c|*{4}{r}|}
-			\cline{2-5}
-			\multicolumn{1}{c|}{} & \multicolumn{4}{c|}{multi-get size} \Tstrut\\
-			\multicolumn{1}{c|}{} & 1 & 3 & 6 & 9 \Tstrut\\
-			\hline
-			sharded & -0.1 & -0.1 & 0.1 & 0.4 \Tstrut\\
-			& \multicolumn{4}{c|}{in milliseconds} \\
-			\hline 
-		\end{tabular}}
-	\end{minipage}
-	\hspace{0.5cm}
-	\begin{minipage}[c]{0.45\linewidth}
-		\centering
-		\scriptsize{
-		\setlength{\tabcolsep}{4.5pt}
-		\begin{tabular}{|c|*{4}{r}|}
-			\cline{2-5}
-			\multicolumn{1}{c|}{} & \multicolumn{4}{c|}{multi-get size} \Tstrut\\
-			\multicolumn{1}{c|}{} & 1 & 3 & 6 & 9 \Tstrut\\
-			\hline
-			non-sharded & -0.1 & -0.1 & 0.1 & 0.3 \Tstrut\\
-			& \multicolumn{4}{c|}{in milliseconds} \\
-			\hline 
-		\end{tabular}
-	}
-	\end{minipage}
-	\caption{Interactive law response time deviations in milliseconds from client measurements according to equation \ref{ilaw} but using the set response time as client thinking time.}\label{exp5_ilaw}
-\end{figure}
-
 
 In this setting the focus lies on GET and multi-GET requests because the performance of SET requests in the same setting was already extensively analysed in section \ref{exp4}.
 However, in order to apply the interactive law to validate the throughput and response time measurements for the read workload, the average SET response time as measured on the client is used as client thinking time. This reflects the fact that \emph{memtier} alternately generates a GET/multi-GET and a SET request. So in the viewpoint of the middleware, the client waits the round trip time and the SET response time before sending the next GET/multi-GET request. As table \ref{exp5_ilaw} shows, the interactive law holds for all measurements in this section.
@@ -80,7 +44,7 @@ However, in order to apply the interactive law to validate the throughput and re
 		\includegraphics[width=\linewidth]{data/exp52_ns_rt_mget_perc_client.pdf}
 		\caption{non-sharded}\label{exp52_ns_rt_mget_perc}
 	\end{subfigure}%
-	\caption{Average response time and 25th, 50th, 75th, 90th and 99th percentiles of different multi-get sizes. The error metric is the sample standard deviation over repetitions.}\label{exp5_rt_mget_perc}
+	\caption{Average response time and 25th, 50th, 75th, 90th and 99th percentiles of different multi-GET sizes. The error metric is the sample standard deviation over repetitions.}\label{exp5_rt_mget_perc}
 \end{figure}
 
 
@@ -95,7 +59,7 @@ However, in order to apply the interactive law to validate the throughput and re
 		\includegraphics[width=\linewidth]{data/exp51_s_rt_comp.pdf}
 		\caption{Sharded multi-GET response time decomposition}\label{exp51_s_rt_comp}
 	\end{subfigure}%
-	\caption{Throughput of multi-GET requests with bandwidth limit with sample standard deviation over the experiment repetitons as the error metric and response time decomposition of sharded multi-GET requests.}
+	\caption{Throughput of multi-GET requests with bandwidth limit and sample standard deviation over the experiment repetitons as the error metric. On the right side  the response time decomposition of sharded multi-GET requests is presented.}
 \end{figure}
 
 
@@ -110,7 +74,7 @@ However, in order to apply the interactive law to validate the throughput and re
 		\includegraphics[width=\linewidth]{data/exp52_ns_get_sst.pdf}
 		\caption{non-sharded}\label{exp52_s_get_sst}
 	\end{subfigure}%
-	\caption{Server service time for each server individually and the average total server service time with the sample standard deviation over the experiment repetitons.}
+	\caption{Server service time for each server individually and the average total server service time. All measurements are accompanied with the sample standard deviation over the experiment repetitons.}
 \end{figure}
 
 \subsection{Sharded Case}
@@ -119,44 +83,23 @@ This section evaluates the sharded mode for multi-GETs with 1, 3, 6 and 9 keys.
 
 \subsubsection{Explanation}
 
-Figure \ref{exp5_tp} shows that multi-GETs with more than 3 keys are limited by the network upload bandwidth of the server VMs. The three server have a combined upload bandwidth of 297.8 MBit/sec as measured with \emph{iperf}. Since every 4096B value has to be transported from a server VM to a middleware VM independent of sharded or non-sharded mode, a request with 6 keys requires the transportation of at least 24576B without considering any additional overhead. This limits the throughput to 1514 ops/sec which is reached in both the sharded and non-sharded case and thus heavily influences the analysis.
+Figure \ref{exp5_tp} shows that multi-GETs with more than 3 keys are limited by the network upload bandwidth of the server VMs. The 3 servers have a combined upload bandwidth of 297.8 MBit/sec. Since every 4096B value has to be transported from a server VM to a middleware VM independent of sharded or non-sharded mode, a request with 6 keys requires the transportation of at least 24576B without considering any additional overhead. This limits the throughput to 1514 ops/sec which is reached in both the sharded and non-sharded case and thus heavily influences the results.
 
-The network bottleneck becomes also evident when considering the percentiles and the average of the response time in figure \ref{exp51_s_rt_mget_perc}. The 75th, 90th and 99th percentile and the average response time have a clear knee between multi-GET requests with 3 and 6 values. Then for multi-GETs with 9 values the knee is also visible in the 50th percentile. Only the 25th percentile remains stable, which means that at least 25\% of the multi-GET requests are basically not affected by the bottleneck for multi-GET requests with 9 or less values.
+The network bottleneck becomes also evident when considering the percentiles and the average of the response time in figure \ref{exp51_s_rt_mget_perc}. The 75th, 90th and 99th percentile and the average response time have a clear knee between multi-GET requests with 3 and 6 keys. Then for multi-GETs with 9 keys the knee is also visible in the 50th percentile. Only the 25th percentile remains stable, which means that at least 25\% of the multi-GET requests are basically not affected by the bottleneck for multi-GET requests with 9 or less values.
 
 In sharded mode it could be expected that there is a trade-off between additional worker-thread processing time disassembling and assembling the multi-GET request and a shorter server service time due to the smaller number of values that need to be handled by a single \emph{memcached} server. However as figure \ref{exp51_s_rt_comp} shows the worker-thread processing time is a negligible factor in sharded mode. It is the server service time that dominates the response time. Here a problem of the sharded mode arises, a worker-thread needs to wait for the responses of all involved \emph{memcached} servers and thus the slowest server determines the total server service time of the request.  The effect is clearly visible in figure \ref{exp51_s_get_sst} where server 3 is considerably slower in particular for requests with more keys and hence the total server service time is also long. The average total server service time is even worse than the average server service time of server 3 because for some requests server 3 is faster than server 1 or 2 but then the limiting factor is server 1 or 2. Effectively the slowest responding server is the bottleneck of the system and the problem is aggravated by the network bottleneck for multi-GETs with more than 3 values.
-The same phenomena was previously observed in section \ref{exp4} for a write-only workload with 3 server VMs.\footnote{Since the VMs were restarted for experiments in this section, another server is the slowest.}
+The same phenomena was previously observed in section \ref{exp4} for a write-only workload with 3 servers.\footnote{Since the VMs were restarted for experiments in this section, another server is the slowest but the same phenomena occurred.}
 
 
 \subsection{Non-sharded Case}
 
 This section evaluates the non-sharded mode for multi-GETs with 1, 3, 6 and 9 keys.
-%Run multi-gets with 1, 3, 6 and 9 keys (memtier configuration) with sharding disabled. Plot average response time as measured on the client, as well as the 25th, 50th, 75th, 90th and 99th percentiles.
-
-%\begin{center}
-%	\scriptsize{
-%		\begin{tabular}{|l|c|}
-%			\hline Number of servers                & 3                       \\ 
-%			\hline Number of client machines        & 3                       \\ 
-%			\hline Instances of memtier per machine & 2                       \\ 
-%			\hline Threads per memtier instance     & 1                       \\
-%			\hline Virtual clients per thread       & 2                		 \\ 
-%			\hline Workload                         & ratio=1:$<$Multi-Get size$>$              \\
-%			\hline Multi-Get behavior               & Non-Sharded             \\
-%			\hline Multi-Get size                   & [1, 3, 6, 9]                  \\
-%			\hline Number of middlewares            & 2                       \\
-%			\hline Worker threads per middleware    & 8 \\
-%			\hline Repetitions                      & 3 or more (at least 1 minute each) \\ 
-%			\hline 
-%		\end{tabular}
-%	} 
-%\end{center}
-
 
 \subsubsection{Explanation}
 
 The network bottleneck identified in the sharded mode also directly applies to the non-sharded mode and so the analysis of results for multi-GETs with more than 3 keys has to take this into consideration.
 
-The network bottleneck also directly influences the response time as seen in figure \ref{exp52_ns_rt_mget_perc}, because for the average, the 90th and 99th percentile there is a knee between 3 and 6 keys per multi-GET request. The 75th percentile has the knee at 6 keys per request and the 25th and 50th percentile remain stable up to 9 keys. This shows that at least 50\% requests are almost not affected by the network bottleneck which is more than in sharded mode. The fact that less requests are affected in non-sharded mode by the bottleneck can be explained by a simple probability model.
+The network bottleneck directly influences the response time as seen in figure \ref{exp52_ns_rt_mget_perc}, because for the average, the 90th and 99th percentile there is a knee between 3 and 6 keys per multi-GET request. The 75th percentile has the knee at 6 keys per request and the 25th and 50th percentile remain stable up to 9 keys. This shows that at least 50\% requests are almost not affected by the network bottleneck which is more than in sharded mode. The fact that less requests are affected in non-sharded mode by the bottleneck can be explained by a simple probability model.
 Under the simplifying assumption that each message from the server is delayed with probability of 0.5. This is a reasonable assumption because the 50th percentile of the non-sharded mode shows that at least half of the requests are not delayed.
 The probability of a non-sharded request not being delayed is 0.5, because it relies only on a single message from a server.
 In sharded mode each request relies on 3 messages from a server and so the probability of at least one of those being delayed is $(1-0.5^3)=0.875$ which results in the whole request being delayed.
@@ -166,11 +109,10 @@ Despite the fact that in non-sharded mode less requests are delayed, figure \ref
 Further it can be observed that the average total server service time in non-sharded mode is less affected by the slowest server because the round-robin scheme takes care of the fact that only every third request is sent to this server. This shows the potential of a more sophisticated load balancing scheme considering the current throughput obtained by each server VM.
 
 
-
 \subsection{Histogram}
 
 
-The constant bucket size of 0.21 was selected by applying the \emph{Freedman–Diaconis rule} (bucket size $ = 2 \frac{IQR(x)}{\sqrt[3]{n}}$ where $IQR(x)$ is the interquartile range) on the middleware response time measurements of the sharded case. All outliers taking more than 15 ms are collected in the last bucket. Each bucket contains an error bar indicating the standard deviation of the frequency per bin over the repetitions.
+The constant bucket size of 0.21 was selected by applying the \emph{Freedman–Diaconis rule} (bucket size $ = 2 \frac{IQR(x)}{\sqrt[3]{n}}$ where $IQR(x)$ is the interquartile range) on the MW response time measurements of the sharded case. All outliers with more than 15 ms are collected in the last bucket.
 
 The histogram contains also the response time measurements from the warmup and cooldown phase to allow a fair comparison between client and MW because \emph{memtier} does not allow to filter them out. However a manual check of average response time over time indicated that the warmup and cooldown phase only have a limited influence on response time.
 
@@ -200,7 +142,7 @@ Consistent with the results from the previous section the data in figure \ref{ex
 		\includegraphics[width=\linewidth]{data/exp52_ns_mget6_hist_client.pdf}
 		\caption{Non-Sharded - Client}
 	\end{subfigure}%
-	\caption{Sharded and non-sharded response time distribution for multi-gets with 6 keys as measured inside the middleware and on the client}\label{exp5_hist}
+	\caption{Sharded and non-sharded response time distribution for multi-GETs with 6 keys as measured inside the MW and on the client. Each bucket is showing an error bar indicating the standard deviation in the bucket size over the repetitions.}\label{exp5_hist}
 \end{figure}
 
 \subsection{Summary}
@@ -211,7 +153,7 @@ For values of size 4096B the expected gain in throughput in keys per second is n
 \paragraph{Sharded vs. Non-Sharded}
 Due to the network bottleneck a fair comparison between sharded and non-sharded is difficult. 
 However with 3 keys per multi-GET request the collected data suggests that using the non-sharded mode is better because the gain in server service time as a consequence of only having one instead of three values to fetch is outweighed by the waiting time for the answer of the slowest server. For 6 and 9 keys per multi-GET request there is a trade-off in presence of the network bottleneck. On average the response time in non-sharded mode is smaller than in sharded mode because as explained in the previous section less requests are affected by the network bottleneck. However using the non-sharded mode the tail in the response time distribution is longer and so the 99th percentile rank is significantly higher than in the sharded mode. This results in large response times for some requests.
-So for multi-GETs with 6 and 9 keys, the preferred option in presence of the network bottleneck depends on whether the application requires to be good on average or not terrible in the worst case. 
+So for multi-GETs with 6 and 9 keys, the preferred option in presence of the network bottleneck depends on whether the application requires to be good on average or having a shorter tail. 
 
 \paragraph{Client vs. Middleware Measurements}
 The histograms in figure \ref{exp5_hist} show that the response time measurements follow the same distribution on client as on the middleware however with a shift of approximately 1 milliseconds representing the transfer between client VM and middleware VM and vice versa. This corresponds with the estimate of the round trip time measured before the experiments.
