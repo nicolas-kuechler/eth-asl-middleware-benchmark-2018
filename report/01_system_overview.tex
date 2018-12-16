@@ -43,7 +43,7 @@ In order to support a graceful shutdown of the middleware, a shutdown hook is re
 The middleware only supports SET, GET and multi-GET operations according to the protocol specification in \cite{memcached:protocol}.
 Logically each request from a client is represented using an instance of \emph{SetRequest.java}, \emph{GetRequest.java} or \emph{MultiGetRequest.java}. They all inherit basic functionality from \emph{AbstractRequest.java}.
 These request objects are created in the net-thread by the decoder (Section \ref{request-decoding}) and placed into the queue where they wait to be processed by a worker-thread (Section \ref{request-processing}).
-Apart from containing the operation command, the request object also serves as a container for the TCP socket channel to the client and for timestamps collected at different points in the system (Section \ref{measured-points}). This allows to measure how much time the request spent in each part of the system.
+Apart from containing the operation command, the request object also serves as a container for the TCP socket channel to the client and for timestamps collected at different points in the system (Section \ref{metrics}). This allows to measure how much time the request spent in each part of the system.
 
 \subsubsection{Request Decoding}\label{request-decoding}
 The net-thread \emph{(NetThread.java)} extends the java \emph{Thread} class. In the \emph{run()} method the net-thread is using an nio \emph{Selector} to handle multiple client channels in a single thread. The net-thread iterates over all channels that are ready and loads the content into a buffer \emph{(ByteBuffer.java)}. From there the incoming requests are decoded using the function \emph{decode(ByteBuffer buffer)} of the request decoder \emph{(RequestDecoder.java)}. Since every request needs to pass this function, the decoding is done on byte level to avoid unnecessary overhead.
@@ -63,7 +63,7 @@ After reading the "get" in the beginning of the command, the decoder determines 
 For GET and multi-GET requests the decoder assigns each request a server (or for sharded multi-GET multiple servers) in a round-robin scheme. (more on workload balancing in section \ref{workload-balancing})
 
 
-\subsubsection{Request Processing}\label{request-processing}
+
 
 \begin{figure}[H]
 	\begin{subfigure}[b]{.45\linewidth}
@@ -79,7 +79,7 @@ For GET and multi-GET requests the decoder assigns each request a server (or for
 \caption{Schematic overview of different request types between client (C), net-thread (NT), queue (Q), worker-thread (WT) and server (S).}
 \end{figure}
 
-
+\subsubsection{Request Processing}\label{request-processing}
 The worker-thread (WorkerThread.java) extends tha java \emph{Thread} class and takes a request from the queue with a blocking operation that waits until a request is available.
 Afterwards the worker-thread calls the function \emph{getServerMessages()} of the request object.
 This method is responsible for assembling all server messages (\emph{ServerMessage.java}) according to the request type.
@@ -88,23 +88,23 @@ The different channels to the servers are monitored using an nio \emph{Selector}
 
 \paragraph{SET} The SET request command obtained from the client is forwarded to all servers. If all servers answer with \texttt{STORED\textbackslash r\textbackslash n}, then the confirmation is forwarded to the client. 
 If one or multiple servers answer with an error message, the error message which arrived last is relayed back to the client. 
-In this case a warning is written to a log file.
+In this case a warning is written to a log file. (Fig. \ref{processing-set-smget})
 
 \paragraph{GET} The GET request command received from the client is relayed to the server determined by the round-robin scheme.
-The response of the server is directly forwarded to the client.
+The response of the server is directly forwarded to the client. (Fig. \ref{processing-get-nsmget})
 
-\paragraph{Multi-GET} The processing of a multi-GET request is different depending on the sharded/non-sharded mode which can be configured at the startup time. In case of non-sharded mode, the processing is identical to a GET request where the message is sent to one server and the response is directly relayed to the client. In case of sharded mode, the request is split evenly into three smaller requests such that the difference in the number of keys per server is maximally one (i.e. for 7 keys, 2 servers receive 2 keys each and 1 server receives 3 keys).
-Each part is sent to the server according to the round-robin scheme. Whenever a server response arrives in the worker-thread, it is fed back to the multi-GET request object where it is stored until all servers responded. Then the client response is assembled by splitting and reordering the individual responses of the servers before sending it to the client.
+\paragraph{MULTI-GET} The processing of a multi-GET request is different depending on the sharded/non-sharded mode which can be configured at the startup time. In case of non-sharded mode, the processing is identical to a GET request where the message is sent to one server and the response is directly relayed to the client (Fig. \ref{processing-get-nsmget}). In case of sharded mode, the request is split evenly into three smaller requests such that the difference in the number of keys per server is maximally one (i.e. for 7 keys, 2 servers receive 2 keys each and 1 server receives 3 keys).
+Each part is sent to the server according to the round-robin scheme. Whenever a server response arrives in the worker-thread, it is fed back to the multi-GET request object where it is stored until all servers responded. Then the client response is assembled by splitting and reordering the individual responses of the servers before sending it to the client (Fig. \ref{processing-set-smget}).
 
 \subsubsection{Workload Balancing}\label{workload-balancing}
-The round-robin scheme applied for GET and multi-GET requests allows to balance the read-workload among multiple servers.
+The round-robin scheme applied for GET and multi-GET requests allows to balance the read workload among multiple servers.
 
 As described in \ref{request-decoding} each GET and multi-GET request receives one or multiple server ids from the decoder in the net-thread.
 For GET and multi-GET requests in non-sharded mode this is only one server id. For multi-GET requests in sharded mode this is a set of server ids. (if the number of keys is larger than the number of servers, then this will be all servers).
 
 Since the net-thread is a singleton and the request queue offers first come first served processing of requests, the order in which the requests are processed does not change. Hence when neglecting network related effects, it can be expected that the work will be distributed evenly among the available servers.
 
-Another form of work balancing takes place with the number of worker threads. For a single worker-thread there is no balancing. But as the number of workers increases, also the concurrency in the system increases because multiple requests can be processed in parallel.
+Another form of work balancing takes place with the number of worker-threads. For a single worker-thread there is no balancing. But as the number of workers increases, also the concurrency in the system increases because multiple requests can be processed in parallel.
 
 The balancing of the read workload comes at the cost of the write workload. Since the value in each SET request is replicated to all \emph{memcached} servers, the total server service time is determined by the last server responding.
 
@@ -120,7 +120,7 @@ The statistic unit is collecting online averages and sample standard deviations 
 The algorithm provides a method to calculate the average $\bar{x}_n = \bar{x}_{n-1} + \frac{x_n -\bar{x}_{n-1}}{n}$ and the variance $s^2_n = \frac{M_{2,n}}{n-1}$ where $M_{2,n} = M_{2,n-1} + (x_n - \bar{x}_{n-1})(x_n - \bar{x}_n)$ in an online and numerically stable fashion.
 Every 5 seconds $\bar{x}_n$, $M_{2,n}$ and $n$ of every metric are logged to \emph{mw\_stat.log} and then reset to 0 afterwards. These measurements can then be aggregated off-line into 3 error metrics. First the standard deviation within every 5 second window which gives insight into how stable the metric is in the 5 second window. Secondly the standard deviation over the 5 second averages where a warmup and cooldown phase are filtered out. This allows to check if the execution over the 60 seconds was stable. Third the standard deviation over the average of each repetition which gives the possibility to check how much a measurement varies when repeating an experiment.
 
-The statistic unit of each worker-thread also keeps track of a histogram of the response time in 100$\mu s$ steps. This histogram is flushed to \emph{mw\_stat.log} and reset every 5 seconds. The individual histograms of each worker-thread and time window are then aggregated off-line which also allows to filter out measurements from the warmup and cooldown phase.
+The statistic unit of each worker-thread also keeps track of a histogram of the response time distribution in 100$\mu s$ steps. This histogram is flushed to \emph{mw\_stat.log} and reset every 5 seconds. The individual histograms of each worker-thread and time window are then aggregated off-line which also allows to filter out measurements from the warmup and cooldown phase.
 
 In addition there is a separate executor service \emph{(ScheduledExecutorService.java)} in the MW that executes every 5 seconds a runnable collecting statistics about the arrival rate in the net-thread and the internal request queue. 
 
@@ -136,7 +136,7 @@ The measurements were obtained using up to 8 VMs:
 \end{itemize}
 
 \emph{Memtier benchmark} is a command line utility for load generation and benchmarking key-value stores \cite{memtier}.
-Using multiple \emph{memtier} instances, the number of clients in the system is defined as the number of memtier instances times the number of threads per instance times the number of virtual clients per thread. Throughout all experiments a constant value size of 4096B was used and the number of keys was limited to 10000. All SETs have a long expiry time, such that keys are not evicted during the experiment.
+When using multiple \emph{memtier} instances, the number of clients in the system is defined as the number of memtier instances times the number of threads per instance times the number of virtual clients per thread. Throughout all experiments a constant value size of 4096B was used and the number of keys was limited to 10000. All SETs have a long expiry time, such that keys are not evicted during the experiment.
 
 \subsubsection{Metrics}\label{metrics}
 
@@ -189,7 +189,7 @@ After each run  the resulting log files were transferred to the local machine an
 The obtained results are filtered (remove 10 second warmup and cooldown phase) and later aggregated off-line using \emph{MongoDB} queries.
 All visualizations were done using \emph{matlibplot}.
 
-After repeating an experiment 3 times, the results were validated by checking that the coefficient of variation of the throughput over the 60 second runtime and the coefficient of variation over the repetitions does not exceed a threshold. If necessary additional repetitions are scheduled to account for external factors on the cloud impacting the performance.
+After repeating an experiment 3 times, the results were validated by checking that the coefficient of variation of the throughput over the 60 second runtime and the coefficient of variation over the repetitions did not exceed a threshold. If necessary additional repetitions were scheduled to account for external factors on the cloud impacting the performance.
 
 \begin{algorithm}
 	\scriptsize{
@@ -204,9 +204,9 @@ After repeating an experiment 3 times, the results were validated by checking th
 			{
 				repetition
 			}{
-				- start all memcached instances with one thread
+				- start all \emph{memcached} instances with one thread
 				
-				- initialize all memcached instances by populating the key value store to avoid cache misses
+				- initialize all \emph{memcached} instances by populating the key value store to avoid cache misses
 				
 				- start all middlewares according to the experiment configuration
 				
@@ -216,7 +216,7 @@ After repeating an experiment 3 times, the results were validated by checking th
 				
 				- stop all middlewares
 				
-				- stop all memcached instances
+				- stop all \emph{memcached} instances
 				
 				- transfer results from VMs to the local machine using \emph{SCP} 
 				
@@ -226,7 +226,7 @@ After repeating an experiment 3 times, the results were validated by checking th
 			- validate results and possibly run additional repetitions
 		}
 	}}
-	\caption{Each section of the report represents a set of experiment where different configurations were evaluated using at least 3 repetitions each.}\label{exp-suite-algo}
+	\caption{Each section of the report represents a set of experiments where different configurations were evaluated using at least 3 repetitions with a stable runtime of 1 minute each.}\label{exp-suite-algo}
 \end{algorithm}
 
 Apart from the set of experiments for the baseline without middleware in section \ref{exp2} and GET/multi-GET in section \ref{exp5}, all experiments were run on the same set of VMs without restarting them. This allows a comparison of results not only within a set of experiments but also between different sections.

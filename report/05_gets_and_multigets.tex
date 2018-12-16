@@ -1,5 +1,6 @@
 \documentclass[report.tex]{subfiles}
 \begin{document}
+\newpage
 \section{Gets and Multi-gets (90 pts)}\label{exp5}
 
 
@@ -114,7 +115,7 @@ Further it can be observed that the average total server service time in non-sha
 
 The constant bucket size of 0.21 was selected by applying the \emph{Freedman–Diaconis rule} (bucket size $ = 2 \frac{IQR(x)}{\sqrt[3]{n}}$ where $IQR(x)$ is the interquartile range) on the MW response time measurements of the sharded case. All outliers with more than 15 ms are collected in the last bucket.
 
-The histogram contains also the response time measurements from the warmup and cooldown phase to allow a fair comparison between client and MW because \emph{memtier} does not allow to filter them out. However a manual check of average response time over time indicated that the warmup and cooldown phase only have a limited influence on response time.
+The histogram contains also the response time measurements from the warmup and cooldown phase to allow a fair comparison between client and MW because \emph{memtier} does not allow to filter them out. However, a manual check of average response time over time indicated that the warmup and cooldown phase only have a limited influence on response time.
 
 As previously explained the response time measured on the client is larger than on the middleware by approximately 1 millisecond resulting in a shift of the time distribution in the histogram.
 For response times greater than 10ms the \emph{memtier} clients reduced the granularity of the buckets resulting in the artefacts visible in the tail of the client measurements.

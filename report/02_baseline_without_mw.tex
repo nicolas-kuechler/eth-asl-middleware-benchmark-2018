@@ -74,14 +74,14 @@ Consequently increasing the number of clients has almost no effect on the throug
 
 \paragraph{Write-Only Workload}
 In figure \ref{exp21_wo_nc} it can be observed that for a write-only workload the throughput saturation is reached at 72 clients. In this experiment the bottleneck is not the bandwidth but rather the \emph{memcached} server. 
-As expected the throughput first increases in the number of clients while the memcached servers are still under-saturated. The response time of the \emph{memcached} server does not show the typical behaviour between the under-saturated and saturated phase, because even though the throughput still increases drastically, the response time is already showing a linear increase without a clear knee.
-However even though using 96 clients would result in a marginally higher throughput, the increase in response time does not justify a user load of more than 72 clients as the maximum throughput and hence with more than 72 clients the system is saturated. The over-saturated phase with decreasing throughput is not shown.
+As expected the throughput first increases in the number of clients while the \emph{memcached} servers are still under-saturated. The response time of the \emph{memcached} server does not show the typical behaviour between the under-saturated and saturated phase, because even though the throughput still increases drastically, the response time is already showing a linear increase without a clear knee.
+However, even though using 96 clients would result in a marginally higher throughput, the increase in response time does not justify a user load of more than 72 clients as the maximum throughput and hence with more than 72 clients the system is saturated. The over-saturated phase with decreasing throughput is not shown because \emph{memcached} is able to keep the throughput stable even for a large user-load.
 
 
 \subsection{Two Servers}\label{exp22}
 
 
-This set of experiments analyses the behaviour of the system with 1 load generating VM and a two server VMs. The detailed experiment configuration is presented in the table below.
+This set of experiments analyses the behaviour of the system with 1 load generating VM and two server VMs. The detailed experiment configuration is presented in the table below.
 
 \begin{center}
 	\scriptsize{
@@ -168,13 +168,13 @@ Using a write-only workload with values of 4096B the situation is similar but he
 For a read-only workload both experiments are bound by the network upload bandwidth of the server VM(s).
 Despite the fact that they are both network bound, they have a different maximum throughput because having an additional server in the second set of experiments gives two times the upload bandwidth between server and client VMs and thus resulting in approximately two times the throughput.
 
-The different throughput for write-only workload is explained by considering that only the second experiment is bound by the network. Namely by the upload bandwidth of the client VM. The bottleneck in the first experiment is \emph{memcached} which saturates for around 72 clients.
+The different throughput for write-only workloads is explained by considering that only the second experiment is bound by the network. Namely by the upload bandwidth of the client VM. The bottleneck in the first experiment is \emph{memcached} which saturates for around 72 clients.
 
 \paragraph{Comparison of workloads}
 In the first set of experiments with one \emph{memcached} server the throughput is different between write and read workload. 
 This is primarily because only the read workload is network bound. For a SET request the server only needs to transmit the 8B confirmation message \texttt{STORED\textbackslash r\textbackslash n} to the client compared to a GET request where the server needs to transport a message with at least 4096B. 
 
-Despite the fact that in the second set of experiments with only one load generating VM the throughput for read-only and write-only is almost identical the bottleneck is a different part of the system. For read-only it is the upload bandwidth of the two server VMs and for the write-only workload it is the upload bandwidth of the load generating client VM.
+Despite the fact that in the second set of experiments with only one load generating VM the throughput for read-only and write-only is almost identical, the bottleneck is a different part of the system. For read-only it is the upload bandwidth of the two server VMs and for the write-only workload it is the upload bandwidth of the load generating client VM.
 
 \paragraph{Key take-away messages}
 \begin{itemize}

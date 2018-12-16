@@ -13,8 +13,12 @@ __pycache__/
 *.aux
 *.out
 *.synctex.gz
+*.bbl
+*.blg
+*.log
 
 data/
+mongodump/
 exp_output/
 exp_plots/
 report/data/

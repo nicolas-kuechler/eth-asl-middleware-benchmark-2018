@@ -1,4 +1,4 @@
-# Advanced Systems Lab - Fall 2018
+# Advanced Systems Lab - Autumn Semester 2018
 
 ## Repository Overview
 
@@ -17,6 +17,8 @@ The top-level folder structure of the data matches the structure of the report
 (i.e. exp21 corresponds to section 2.1 Baseline without Middleware - One Server).
 Each set of experiments is divided into folders for the different evaluated configurations.
 The folder of each experiment is partitioned further into folders for the repetitions and files containing the aggregated data from client and middleware in a csv format.
+
+The file mongodump.zip contains an export of the experiment database based on the files in data.zip
 
 
 #### Example
@@ -65,10 +67,15 @@ This results in a jar file located in:
 ### Prerequisites
 - conda environment asl.yml
 - MongoDB
+- octave (for queuing models)
 
 ### Running
 Running experiment_suite.py will launch experiments according to the json configurations in python/experiments/configs.
 General configurations including the settings of the Azure cloud environment are done in python/experiments/configs/config.py
+
+```
+ python experiment_suite.py -id simulation -exp exp21 exp22 exp31 exp32 exp41 exp51 exp52 exp60 -vmstart initial
+ ```
 
 The jupyter notebooks in python/analysis include the data analysis for each section of the report.
 

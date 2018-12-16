@@ -76,17 +76,17 @@ The interactive law was checked and holds for all experiments in this section (T
 \paragraph{Read-Only Workload}
 
 
-As described in section \ref{exp2} the read-only workload with a single \emph{memcached} server VM and values of size of 4096B is bound to around 3000 ops/sec by the upload bandwidth of the server VM. This phenomena is also clearly visible in figure \ref{exp31_ro_tp_nc} when using a single middleware in between 3 client VMs and server VM. Consequently the point of throughput saturation of a read-only workload is reached already with 6 clients, independent of the number of worker-threads. This also manifests itself in the response time that increases linearly in the number of clients due to the extended waiting period on the server VM.
+As described in section \ref{exp2}, the read-only workload with a single \emph{memcached} server VM and values of size 4096B is bound to around 3000 ops/sec by the upload bandwidth of the server VM. This phenomena is also clearly visible in figure \ref{exp31_ro_tp_nc} when using a single middleware in between 3 client VMs and a server VM. Consequently the point of throughput saturation of a read-only workload is reached already with 6 clients, independent of the number of worker-threads. This also manifests itself in the response time that increases linearly in the number of clients due to the extended waiting period on the server VM.
 
 In the following it is analysed how this network bandwidth bottleneck manifests itself in the middleware measurements. 
 As long as the number of clients is less than the number of workers per MW, the request queue in the middleware is empty (Fig. \ref{exp31_ro_q}). This is because the number of clients in a closed system limit the number of requests that can be in the MW at the same time. 
 So when there are more worker-threads than possible requests in the system, every request placed in the queue is processed immediately by one of the idle workers. This is a fact that holds independently of the network bottleneck. 
 
-Figure \ref{exp31_ro_tp_nc} shows that the response time is not affected by the number of worker-threads because already using 8 workers is enough in combination with 12 clients to reach the network bottleneck so adding more workers cannot improve the throughput. 
-However the response time increases in the number of clients because the number of requests per second that can be transported from the server VM to the MW remains fixed. Consequently with a greater user-load, requests need to wait longer in some part of the system before the bottleneck leading to a longer response time.
+Figure \ref{exp31_ro_tp_nc} shows that the response time is not affected by the number of worker-threads because already using 8 workers is enough in combination with 12 clients to reach the network bottleneck. So adding more workers cannot improve the throughput. 
+However, the response time increases in the number of clients because the number of requests per second that can be transported from the server VM to the MW remains fixed. Consequently with a greater user-load, requests need to wait longer in some part of the system before the bottleneck, leading to a longer response time.
 This also manifests itself in the different components of the response time.
 The queue waiting time and the server service time are the two dominant factors of the response time as measured on the client while the network-, the net-thread decoding- and worker-thread processing time are negligibly small  (Fig. \ref{exp31_ro_rtcomp}). As the number of worker increases, requests spend less time in the queue and instead stay longer on the server VM where they are waiting in front of the network bottleneck. 
-So the number of workers does not influence the response time but it influences if the requests are queued in the middleware or on the server.
+So the number of workers does not influence the response time but it influences if the requests are queued in the middleware or on the server (Fig. \ref{exp31_ro_rtcomp}).
 
 The server service time increases up to the point where are all workers are busy and the queue starts to fill up. Afterwards it remains constant because the number of workers in the middleware limit the number of requests that can be concurrently at the server VM and hence need to be sent through the network bottleneck. (Fig. \ref{exp31_ro_sst})
 
@@ -120,7 +120,7 @@ The throughput saturation for 8 workers is reached at 24 clients, for 16 workers
 As the user-load is increased, eventually the waiting time in the queue becomes the dominant factor in the response time for every number of worker-threads. This is because when all workers are busy waiting for a response from the server,  each new request remains longer in the queue.
 This becomes evident in the decomposition of the response time in figure \ref{exp31_wo_component_nc}.
 The component utilization figure \ref{exp31_wo_util} shows that the bottleneck in the system is the number of worker-threads that are waiting concurrently for a response of the server. This suggests that increasing the number of worker-threads would further benefit the throughput. However, the increasing server service time for an individual request with a larger number of worker-threads poses a limit on this throughput increase.
-When there are more clients than worker-threads, then the number of requests in the queue is approximately equal to the difference between number of clients and number of worker-threads.
+When there are more clients than worker-threads, the number of requests in the queue is approximately equal to the difference between number of clients and number of worker-threads.
 As in the read-only workload the net-thread decoding and worker-thread processing time remain negligible factors in the response time.
 
 
@@ -226,7 +226,7 @@ The interactive law was checked and holds for all experiments in this section (T
 
 \paragraph{Read-Only Workload}
 
-As in the setting with 1 MW, the read-only workload is bound by the upload bandwidth of the server. Since the bottleneck is not related to the MW it is no surprise that adding an additional MW does not change the observed behaviour and the throughput saturation is still reached at 6 clients independent of the number of workers (Fig. \ref{exp32_ro_tp_nc}). The response time also shows the same behaviour as in the case with 1 MW for the identical reasons.
+As in the setting with 1 MW, the read-only workload is bound by the upload bandwidth of the server. Since the bottleneck is not related to the MW, it is no surprise that adding an additional MW does not change the observed behaviour and the throughput saturation is still reached at 6 clients independent of the number of workers (Fig. \ref{exp32_ro_tp_nc}). The response time also shows the same behaviour as in the case with 1 MW for the identical reasons.
 
 However considering the internal MW measurements, there are a few differences.
 Since the two MWs share the workload, each MW has only half of the clients.
@@ -258,8 +258,8 @@ The trade-off between queue waiting time and server service time as the dominati
 
 In the write-only workload the system with 2 MWs behaves in a similar way as the system with 1 MW. 
 As shown in figure \ref{exp32_wo_util_nc} the bottleneck remains the number of worker-threads that are waiting for a server response. 
-However the baseline without middleware suggests that for 72 clients the throughput saturation is reached which means that using more than 72 workers in total does not lead to a higher throughput.
-The server service time still depends only on the number of busy worker-threads (Fig. \ref{exp32_wo_rtcomp_nc})
+However, the baseline without middleware suggests that for 72 clients the throughput saturation is reached. This means that using more than 72 workers in total does not lead to a higher throughput.
+The server service time still depends only on the number of busy worker-threads (Fig. \ref{exp32_wo_rtcomp_nc}).
 However, by adding an additional MW the total number worker-threads in the system is multiplied by two and hence the maximal throughput achieved is higher for the same number of worker-threads per MW.
 For 8 worker-threads per middleware the point of saturation is reached with 48 clients, for 16 workers with 72 clients, for 32 workers with 96 clients and for 64 workers with 192 clients.
 
@@ -267,10 +267,10 @@ The collected data indicates that the total number of worker-threads in the syst
 So essentially the system with 2 MWs has a similar performance to the system with 1 MW with two times as many worker-threads. (i.e. system with two middlewares with 32 workers per MW has approximately the same performance as the system with 1 MW and 64 worker-threads)
 This results from the fact that neither the net-thread nor the middleware VM network bandwidth is the bottleneck and so by duplicating the middleware VM the only performance gain is the consequence of more worker-threads in the system.
 
-The total number of worker-threads in the system affect the performance because the server service time depends only on the number of worker-threads that are sending requests concurrently. (Fig. \ref{exp31_wo_queue_sst_nc} and \ref{exp32_wo_queue_sst_nc})
-Consequently each request needs to wait in the queue for approximately the same time and hence the total response time is the same leading to the same throughput in systems with the same number of total worker-threads. (Fig. \ref{exp31_wo_tp_nc} and \ref{exp32_wo_tp_nc})
+The total number of worker-threads in the system affect the performance because the server service time depends only on the number of worker-threads that are sending requests concurrently (Fig. \ref{exp31_wo_queue_sst_nc} and \ref{exp32_wo_queue_sst_nc}).
+Consequently each request needs to wait in the queue for approximately the same time and hence the total response time is the same leading to the same throughput in systems with the identical number of total worker-threads (Fig. \ref{exp31_wo_tp_nc} and \ref{exp32_wo_tp_nc}).
 The system with 1 MW has on average two times as many requests in the queue compared to each queue in the system with 2 MWs 
-but the total number of requests in the whole system that are waiting in a middleware queue is the same when the total number of workers is identical. (Fig. \ref{exp31_wo_queue_sst_nc} and \ref{exp32_wo_queue_sst_nc})
+but the total number of requests in the whole system that are waiting in a middleware queue is the same when the total number of workers is identical (Fig. \ref{exp31_wo_queue_sst_nc} and \ref{exp32_wo_queue_sst_nc}).
 \vspace{-2mm}
 
 \begin{figure}[H]
@@ -347,7 +347,7 @@ As shown in sections \ref{exp31} and \ref{exp32} the read-only workload is indep
 The optimal number of clients for the read-only workload is somewhere in between 6 and 12 clients but the configuration with 12 clients is already strongly affected by the bandwidth bottleneck and results in a response time that is almost two times as long with only a small gain in throughput. So under the evaluated configurations the maximum throughput is achieved with 6 clients and is independent of the number of worker-threads. Thus there is no point in using more than 8 workers. 
 There are no misses because before every experiment \emph{memcached} is initialized with all keys and thus misses have no influence on the response time. Since in the optimal configuration the number of worker threads is greater than the number of clients, the queue basically remains empty and consequently the average time of a request in the queue is a negligible factor in the response time.
 
-For a write-only workload the maximum throughput  in the system with a single middleware is achieved with 144 clients and 64 middleware worker-threads. In the system with two middlewares the point of throughput saturation is reached at 192 clients when using 64 worker-threads per middleware. The maximum throughput of the system involving two middlewares comes close to the maximum throughput of 14000 ops/sec recorded in the baseline without a middleware\footnote{The experiments of this section were run after restarting the VMs used in the baseline without middleware and so the measurements are not perfectly comparable close enough.} 
+For a write-only workload the maximum throughput  in the system with a single middleware is achieved with 144 clients and 64 middleware worker-threads. In the system with two middlewares the point of throughput saturation is reached at 192 clients when using 64 worker-threads per middleware. The maximum throughput of the system involving two middlewares comes close to the maximum throughput of 14000 ops/sec recorded in the baseline without a middleware\footnote{The experiments of this section were run after restarting the VMs used in the baseline without middleware and so the measurements are only approximately comparable.} 
 It can be concluded that the overhead of using a middleware in a write-only workload with a single server is minimal, because the baseline without MW poses an upper bound on what can be achieved for a write-only workload.
 
 Since in both setups there are more clients than worker-threads, requests usually spend some time waiting in the queue. However, the additionally gained throughput outweighs the longer response time incurred by this waiting time.
@@ -363,7 +363,7 @@ For a write-only workload the maximal throughput achieved with two middlewares i
 \begin{itemize}
 	\vitemsep
 	\item the number of worker-threads is the main factor for performance in a write-only workload
-	\item with two middlewares and the resulting 128 worker-threads the maximal throughput of the baseline without middleware is almost reached
+	\item with two middlewares and the resulting 128 worker-threads, the maximal throughput of the baseline without middleware is almost reached
 	\item round trip time between client and middleware VM is varying between 1 and 2 milliseconds
 \end{itemize}
 
